@@ -28,8 +28,8 @@ export const toolToSqlValues = (tool: Tool) => [
   tool.holderTechnicianId ?? null,
   tool.loanedAt ?? null,
   tool.notes ?? null,
-  null,
-  null,
+  tool.photoUri ?? null,
+  tool.thumbnailUri ?? null,
   tool.imageDataUrl ?? null,
   tool.imageUpdatedAt ?? null,
   tool.status === 'retired' ? 0 : 1,
@@ -55,10 +55,10 @@ export const technicianToSqlValues = (technician: Technician) => [
 export const movementToSqlValues = (
   movement: Movement,
   sequenceNumber: number,
-  deviceId?: string,
+  fallbackDeviceId?: string,
 ) => [
   movement.id,
-  sequenceNumber,
+  movement.sequenceNumber ?? sequenceNumber,
   movement.type,
   movement.toolId,
   movement.technicianId ?? null,
@@ -68,14 +68,15 @@ export const movementToSqlValues = (
   movement.condition ?? null,
   movement.notes ?? null,
   movement.occurredAt,
-  deviceId ?? null,
-  null,
-  'local',
+  movement.deviceId ?? fallbackDeviceId ?? null,
+  movement.reversedMovementId ?? null,
+  movement.syncStatus ?? 'local',
   movement.occurredAt,
 ];
 
 const stringValue = (value: unknown, fallback = '') => typeof value === 'string' ? value : fallback;
 const optionalString = (value: unknown) => typeof value === 'string' && value.length > 0 ? value : undefined;
+const optionalNumber = (value: unknown) => Number.isFinite(Number(value)) ? Number(value) : undefined;
 
 export const rowToTechnician = (row: Record<string, unknown>): Technician => ({
   id: stringValue(row.id),
@@ -106,6 +107,8 @@ export const rowToTool = (row: Record<string, unknown>): Tool => ({
   holderTechnicianId: optionalString(row.holder_technician_id),
   loanedAt: optionalString(row.loaned_at),
   notes: optionalString(row.notes),
+  photoUri: optionalString(row.photo_uri),
+  thumbnailUri: optionalString(row.thumbnail_uri),
   imageDataUrl: optionalString(row.legacy_image_data_url),
   imageUpdatedAt: optionalString(row.image_updated_at),
   createdAt: stringValue(row.created_at),
@@ -114,13 +117,17 @@ export const rowToTool = (row: Record<string, unknown>): Tool => ({
 
 export const rowToMovement = (row: Record<string, unknown>): Movement => ({
   id: stringValue(row.id),
+  sequenceNumber: optionalNumber(row.sequence_number),
   type: stringValue(row.type) as Movement['type'],
   toolId: stringValue(row.tool_id),
   technicianId: optionalString(row.technician_id),
   operatorName: stringValue(row.operator_name),
+  deviceId: optionalString(row.device_id),
   occurredAt: stringValue(row.occurred_at),
   previousStatus: stringValue(row.previous_status) as Movement['previousStatus'],
   nextStatus: stringValue(row.next_status) as Movement['nextStatus'],
   condition: optionalString(row.condition) as Movement['condition'],
   notes: optionalString(row.notes),
+  reversedMovementId: optionalString(row.reversed_movement_id),
+  syncStatus: optionalString(row.sync_status) as Movement['syncStatus'],
 });

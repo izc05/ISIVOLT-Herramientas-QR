@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#041426"/>
+      <stop offset="0.62" stop-color="#081d37"/>
+      <stop offset="1" stop-color="#130724"/>
+    </linearGradient>
+    <linearGradient id="neon" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#63ecff"/>
+      <stop offset="0.55" stop-color="#5df0b4"/>
+      <stop offset="1" stop-color="#a679ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="2732" height="2732" fill="url(#bg)"/>
+  <circle cx="1366" cy="1220" r="500" fill="none" stroke="#5be7ff" stroke-opacity=".11" stroke-width="22"/>
+  <circle cx="1366" cy="1220" r="414" fill="none" stroke="#9b72ff" stroke-opacity=".12" stroke-width="13" stroke-dasharray="48 38"/>
+  <g transform="translate(918 772)">
+    <path d="M100 80h120v120H100zM500 80h120v120H500zM100 480h120v120H100z" fill="none" stroke="url(#neon)" stroke-width="42"/>
+    <path d="M500 480h52v52h-52zM568 548h52v52h-52zM500 616h120v52H500zM270 280h350v52H270z" fill="url(#neon)"/>
+    <path d="M196 636l-58 58L20 576l58-58 44 44 88-88 78 78-92 84z" fill="url(#neon)"/>
+    <path d="M594 634l-86-86 48-48 86 86v52l-48 48h-52l52-52z" fill="#f4fbff"/>
+  </g>
+  <text x="1366" y="1885" text-anchor="middle" fill="#f2fbff" font-family="Arial, sans-serif" font-weight="800" font-size="154" letter-spacing="12">ISIVOLT</text>
+  <text x="1366" y="2025" text-anchor="middle" fill="#7feaff" font-family="Arial, sans-serif" font-weight="600" font-size="70" letter-spacing="6">HERRAMIENTAS QR</text>
+  <text x="1366" y="2160" text-anchor="middle" fill="#d5edf5" fill-opacity=".54" font-family="Arial, sans-serif" font-size="42" letter-spacing="4">CONTROL · TRAZABILIDAD · SEGURIDAD</text>
+</svg>

@@ -12,6 +12,12 @@ const base64ToBytes = (value: string) => {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 };
 
+const asArrayBuffer = (bytes: Uint8Array): ArrayBuffer => {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+};
+
 const derive = async (pin: string, salt: Uint8Array, iterations: number) => {
   const material = await crypto.subtle.importKey(
     'raw',
@@ -24,7 +30,7 @@ const derive = async (pin: string, salt: Uint8Array, iterations: number) => {
     {
       name: 'PBKDF2',
       hash: HASH_ALGORITHM,
-      salt,
+      salt: asArrayBuffer(salt),
       iterations,
     },
     material,

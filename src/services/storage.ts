@@ -64,20 +64,23 @@ export const hydrateAppDataFromNative = async (): Promise<void> => {
     if (nativeData) {
       const clean = prepareData(nativeData);
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
-      await recordNativeStorageEvent('hydrate', 'Datos recuperados desde SQLite y validados.');
+      await recordNativeStorageEvent('hydrate', 'Datos recuperados desde SQLite normalizado y validados.');
       return;
     }
 
     const initialData = loadAppData();
-    await writeNativeAppData(initialData);
-    await recordNativeStorageEvent('initialize', 'Base de datos creada con el estado inicial.');
+    await writeNativeAppData(initialData, { replace: true });
+    await recordNativeStorageEvent('initialize', 'Base de datos normalizada creada con el estado inicial.');
   } catch (error) {
     recordAppError('storage.hydrate', error);
     console.error('No se ha podido hidratar SQLite. Se mantiene el almacenamiento web.', error);
   }
 };
 
-export const saveAppData = (data: AppData): void => {
+export const saveAppData = (
+  data: AppData,
+  options: { replaceNative?: boolean } = {},
+): void => {
   const clean = prepareData(data);
 
   try {
@@ -88,7 +91,7 @@ export const saveAppData = (data: AppData): void => {
     throw error;
   }
 
-  void writeNativeAppData(clean).catch((error) => {
+  void writeNativeAppData(clean, { replace: options.replaceNative }).catch((error) => {
     recordAppError('storage.sqlite-save', error);
     console.error('No se ha podido guardar el estado en SQLite.', error);
   });
@@ -108,7 +111,7 @@ export const resetAppData = (): AppData => {
   }
 
   const clean = clone(seedData);
-  saveAppData(clean);
-  void recordNativeStorageEvent('reset', 'Datos restaurados a la configuración inicial con confirmación reforzada.');
+  saveAppData(clean, { replaceNative: true });
+  void recordNativeStorageEvent('reset', 'Datos restaurados con reemplazo transaccional y confirmación reforzada.');
   return clean;
 };

@@ -2,7 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: '/ISIVOLT-Herramientas-QR/',
+  // Las rutas relativas funcionan tanto dentro del WebView de Capacitor
+  // como bajo el subdirectorio de GitHub Pages.
+  base: './',
   plugins: [react()],
   server: {
     host: true,

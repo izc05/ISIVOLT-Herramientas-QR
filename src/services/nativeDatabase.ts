@@ -343,7 +343,7 @@ export const getNativeDatabaseHealth = async (): Promise<NativeDatabaseHealth | 
     tools: await countRows(db, 'tools'),
     technicians: await countRows(db, 'technicians'),
     movements: await countRows(db, 'movements'),
-    transactionActive: active.result,
+    transactionActive: Boolean(active.result),
   };
 };
 

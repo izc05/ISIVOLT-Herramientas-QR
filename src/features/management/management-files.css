@@ -1,0 +1,88 @@
+.management-files-launcher {
+  position: fixed;
+  right: 67px;
+  bottom: calc(94px + env(safe-area-inset-bottom));
+  z-index: 174;
+  display: grid;
+  place-items: center;
+  width: 45px;
+  height: 45px;
+  border: 1px solid rgba(77, 218, 255, 0.36);
+  border-radius: 15px;
+  color: #b8f4ff;
+  background: linear-gradient(145deg, rgba(18, 96, 138, 0.96), rgba(10, 34, 66, 0.96));
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.4), 0 0 24px rgba(54, 207, 255, 0.14);
+  cursor: pointer;
+}
+
+.management-files-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 620;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 4, 13, 0.76);
+  backdrop-filter: blur(15px);
+}
+
+.management-files-panel {
+  width: min(470px, 100%);
+  display: grid;
+  gap: 11px;
+  padding: 18px;
+  border: 1px solid rgba(77, 220, 255, 0.26);
+  border-radius: 22px;
+  color: #effbff;
+  background: linear-gradient(155deg, #081c31, #050a16 70%, #0d071d);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+}
+
+.management-files-panel header,
+.management-files-panel header > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 11px;
+}
+
+.management-files-panel header > div { justify-content: flex-start; }
+.management-files-panel header > div > span { display: grid; gap: 2px; }
+.management-files-panel header small { color: rgba(220, 245, 255, 0.58); }
+.management-files-panel header button {
+  display: grid;
+  place-items: center;
+  width: 39px;
+  height: 39px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 12px;
+  color: #fff;
+  background: rgba(255,255,255,.035);
+  cursor: pointer;
+}
+
+.management-file-action {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 70px;
+  padding: 13px;
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 15px;
+  color: #77eaff;
+  background: rgba(255,255,255,.028);
+  text-align: left;
+  cursor: pointer;
+}
+.management-file-action span { display: grid; gap: 4px; color: #fff; }
+.management-file-action small { color: rgba(220,245,255,.6); line-height: 1.35; }
+.management-file-action:disabled { opacity: .52; cursor: default; }
+.management-files-panel > p { margin: 0; padding: 10px; border-radius: 12px; color: #bdf6d9; background: rgba(65,224,151,.065); line-height: 1.4; }
+
+@media (max-width: 520px) {
+  .management-files-launcher { right: 62px; bottom: calc(91px + env(safe-area-inset-bottom)); width: 44px; height: 44px; border-radius: 50%; }
+  .management-files-backdrop { align-items: end; padding: 0; }
+  .management-files-panel { width: 100%; padding: 18px 14px calc(18px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }
+}

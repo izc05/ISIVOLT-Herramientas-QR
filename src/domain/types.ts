@@ -18,6 +18,8 @@ export type Tool = {
   holderTechnicianId?: string;
   loanedAt?: string;
   notes?: string;
+  imageDataUrl?: string;
+  imageUpdatedAt?: string;
   createdAt: string;
   updatedAt: string;
 };

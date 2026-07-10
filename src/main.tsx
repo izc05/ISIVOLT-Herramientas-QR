@@ -5,6 +5,7 @@ import './styles.css';
 import './core.css';
 import './game-ui.css';
 import './vivid-theme.css';
+import './technician-detail.css';
 
 const root = document.getElementById('root');
 

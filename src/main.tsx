@@ -1,8 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
+import AppV2 from './AppV2';
 import './styles.css';
 import './core.css';
+import './game-ui.css';
 
 const root = document.getElementById('root');
 
@@ -12,6 +13,6 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <AppV2 />
   </StrictMode>,
 );

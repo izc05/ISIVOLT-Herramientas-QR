@@ -3,7 +3,6 @@ import {
   BarcodeFormat,
   BarcodeScanner,
   GoogleBarcodeScannerModuleInstallState,
-  type PluginListenerHandle,
 } from '@capacitor-mlkit/barcode-scanning';
 
 export type NativeScanResult =
@@ -84,7 +83,7 @@ const ensureGoogleScannerModule = async (): Promise<boolean> => {
   return new Promise<boolean>((resolve) => {
     let settled = false;
     let timeoutId: number | undefined;
-    let listener: PluginListenerHandle | null = null;
+    let listener: Awaited<ReturnType<typeof BarcodeScanner.addListener>> | null = null;
 
     const finish = async (available: boolean) => {
       if (settled) return;

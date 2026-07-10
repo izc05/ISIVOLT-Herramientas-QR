@@ -6,6 +6,7 @@ import './core.css';
 import './game-ui.css';
 import './vivid-theme.css';
 import './technician-detail.css';
+import './qr-print.css';
 
 const root = document.getElementById('root');
 

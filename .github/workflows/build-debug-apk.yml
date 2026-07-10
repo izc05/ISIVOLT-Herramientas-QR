@@ -20,7 +20,7 @@ jobs:
   build-debug-apk:
     name: Compilar APK de prueba
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Descargar código
@@ -46,7 +46,10 @@ jobs:
       - name: Crear proyecto Android temporal
         run: npx cap add android
 
-      - name: Sincronizar Capacitor
+      - name: Configurar cámara y protección de datos
+        run: npm run android:configure
+
+      - name: Sincronizar Capacitor y plugins nativos
         run: npx cap sync android
 
       - name: Compilar APK debug
@@ -58,7 +61,7 @@ jobs:
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
-          name: ISIVOLT-Herramientas-QR-debug
+          name: ISIVOLT-Herramientas-QR-v0.3.0-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30

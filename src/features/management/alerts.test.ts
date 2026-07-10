@@ -30,7 +30,16 @@ const data = (): AppData => ({
     updatedAt: '2026-07-01T08:00:00.000Z',
   }],
   movements: [],
-  accessories: [],
+  accessories: [{
+    id: 'acc-1',
+    toolId: 'tool-1',
+    name: 'Puntas de prueba',
+    required: true,
+    active: true,
+    condition: 'missing',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-07-10T08:00:00.000Z',
+  }],
   maintenanceRecords: [{
     id: 'maint-1',
     toolId: 'tool-1',
@@ -58,6 +67,12 @@ describe('buildManagementAlerts', () => {
     const alerts = buildManagementAlerts(data(), new Date('2026-07-10T12:00:00.000Z'));
     expect(alerts.some((alert) => alert.type === 'calibration')).toBe(true);
     expect(alerts.some((alert) => alert.type === 'photo')).toBe(true);
+  });
+
+  it('avisa de accesorios obligatorios ausentes', () => {
+    const alerts = buildManagementAlerts(data(), new Date('2026-07-10T12:00:00.000Z'));
+    expect(alerts.some((alert) => alert.type === 'accessory' && alert.severity === 'critical')).toBe(true);
+    expect(alerts.some((alert) => alert.detail.includes('Puntas de prueba'))).toBe(true);
   });
 
   it('ordena primero las alertas críticas', () => {

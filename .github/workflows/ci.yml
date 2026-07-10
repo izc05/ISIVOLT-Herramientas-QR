@@ -34,4 +34,18 @@ jobs:
         run: npm test
 
       - name: Compilar aplicación
-        run: npm run build
+        run: |
+          set +e
+          npm run build > build.log 2>&1
+          status=$?
+          cat build.log
+          exit $status
+
+      - name: Conservar diagnóstico de compilación
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-build-log
+          path: build.log
+          if-no-files-found: ignore
+          retention-days: 3

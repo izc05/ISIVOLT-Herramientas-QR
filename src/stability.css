@@ -82,9 +82,9 @@
 
 .diagnostics-panel {
   width: min(680px, 100%);
-  max-height: min(760px, calc(100dvh - 36px));
+  max-height: min(800px, calc(100dvh - 36px));
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   gap: 16px;
   padding: 20px;
   border: 1px solid rgba(65, 218, 255, 0.34);
@@ -96,19 +96,58 @@
 
 .diagnostics-panel header,
 .diagnostics-panel header > div,
-.diagnostics-panel footer {
+.diagnostics-panel footer,
+.database-health-card > div:first-child {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.diagnostics-panel header > div > span { display: grid; gap: 2px; }
+.diagnostics-panel header > div > span,
+.database-health-card > div:first-child > span { display: grid; gap: 2px; }
 .diagnostics-panel header small,
 .diagnostics-panel > p,
 .diagnostics-panel time,
-.diagnostics-panel footer > span { color: rgba(220, 246, 255, 0.64); }
+.diagnostics-panel footer > span,
+.database-health-card small { color: rgba(220, 246, 255, 0.64); }
 .diagnostics-panel > p { margin: 0; line-height: 1.45; }
+
+.database-health-card {
+  display: grid;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid rgba(70, 231, 255, 0.2);
+  border-radius: 17px;
+  background: linear-gradient(145deg, rgba(35, 194, 235, 0.075), rgba(120, 75, 255, 0.045));
+  box-shadow: inset 0 0 28px rgba(40, 207, 255, 0.04);
+}
+
+.database-health-card > div:first-child {
+  justify-content: flex-start;
+  color: #83eaff;
+}
+
+.database-health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.database-health-grid > span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+}
+
+.database-health-grid strong { font-size: 1rem; color: #fff; }
+.database-health-loading,
+.database-health-web { color: rgba(220, 246, 255, 0.68); font-size: 0.82rem; }
+
 .diagnostics-list { overflow: auto; display: grid; gap: 10px; padding-right: 3px; }
 .diagnostics-list article {
   display: grid;
@@ -121,7 +160,7 @@
 .diagnostics-list article strong { color: #74e6ff; }
 .diagnostics-list article span { overflow-wrap: anywhere; }
 .diagnostics-list article time { font-size: 0.74rem; }
-.diagnostics-empty { display: grid; place-items: center; gap: 8px; min-height: 180px; color: rgba(220, 246, 255, 0.65); }
+.diagnostics-empty { display: grid; place-items: center; gap: 8px; min-height: 150px; color: rgba(220, 246, 255, 0.65); }
 .diagnostics-panel footer button {
   display: inline-flex;
   align-items: center;
@@ -146,11 +185,12 @@
   .diagnostics-backdrop { padding: 0; align-items: end; }
   .diagnostics-panel {
     width: 100%;
-    max-height: 92dvh;
+    max-height: 94dvh;
     padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
     border-radius: 24px 24px 0 0;
   }
 
+  .database-health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .diagnostics-panel footer { align-items: stretch; flex-direction: column; }
   .diagnostics-panel footer button { justify-content: center; width: 100%; }
 }

@@ -27,6 +27,11 @@ export type Technician = {
   code: string;
   name: string;
   specialty: string;
+  role?: string;
+  phone?: string;
+  extension?: string;
+  previousPhone?: string;
+  email?: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;

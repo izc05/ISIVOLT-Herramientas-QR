@@ -1,0 +1,39 @@
+name: Aplicar integración de seguridad
+
+on:
+  push:
+    branches:
+      - feature/security-0.9
+
+permissions:
+  contents: write
+
+concurrency:
+  group: security-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, 'chore: aplicar integración de seguridad') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+        with:
+          ref: feature/security-0.9
+          fetch-depth: 0
+
+      - name: Aplicar integración idempotente
+        run: python3 scripts/apply_security_integration.py
+
+      - name: Confirmar cambios
+        run: |
+          if git diff --quiet; then
+            echo "La integración ya estaba aplicada."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html src/AppV2.tsx src/AppV4.tsx src/services/reports.ts src/features/management/managementService.ts src/features/management/managementExport.ts
+          git commit -m "chore: aplicar integración de seguridad"
+          git push origin HEAD:feature/security-0.9

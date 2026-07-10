@@ -1,0 +1,140 @@
+name: Generar release Android
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Validar y generar APK/AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Preparar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Ejecutar pruebas
+        run: npm test
+
+      - name: Validar esquema SQLite
+        run: python3 scripts/validate_sqlite_schema.py
+
+      - name: Validar preparación de producción
+        run: node scripts/validate-production.mjs
+
+      - name: Compilar aplicación web
+        run: npm run build
+
+      - name: Crear proyecto Android
+        run: npx cap add android
+
+      - name: Generar iconos y splash
+        run: npx --yes @capacitor/assets generate --android --assetPath assets
+
+      - name: Configurar cámara y protección de datos
+        run: npm run android:configure
+
+      - name: Preparar keystore release
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/android/isivolt-release.keystore"
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/android/isivolt-release.keystore" >> "$GITHUB_ENV"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Firma release no configurada: se validará la compilación unsigned."
+          fi
+
+      - name: Configurar versión y firma
+        run: node scripts/configure-android-production.mjs
+
+      - name: Sincronizar Capacitor
+        run: npx cap sync android
+
+      - name: Compilar release unsigned de validación
+        if: steps.signing.outputs.configured != 'true'
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease --stacktrace
+
+      - name: Compilar APK y AAB firmadas
+        if: steps.signing.outputs.configured == 'true'
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease --stacktrace
+
+      - name: Verificar firma APK
+        if: steps.signing.outputs.configured == 'true'
+        run: |
+          APK=$(find android/app/build/outputs/apk/release -name '*.apk' | head -n 1)
+          "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner" verify --verbose --print-certs "$APK"
+
+      - name: Subir metadatos de compilación
+        uses: actions/upload-artifact@v4
+        with:
+          name: ISIVOLT-release-metadata
+          path: android/build-metadata.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Subir APK release firmada
+        if: steps.signing.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ISIVOLT-Herramientas-QR-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Subir AAB release firmado
+        if: steps.signing.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ISIVOLT-Herramientas-QR-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Subir release unsigned de validación
+        if: steps.signing.outputs.configured != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ISIVOLT-Herramientas-QR-unsigned-validation
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+          retention-days: 14

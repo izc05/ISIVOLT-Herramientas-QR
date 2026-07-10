@@ -1,0 +1,39 @@
+name: Finalizar candidata de producción
+
+on:
+  push:
+    branches:
+      - feature/production-1.0
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  finalize:
+    if: ${{ !contains(github.event.head_commit.message, 'chore: finalizar candidata de producción') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+        with:
+          ref: feature/production-1.0
+          fetch-depth: 0
+
+      - name: Aplicar coherencia final
+        run: python3 scripts/finalize_production_rc.py
+
+      - name: Confirmar cambios
+        run: |
+          if git diff --quiet; then
+            echo "La candidata ya estaba finalizada."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json src/config/app.ts index.html README.md docs/ROADMAP.md docs/PRODUCTION.md .github/workflows/production-readiness.yml .github/workflows/build-release.yml
+          git commit -m "chore: finalizar candidata de producción 1.0.0-rc.1"
+          git push origin HEAD:feature/production-1.0

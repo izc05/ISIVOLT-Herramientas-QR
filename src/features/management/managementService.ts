@@ -27,14 +27,41 @@ const baseStatusForService = (serviceStatus: ToolServiceStatus | undefined, curr
   return current === 'loaned' ? current : 'review' as const;
 };
 
+const assertToolManagementRules = (tool: Tool, serviceStatus: ToolServiceStatus) => {
+  if (serviceStatus === 'reserved' && !tool.reservedTechnicianId) {
+    throw new Error('Selecciona el técnico para el que queda reservada la herramienta.');
+  }
+
+  if (tool.status === 'loaned' && serviceStatus !== 'none') {
+    throw new Error('Una herramienta prestada debe devolverse antes de reservarla, repararla o cambiarla de servicio.');
+  }
+
+  if (tool.status === 'loaned' && tool.active === false) {
+    throw new Error('No se puede dar de baja una herramienta mientras continúa prestada.');
+  }
+
+  if ((tool.status === 'retired' || serviceStatus === 'lost') && tool.holderTechnicianId) {
+    throw new Error('Devuelve o regulariza la herramienta antes de marcarla como baja o extraviada.');
+  }
+};
+
 export const saveManagedTool = (tool: Tool): AppData => {
   const data = getManagementData();
   const code = tool.code.trim().toUpperCase();
   if (!code || !tool.name.trim()) throw new Error('El código y el nombre son obligatorios.');
   if (!canUseToolCode(code, tool.id)) throw new Error(`El código ${code} ya pertenece a otra herramienta.`);
 
-  const timestamp = nowIso();
   const serviceStatus = tool.serviceStatus ?? 'none';
+  assertToolManagementRules(tool, serviceStatus);
+
+  if (tool.reservedTechnicianId) {
+    const reservedTechnician = data.technicians.find((item) => item.id === tool.reservedTechnicianId);
+    if (!reservedTechnician || !reservedTechnician.active) {
+      throw new Error('El técnico de la reserva no existe o está inactivo.');
+    }
+  }
+
+  const timestamp = nowIso();
   const saved: Tool = {
     ...tool,
     code,
@@ -85,6 +112,20 @@ export const saveManagedTechnician = (technician: Technician): AppData => {
   const code = technician.code.trim().toUpperCase();
   if (!code || !technician.name.trim()) throw new Error('El código y el nombre son obligatorios.');
   if (!canUseTechnicianCode(code, technician.id)) throw new Error(`El código ${code} ya pertenece a otro técnico.`);
+
+  if (!technician.active) {
+    const assigned = data.tools.filter(
+      (tool) => tool.status === 'loaned' && tool.holderTechnicianId === technician.id,
+    );
+    const reserved = data.tools.filter(
+      (tool) => tool.serviceStatus === 'reserved' && tool.reservedTechnicianId === technician.id,
+    );
+    if (assigned.length > 0 || reserved.length > 0) {
+      throw new Error(
+        `No se puede desactivar: tiene ${assigned.length} herramienta(s) prestada(s) y ${reserved.length} reserva(s).`,
+      );
+    }
+  }
 
   const timestamp = nowIso();
   const saved: Technician = {
@@ -179,9 +220,19 @@ export const archiveAccessory = (accessoryId: string): AppData => {
   return next;
 };
 
+const serviceStatusFromMaintenance = (record: MaintenanceRecord): ToolServiceStatus | null => {
+  if (record.status === 'completed' || record.status === 'cancelled') return 'none';
+  if (record.status === 'waiting_parts') return 'waiting_parts';
+  if (record.type === 'calibration') return 'calibration';
+  if (record.type === 'repair') return 'repair';
+  if (record.type === 'incident') return 'out_of_service';
+  return null;
+};
+
 export const saveMaintenanceRecord = (record: MaintenanceRecord): AppData => {
   const data = getManagementData();
-  if (!data.tools.some((tool) => tool.id === record.toolId)) throw new Error('La herramienta del expediente no existe.');
+  const relatedTool = data.tools.find((tool) => tool.id === record.toolId);
+  if (!relatedTool) throw new Error('La herramienta del expediente no existe.');
   if (!record.title.trim() || !record.description.trim()) throw new Error('Título y descripción son obligatorios.');
 
   const timestamp = nowIso();
@@ -200,7 +251,28 @@ export const saveMaintenanceRecord = (record: MaintenanceRecord): AppData => {
     ? (data.maintenanceRecords ?? []).map((item) => item.id === saved.id ? saved : item)
     : [{ ...saved, id: saved.id || newId('maint'), createdAt: saved.createdAt || timestamp }, ...(data.maintenanceRecords ?? [])];
 
-  const next = { ...data, maintenanceRecords };
+  const serviceStatus = serviceStatusFromMaintenance(saved);
+  const hasOtherOpenRecords = maintenanceRecords.some(
+    (item) => item.id !== saved.id
+      && item.toolId === saved.toolId
+      && !['completed', 'cancelled'].includes(item.status),
+  );
+  const tools = data.tools.map((tool) => {
+    if (tool.id !== saved.toolId) return tool;
+    const nextServiceStatus = serviceStatus === 'none' && hasOtherOpenRecords
+      ? tool.serviceStatus
+      : serviceStatus ?? tool.serviceStatus;
+    return {
+      ...tool,
+      serviceStatus: nextServiceStatus,
+      status: nextServiceStatus && !['none', 'reserved'].includes(nextServiceStatus) && tool.status !== 'loaned'
+        ? 'review'
+        : tool.status,
+      updatedAt: timestamp,
+    };
+  });
+
+  const next = { ...data, tools, maintenanceRecords };
   saveAppData(next);
   return next;
 };

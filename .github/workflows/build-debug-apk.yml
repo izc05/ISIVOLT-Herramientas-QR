@@ -39,7 +39,8 @@ jobs:
 
       - name: Leer versión del proyecto
         id: app_version
-        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+        run: |
+          node -e "const pkg=require('./package.json'); console.log('version=' + pkg.version)" >> "$GITHUB_OUTPUT"
 
       - name: Instalar dependencias
         run: npm install

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, Bug, Database, ShieldCheck, Trash2, X } from 'lucide-react';
 import AppV6 from './AppV6';
 import { APP_VERSION } from './config/app';
+import ManagementCenter from './features/management/ManagementCenter';
 import type { IntegrityIssue } from './services/dataIntegrity';
 import {
   clearAppErrorLog,
@@ -16,6 +17,7 @@ import {
 } from './services/nativeDatabase';
 
 export default function AppStable() {
+  const [appRevision, setAppRevision] = useState(0);
   const [integrityIssues, setIntegrityIssues] = useState<IntegrityIssue[]>([]);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [errors, setErrors] = useState<AppErrorEntry[]>(() => getAppErrorLog());
@@ -54,7 +56,8 @@ export default function AppStable() {
 
   return (
     <>
-      <AppV6 />
+      <AppV6 key={appRevision} />
+      <ManagementCenter onSaved={() => setAppRevision((value) => value + 1)} />
 
       <button
         className="stability-badge"
@@ -98,6 +101,8 @@ export default function AppStable() {
                   <span><small>Herramientas</small><strong>{databaseHealth.tools}</strong></span>
                   <span><small>Técnicos</small><strong>{databaseHealth.technicians}</strong></span>
                   <span><small>Movimientos</small><strong>{databaseHealth.movements}</strong></span>
+                  <span><small>Accesorios</small><strong>{databaseHealth.accessories}</strong></span>
+                  <span><small>Mantenimiento</small><strong>{databaseHealth.maintenanceRecords}</strong></span>
                 </div>
               ) : (
                 <span className="database-health-web">Modo web · almacenamiento del navegador</span>

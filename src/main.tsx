@@ -11,6 +11,8 @@ import './qr-print.css';
 import './native-scanner.css';
 import './report-center.css';
 import './tool-experience.css';
+import './tool-detail-mobile.css';
+import './tool-detail-compat.css';
 
 const root = document.getElementById('root');
 

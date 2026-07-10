@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/**
+      - fix/**
   pull_request:
     branches:
       - main
@@ -14,7 +15,7 @@ permissions:
 
 jobs:
   web-build:
-    name: Compilar React y TypeScript
+    name: Probar y compilar React y TypeScript
     runs-on: ubuntu-latest
 
     steps:
@@ -28,6 +29,9 @@ jobs:
 
       - name: Instalar dependencias
         run: npm install
+
+      - name: Ejecutar pruebas de dominio
+        run: npm test
 
       - name: Compilar aplicación
         run: npm run build

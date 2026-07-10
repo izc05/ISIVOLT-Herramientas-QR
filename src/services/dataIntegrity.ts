@@ -1,4 +1,4 @@
-import type { AppData, Technician, Tool } from '../domain/types';
+import type { AppData, Movement, Technician, Tool } from '../domain/types';
 
 export type IntegrityIssue = {
   code:
@@ -9,7 +9,9 @@ export type IntegrityIssue = {
     | 'duplicate-technician-code'
     | 'invalid-holder'
     | 'invalid-loan-state'
-    | 'duplicate-movement-id';
+    | 'duplicate-movement-id'
+    | 'invalid-movement-tool'
+    | 'invalid-movement-technician';
   message: string;
 };
 
@@ -82,6 +84,43 @@ const sanitizeTechnicians = (technicians: Technician[]) => {
   return { technicians: sanitized, issues };
 };
 
+const sanitizeMovements = (
+  movements: Movement[],
+  toolIds: Set<string>,
+  technicianIds: Set<string>,
+) => {
+  const unique = keepLastUnique(
+    movements,
+    (movement) => movement.id,
+    (movement) => ({ code: 'duplicate-movement-id', message: `Se ha rechazado un movimiento duplicado: ${movement.id}.` }),
+  );
+  const issues = [...unique.issues];
+  const valid: Movement[] = [];
+
+  for (const movement of unique.items) {
+    if (!toolIds.has(movement.toolId)) {
+      issues.push({
+        code: 'invalid-movement-tool',
+        message: `El movimiento ${movement.id} apuntaba a una herramienta inexistente y se ha aislado.`,
+      });
+      continue;
+    }
+
+    if (movement.technicianId && !technicianIds.has(movement.technicianId)) {
+      issues.push({
+        code: 'invalid-movement-technician',
+        message: `El movimiento ${movement.id} tenía un técnico inexistente; se conserva como movimiento de almacén.`,
+      });
+      valid.push({ ...movement, technicianId: undefined, sequenceNumber: undefined });
+      continue;
+    }
+
+    valid.push({ ...movement, sequenceNumber: undefined });
+  }
+
+  return { movements: valid, issues };
+};
+
 export const enforceAppDataIntegrity = (source: AppData): { data: AppData; issues: IntegrityIssue[] } => {
   const toolResult = sanitizeTools(source.tools);
   const technicianResult = sanitizeTechnicians(source.technicians);
@@ -114,11 +153,8 @@ export const enforceAppDataIntegrity = (source: AppData): { data: AppData; issue
     return tool;
   });
 
-  const movementResult = keepLastUnique(
-    source.movements,
-    (movement) => movement.id,
-    (movement) => ({ code: 'duplicate-movement-id', message: `Se ha rechazado un movimiento duplicado: ${movement.id}.` }),
-  );
+  const toolIds = new Set(tools.map((tool) => tool.id));
+  const movementResult = sanitizeMovements(source.movements, toolIds, technicianIds);
   issues.push(...movementResult.issues);
 
   return {
@@ -126,7 +162,7 @@ export const enforceAppDataIntegrity = (source: AppData): { data: AppData; issue
       ...source,
       tools,
       technicians: technicianResult.technicians,
-      movements: movementResult.items,
+      movements: movementResult.movements,
     },
     issues,
   };

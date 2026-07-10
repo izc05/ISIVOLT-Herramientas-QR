@@ -22,6 +22,8 @@ const isAppData = (value: unknown): value is AppData => {
     && Array.isArray(candidate.tools)
     && Array.isArray(candidate.technicians)
     && Array.isArray(candidate.movements)
+    && (candidate.accessories === undefined || Array.isArray(candidate.accessories))
+    && (candidate.maintenanceRecords === undefined || Array.isArray(candidate.maintenanceRecords))
   );
 };
 
@@ -52,16 +54,18 @@ const readLocalDataWithoutFallback = (): AppData | null => {
   }
 };
 
+const hasMissingIds = <T extends { id: string }>(previous: T[] = [], next: T[] = []) => {
+  const nextIds = new Set(next.map((item) => item.id));
+  return previous.some((item) => !nextIds.has(item.id));
+};
+
 const hasRemovedIds = (previous: AppData | null, next: AppData): boolean => {
   if (!previous) return false;
-
-  const nextToolIds = new Set(next.tools.map((item) => item.id));
-  const nextTechnicianIds = new Set(next.technicians.map((item) => item.id));
-  const nextMovementIds = new Set(next.movements.map((item) => item.id));
-
-  return previous.tools.some((item) => !nextToolIds.has(item.id))
-    || previous.technicians.some((item) => !nextTechnicianIds.has(item.id))
-    || previous.movements.some((item) => !nextMovementIds.has(item.id));
+  return hasMissingIds(previous.tools, next.tools)
+    || hasMissingIds(previous.technicians, next.technicians)
+    || hasMissingIds(previous.movements, next.movements)
+    || hasMissingIds(previous.accessories, next.accessories)
+    || hasMissingIds(previous.maintenanceRecords, next.maintenanceRecords);
 };
 
 const attachDeviceToNewMovements = async (
@@ -90,16 +94,16 @@ const attachDeviceToNewMovements = async (
 export const loadAppData = (): AppData => {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return clone(seedData);
+    if (!raw) return prepareData(clone(seedData));
     const parsed: unknown = JSON.parse(raw);
     if (!isAppData(parsed)) {
       recordAppError('storage.load', 'El almacenamiento local no contiene una estructura válida.');
-      return clone(seedData);
+      return prepareData(clone(seedData));
     }
     return prepareData(parsed);
   } catch (error) {
     recordAppError('storage.load', error);
-    return clone(seedData);
+    return prepareData(clone(seedData));
   }
 };
 
@@ -167,7 +171,7 @@ export const resetAppData = (): AppData => {
     return current;
   }
 
-  const clean = clone(seedData);
+  const clean = prepareData(clone(seedData));
   saveAppData(clean, { replaceNative: true });
   void recordNativeStorageEvent('reset', 'Datos restaurados con reemplazo transaccional y confirmación reforzada.');
   return clean;

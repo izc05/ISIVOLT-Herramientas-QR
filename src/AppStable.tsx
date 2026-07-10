@@ -3,6 +3,7 @@ import { AlertTriangle, Bug, Database, ShieldCheck, Trash2, X } from 'lucide-rea
 import AppV6 from './AppV6';
 import { APP_VERSION } from './config/app';
 import ManagementCenter from './features/management/ManagementCenter';
+import ManagementFiles from './features/management/ManagementFiles';
 import type { IntegrityIssue } from './services/dataIntegrity';
 import {
   clearAppErrorLog,
@@ -58,6 +59,7 @@ export default function AppStable() {
     <>
       <AppV6 key={appRevision} />
       <ManagementCenter onSaved={() => setAppRevision((value) => value + 1)} />
+      <ManagementFiles />
 
       <button
         className="stability-badge"

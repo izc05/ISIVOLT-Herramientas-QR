@@ -7,6 +7,16 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
   },
+  plugins: {
+    CapacitorSQLite: {
+      androidIsEncryption: false,
+      androidBiometric: {
+        biometricAuth: false,
+        biometricTitle: 'Acceso a ISIVOLT Herramientas QR',
+        biometricSubTitle: 'Protección de la base de datos local',
+      },
+    },
+  },
 };
 
 export default config;

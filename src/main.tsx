@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import AppStable from './AppStable';
-import { hydrateAppDataFromNative } from './services/storage';
+import AppRoot from './AppRoot';
 import './styles.css';
 import './core.css';
 import './game-ui.css';
@@ -16,6 +15,11 @@ import './tool-detail-compat.css';
 import './stability.css';
 import './features/management/management.css';
 import './features/management/management-files.css';
+import './features/management/maintenance-board.css';
+import './security/security.css';
+import './security/rectification.css';
+import './production/commissioning.css';
+import './boot.css';
 
 const root = document.getElementById('root');
 
@@ -23,13 +27,8 @@ if (!root) {
   throw new Error('No se ha encontrado el contenedor principal de la aplicación.');
 }
 
-const bootstrap = async () => {
-  await hydrateAppDataFromNative();
-  createRoot(root).render(
-    <StrictMode>
-      <AppStable />
-    </StrictMode>,
-  );
-};
-
-void bootstrap();
+createRoot(root).render(
+  <StrictMode>
+    <AppRoot />
+  </StrictMode>,
+);

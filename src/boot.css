@@ -1,0 +1,126 @@
+.boot-screen,
+.boot-failure {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  color: #effbff;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(52, 207, 255, 0.18), transparent 35%),
+    radial-gradient(circle at 84% 8%, rgba(132, 78, 255, 0.16), transparent 35%),
+    linear-gradient(155deg, #051426, #030711 65%, #0e0719);
+}
+
+.boot-screen section,
+.boot-failure section {
+  width: min(440px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid rgba(85, 224, 255, 0.24);
+  border-radius: 24px;
+  background: linear-gradient(155deg, rgba(11, 35, 58, 0.98), rgba(5, 10, 22, 0.99));
+  box-shadow: 0 30px 90px rgba(0,0,0,.62);
+  text-align: center;
+}
+
+.boot-screen section > span,
+.boot-failure-icon {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
+  color: #76eaff;
+  background: rgba(58, 212, 255, 0.1);
+}
+
+.boot-screen small,
+.boot-failure small {
+  color: #7ceaff;
+  font-size: .78rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.boot-screen h1,
+.boot-failure h1 { margin: 0; font-size: 1.55rem; }
+.boot-screen p,
+.boot-failure p { margin: 0; color: rgba(227, 247, 255, .65); line-height: 1.5; }
+
+.boot-screen button,
+.boot-failure button,
+.boot-degraded-banner button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(84, 224, 255, .34);
+  border-radius: 13px;
+  color: #06131d;
+  background: linear-gradient(135deg, #73eaff, #65efb8);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.boot-failure .boot-secondary {
+  color: #dff8ff;
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.1);
+}
+
+.boot-failure-detail {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid rgba(255, 87, 101, .25);
+  border-radius: 13px;
+  color: #ffc2c8;
+  background: rgba(255, 58, 77, .07);
+  text-align: left;
+}
+.boot-failure-detail code { white-space: pre-wrap; word-break: break-word; }
+
+.boot-spin { animation: boot-spin 1s linear infinite; }
+@keyframes boot-spin { to { transform: rotate(360deg); } }
+
+.boot-degraded-banner {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  top: calc(8px + env(safe-area-inset-top));
+  z-index: 9750;
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 193, 83, .28);
+  border-radius: 14px;
+  color: #fff4dc;
+  background: rgba(42, 24, 6, .94);
+  box-shadow: 0 14px 38px rgba(0,0,0,.4);
+  backdrop-filter: blur(14px);
+}
+.boot-degraded-banner div { display: grid; gap: 2px; min-width: 0; }
+.boot-degraded-banner span { color: rgba(255, 242, 215, .65); font-size: .72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boot-degraded-banner button { min-height: 36px; padding: 7px 10px; color: #fff2d0; background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); font-size: .76rem; }
+.boot-ready-marker { position: fixed; left: 8px; bottom: calc(48px + env(safe-area-inset-bottom)); z-index: 150; display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; color: #78efbb; background: rgba(8, 34, 27, .86); opacity: .65; }
+
+@media (max-width: 560px) {
+  .boot-screen,
+  .boot-failure { padding: 14px; }
+  .boot-screen section,
+  .boot-failure section { padding: 21px 16px; }
+  .boot-degraded-banner { grid-template-columns: auto minmax(0,1fr); }
+  .boot-degraded-banner button { grid-column: 1 / -1; width: 100%; }
+}

@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import AppV6 from './AppV6';
+import AppStable from './AppStable';
 import { hydrateAppDataFromNative } from './services/storage';
 import './styles.css';
 import './core.css';
@@ -13,6 +13,7 @@ import './report-center.css';
 import './tool-experience.css';
 import './tool-detail-mobile.css';
 import './tool-detail-compat.css';
+import './stability.css';
 
 const root = document.getElementById('root');
 
@@ -24,7 +25,7 @@ const bootstrap = async () => {
   await hydrateAppDataFromNative();
   createRoot(root).render(
     <StrictMode>
-      <AppV6 />
+      <AppStable />
     </StrictMode>,
   );
 };

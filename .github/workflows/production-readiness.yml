@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - feature/production-1.0
+      - fix/blank-startup-1.0.0-rc.2
 
 permissions:
   contents: read
@@ -55,7 +56,7 @@ jobs:
         run: npx cap add android
 
       - name: Generar iconos y splash
-        run: npx --yes @capacitor/assets generate --android --assetPath assets
+        run: npx --yes @capacitor/assets generate --android
 
       - name: Aplicar configuración nativa
         run: npm run android:configure
@@ -78,7 +79,7 @@ jobs:
       - name: Subir APK candidata
         uses: actions/upload-artifact@v4
         with:
-          name: ISIVOLT-Herramientas-QR-v1.0.0-rc.1-debug
+          name: ISIVOLT-Herramientas-QR-v1.0.0-rc.2-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
@@ -86,7 +87,7 @@ jobs:
       - name: Subir metadatos
         uses: actions/upload-artifact@v4
         with:
-          name: ISIVOLT-v1.0.0-rc.1-metadata
+          name: ISIVOLT-v1.0.0-rc.2-metadata
           path: android/build-metadata.json
           if-no-files-found: error
           retention-days: 30

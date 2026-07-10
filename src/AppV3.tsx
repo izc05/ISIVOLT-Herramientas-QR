@@ -6,17 +6,15 @@ import {
   Copy,
   Hash,
   Mail,
-  MapPin,
   Phone,
   Printer,
-  QrCode,
   UserRound,
-  Wrench,
   X,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import AppV2 from './AppV2';
 import QRCodeLabelCenter from './components/QRCodeLabelCenter';
+import ToolDetailSheet from './components/ToolDetailSheet';
 import { hospitalTechnicians } from './data/technicians';
 import type { Technician, Tool } from './domain/types';
 import { loadAppData } from './services/storage';
@@ -56,7 +54,7 @@ export default function AppV3() {
       }
 
       const toolCard = target.closest<HTMLElement>('.tool-card');
-      if (!toolCard || target.closest('.tool-card-actions button')) return;
+      if (!toolCard || target.closest('.tool-card-actions button, .tool-media-trigger')) return;
       const code = toolCard.querySelector('.tool-code')?.textContent?.trim();
       if (!code) return;
       const tool = loadAppData().tools.find((item) => item.code === code);
@@ -87,12 +85,10 @@ export default function AppV3() {
     [selectedTechnician],
   );
 
-  const activePayload = selectedTool?.qrCode ?? technicianQrPayload;
-
   const copyQrPayload = async () => {
-    if (!activePayload) return;
+    if (!technicianQrPayload) return;
     try {
-      await navigator.clipboard.writeText(activePayload);
+      await navigator.clipboard.writeText(technicianQrPayload);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -204,82 +200,7 @@ export default function AppV3() {
           </motion.div>
         )}
 
-        {selectedTool && (
-          <motion.div
-            className="technician-detail-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelectedTool(null)}
-          >
-            <motion.section
-              className="technician-detail-modal tool-qr-modal printable-single-qr"
-              initial={{ opacity: 0, y: 44, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 24, scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 24 }}
-              onClick={(event) => event.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-label={`Ficha QR de ${selectedTool.name}`}
-            >
-              <span className="technician-detail-glow" aria-hidden="true" />
-              <button className="technician-detail-close no-print" onClick={() => setSelectedTool(null)} aria-label="Cerrar ficha">
-                <X size={20} />
-              </button>
-
-              <header className="technician-detail-header">
-                <motion.div className="technician-detail-avatar tool-detail-avatar" animate={{ rotate: [0, 3, -3, 0] }} transition={{ duration: 3, repeat: Infinity }}>
-                  <Wrench size={32} />
-                </motion.div>
-                <div>
-                  <span className="technician-detail-kicker"><QrCode size={14} /> Activo identificado</span>
-                  <h2>{selectedTool.name}</h2>
-                  <p>{selectedTool.code} · {selectedTool.category}</p>
-                </div>
-              </header>
-
-              <div className="technician-detail-grid">
-                <div className="technician-detail-item">
-                  <MapPin size={18} />
-                  <span><small>Ubicación base</small><strong>{selectedTool.location}</strong></span>
-                </div>
-                <div className="technician-detail-item">
-                  <Hash size={18} />
-                  <span><small>Estado actual</small><strong>{selectedTool.status}</strong></span>
-                </div>
-                <div className="technician-detail-item">
-                  <Wrench size={18} />
-                  <span><small>Marca y modelo</small><strong>{selectedTool.brand ?? 'Sin marca'} {selectedTool.model ?? ''}</strong></span>
-                </div>
-                <div className="technician-detail-item">
-                  <Hash size={18} />
-                  <span><small>Número de serie</small><strong>{selectedTool.serialNumber ?? 'No registrado'}</strong></span>
-                </div>
-              </div>
-
-              <div className="technician-qr-preview real-qr-preview tool-real-qr">
-                <motion.div className="real-qr-code" whileHover={{ scale: 1.03 }}>
-                  <QRCodeSVG value={selectedTool.qrCode} size={190} level="M" marginSize={2} />
-                </motion.div>
-                <div>
-                  <small>Etiqueta QR de herramienta</small>
-                  <strong>{selectedTool.qrCode}</strong>
-                  <p>Este código abre el flujo de entrega o devolución del activo.</p>
-                  <div className="qr-detail-actions no-print">
-                    <motion.button onClick={copyQrPayload} whileTap={{ scale: 0.92 }}>
-                      {copied ? <Check size={18} /> : <Copy size={18} />}
-                      {copied ? 'Copiado' : 'Copiar código'}
-                    </motion.button>
-                    <motion.button onClick={() => withPrintMode('printing-single-qr')} whileTap={{ scale: 0.92 }}>
-                      <Printer size={18} /> Imprimir etiqueta
-                    </motion.button>
-                  </div>
-                </div>
-              </div>
-            </motion.section>
-          </motion.div>
-        )}
+        {selectedTool && <ToolDetailSheet tool={selectedTool} onClose={() => setSelectedTool(null)} />}
       </AnimatePresence>
     </>
   );

@@ -31,8 +31,11 @@ export class MovementRuleError extends Error {
       | 'technician-not-found'
       | 'technician-inactive'
       | 'tool-not-found'
+      | 'tool-inactive'
       | 'tool-not-available'
       | 'tool-not-loaned'
+      | 'tool-service-blocked'
+      | 'tool-reserved-for-another'
       | 'incident-notes-required',
     message: string,
   ) {
@@ -63,7 +66,7 @@ export const applyMovementCommand = (
   const notes = command.notes?.trim() || undefined;
   const condition = command.condition ?? 'ok';
 
-  let technicianId = command.technicianId;
+  const technicianId = command.technicianId;
   if (command.mode === 'delivery') {
     if (!technicianId) {
       throw new MovementRuleError('technician-required', 'La entrega necesita un técnico responsable.');
@@ -89,8 +92,26 @@ export const applyMovementCommand = (
     if (!tool) {
       throw new MovementRuleError('tool-not-found', `No existe la herramienta ${toolId}.`);
     }
-    if (command.mode === 'delivery' && tool.status !== 'available') {
-      throw new MovementRuleError('tool-not-available', `${tool.name} no está disponible para entregar.`);
+    if (tool.active === false || tool.status === 'retired') {
+      throw new MovementRuleError('tool-inactive', `${tool.name} está de baja y no puede utilizarse.`);
+    }
+    if (command.mode === 'delivery') {
+      if (tool.status !== 'available') {
+        throw new MovementRuleError('tool-not-available', `${tool.name} no está disponible para entregar.`);
+      }
+      if (tool.serviceStatus && !['none', 'reserved'].includes(tool.serviceStatus)) {
+        throw new MovementRuleError(
+          'tool-service-blocked',
+          `${tool.name} está bloqueada por ${tool.serviceStatus.replace('_', ' ')}.`,
+        );
+      }
+      if (tool.serviceStatus === 'reserved' && tool.reservedTechnicianId !== technicianId) {
+        const reservedFor = source.technicians.find((item) => item.id === tool.reservedTechnicianId)?.name;
+        throw new MovementRuleError(
+          'tool-reserved-for-another',
+          `${tool.name} está reservada${reservedFor ? ` para ${reservedFor}` : ''}.`,
+        );
+      }
     }
     if (command.mode === 'return' && tool.status !== 'loaned') {
       throw new MovementRuleError('tool-not-loaned', `${tool.name} no figura como prestada.`);
@@ -118,6 +139,8 @@ export const applyMovementCommand = (
       return {
         ...tool,
         status: 'loaned' as ToolStatus,
+        serviceStatus: 'none' as const,
+        reservedTechnicianId: undefined,
         holderTechnicianId: technicianId,
         loanedAt: occurredAt,
         updatedAt: occurredAt,
@@ -146,6 +169,7 @@ export const applyMovementCommand = (
     return {
       ...tool,
       status: nextStatus,
+      serviceStatus: condition === 'ok' ? tool.serviceStatus : 'out_of_service' as const,
       holderTechnicianId: undefined,
       loanedAt: undefined,
       updatedAt: occurredAt,

@@ -1,0 +1,45 @@
+name: Restaurar candidata 1.0.0-rc.1
+
+on:
+  push:
+    branches:
+      - fix/restore-rc1-apk
+
+permissions:
+  contents: write
+
+concurrency:
+  group: restore-rc1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  restore:
+    if: ${{ !contains(github.event.head_commit.message, 'chore: restaurar integración rc1') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+        with:
+          ref: fix/restore-rc1-apk
+          fetch-depth: 0
+
+      - name: Aplicar seguridad y rectificaciones
+        run: |
+          python3 scripts/apply_security_integration.py
+          python3 scripts/apply_rectification_integration.py
+          python3 scripts/apply_security_schema.py
+
+      - name: Aplicar candidata de producción
+        run: python3 scripts/finalize_production_rc.py
+
+      - name: Confirmar integración
+        run: |
+          if git diff --quiet; then
+            echo "La integración ya estaba restaurada."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore: restaurar integración rc1"
+          git push origin HEAD:fix/restore-rc1-apk

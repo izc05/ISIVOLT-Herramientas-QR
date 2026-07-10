@@ -5,6 +5,7 @@ const USERS_KEY = 'isivolt-security-users-v1';
 const SESSION_KEY = 'isivolt-security-session-v1';
 const AUDIT_KEY = 'isivolt-security-audit-v1';
 const MAX_AUDIT_ENTRIES = 1_000;
+const PREFERENCES_TIMEOUT_MS = 1_800;
 
 let cachedUsers: SecurityUser[] = [];
 let cacheLoaded = false;
@@ -21,19 +22,28 @@ const parseArray = <T,>(value: string | null): T[] => {
   }
 };
 
+const withTimeout = async <T,>(operation: Promise<T>, milliseconds = PREFERENCES_TIMEOUT_MS): Promise<T> =>
+  Promise.race([
+    operation,
+    new Promise<T>((_, reject) => {
+      window.setTimeout(() => reject(new Error(`Preferences no respondió en ${milliseconds} ms.`)), milliseconds);
+    }),
+  ]);
+
 const readPreference = async (key: string) => {
+  const fallback = window.localStorage.getItem(key);
   try {
-    const result = await Preferences.get({ key });
-    return result.value;
+    const result = await withTimeout(Preferences.get({ key }));
+    return result.value ?? fallback;
   } catch {
-    return window.localStorage.getItem(key);
+    return fallback;
   }
 };
 
 const writePreference = async (key: string, value: string) => {
   window.localStorage.setItem(key, value);
   try {
-    await Preferences.set({ key, value });
+    await withTimeout(Preferences.set({ key, value }));
   } catch {
     // localStorage permanece como respaldo web y de emergencia.
   }
@@ -104,7 +114,7 @@ export const readSessionSync = (): SecuritySession | null => {
 export const saveSession = async (session: SecuritySession | null) => {
   if (!session) {
     window.localStorage.removeItem(SESSION_KEY);
-    try { await Preferences.remove({ key: SESSION_KEY }); } catch { /* sin acción */ }
+    try { await withTimeout(Preferences.remove({ key: SESSION_KEY })); } catch { /* sin acción */ }
     return;
   }
   await writePreference(SESSION_KEY, JSON.stringify(session));

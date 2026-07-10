@@ -22,6 +22,10 @@ const isAppData = (value: unknown): value is AppData => {
   );
 };
 
+const notifyDataUpdated = (data: AppData) => {
+  window.dispatchEvent(new CustomEvent<AppData>('isivolt:data-updated', { detail: clone(data) }));
+};
+
 export const loadAppData = (): AppData => {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -54,6 +58,7 @@ export const hydrateAppDataFromNative = async (): Promise<void> => {
 
 export const saveAppData = (data: AppData): void => {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  notifyDataUpdated(data);
   void writeNativeAppData(data).catch((error) => {
     console.error('No se ha podido guardar el estado en SQLite.', error);
   });

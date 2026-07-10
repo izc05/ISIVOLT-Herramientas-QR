@@ -13,19 +13,43 @@ Aplicación profesional para registrar, controlar y auditar la entrega y devoluc
 
 ## Experiencia visual
 
-La aplicación tendrá una interfaz industrial premium con animaciones fluidas, escáner QR en vivo, microinteracciones, confirmaciones visuales, panel operativo y estados claramente diferenciados.
+La aplicación incorpora una interfaz industrial premium con animaciones fluidas, escáner QR en vivo, microinteracciones, confirmaciones visuales, panel operativo y estados claramente diferenciados.
 
-## Tecnología prevista
+## Tecnología
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- Motion for React
-- Capacitor para Android
-- SQLite para almacenamiento local
-- Exportación XLSX
+- React.
+- TypeScript.
+- Vite.
+- Motion for React.
+- Capacitor para Android.
+- SQLite para almacenamiento local en la siguiente fase.
+- Exportación XLSX.
 
-## Estado
+## Ejecutar en desarrollo
 
-Proyecto en fase inicial de desarrollo.
+```bash
+npm install
+npm run dev
+```
+
+## Compilar
+
+```bash
+npm run build
+```
+
+## Preparar Android
+
+Después de instalar las dependencias:
+
+```bash
+npm run android:add
+npm run android:sync
+npm run android:open
+```
+
+## Estado actual
+
+La rama `feature/premium-app-foundation` contiene la primera base visual y técnica: panel animado, navegación móvil, movimientos en vivo, escáner QR simulado y configuración inicial de Capacitor.
+
+Consulta `docs/ROADMAP.md` para ver las siguientes fases.

@@ -40,6 +40,29 @@ const prepareData = (data: AppData): AppData => {
   return result.data;
 };
 
+const readLocalDataWithoutFallback = (): AppData | null => {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    return isAppData(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const hasRemovedIds = (previous: AppData | null, next: AppData): boolean => {
+  if (!previous) return false;
+
+  const nextToolIds = new Set(next.tools.map((item) => item.id));
+  const nextTechnicianIds = new Set(next.technicians.map((item) => item.id));
+  const nextMovementIds = new Set(next.movements.map((item) => item.id));
+
+  return previous.tools.some((item) => !nextToolIds.has(item.id))
+    || previous.technicians.some((item) => !nextTechnicianIds.has(item.id))
+    || previous.movements.some((item) => !nextMovementIds.has(item.id));
+};
+
 export const loadAppData = (): AppData => {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -81,7 +104,9 @@ export const saveAppData = (
   data: AppData,
   options: { replaceNative?: boolean } = {},
 ): void => {
+  const previous = readLocalDataWithoutFallback();
   const clean = prepareData(data);
+  const replaceNative = options.replaceNative === true || hasRemovedIds(previous, clean);
 
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
@@ -91,7 +116,7 @@ export const saveAppData = (
     throw error;
   }
 
-  void writeNativeAppData(clean, { replace: options.replaceNative }).catch((error) => {
+  void writeNativeAppData(clean, { replace: replaceNative }).catch((error) => {
     recordAppError('storage.sqlite-save', error);
     console.error('No se ha podido guardar el estado en SQLite.', error);
   });

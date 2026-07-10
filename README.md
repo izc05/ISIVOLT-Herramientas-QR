@@ -7,34 +7,45 @@ Aplicación Android offline para registrar, controlar y auditar la entrega y dev
 - Conocer quién tiene cada herramienta.
 - Registrar entregas, devoluciones, incidencias y cambios de estado.
 - Mantener un historial completo y auditable.
-- Exportar inventario y movimientos a Excel.
+- Gestionar accesorios, revisiones, calibraciones y reparaciones.
+- Exportar inventario, movimientos y gestión a Excel.
 - Trabajar inicialmente sin conexión desde un móvil de almacén.
 - Preparar una futura sincronización entre dispositivos.
 
-## Estado actual — 0.6.2
+## Estado actual — 0.8.0
 
-La aplicación es un prototipo funcional avanzado. Ya incluye:
+La aplicación incluye:
 
 - Directorio de 76 técnicos y 12 secciones.
 - Inventario con fotografía, QR y ficha móvil.
 - Entregas y devoluciones individuales o múltiples.
 - Cámara QR mediante Google ML Kit y entrada manual de respaldo.
-- Historial de movimientos.
-- Excel operativo con seis hojas.
+- SQLite relacional con migraciones, transacciones, claves únicas y auditoría.
+- Movimientos protegidos contra modificación y borrado.
+- Identificador estable del dispositivo.
+- Centro móvil de gestión administrativa.
+- Edición completa de herramientas y técnicos.
+- Compra, proveedor, coste, número de serie y ubicación.
+- Reservas por técnico.
+- Reparación, repuestos, calibración, fuera de servicio y extravío.
+- Accesorios con estado y archivado lógico.
+- Expedientes de mantenimiento.
+- Alertas offline por retrasos, vencimientos, averías, fotografía o QR.
+- Importación y actualización desde Excel.
+- Informe Excel de gestión y plantilla de importación.
 - Copias de seguridad JSON restaurables.
-- SQLite local como respaldo del estado actual.
 - Sonidos, vibración y animaciones configurables.
 - Impresión y compartición de QR.
+- Diagnóstico de SQLite y registro local de errores.
+- Pruebas de dominio y validación del SQL sobre SQLite real.
 - Generación automática de APK debug.
-- Validación de códigos únicos e integridad básica.
-- Diagnóstico y registro de errores local.
 
-> La versión actual sirve para pruebas controladas. Antes de utilizarla como única fuente oficial del inventario se completarán las fases 0.7, 0.8, 0.9 y 1.0.
+> La versión 0.8 continúa siendo una versión de pruebas internas. Antes del uso oficial se completarán usuarios, roles, auditoría avanzada, firma release y un piloto controlado.
 
 ## Tecnología
 
 - React 19 y TypeScript.
-- Vite.
+- Vite y Vitest.
 - Motion for React.
 - Capacitor 8.
 - Google ML Kit Barcode Scanning.
@@ -49,10 +60,12 @@ npm install
 npm run dev
 ```
 
-## Compilar la web
+## Pruebas y compilación
 
 ```bash
+npm test
 npm run build
+python3 scripts/validate_sqlite_schema.py
 ```
 
 ## Preparar Android localmente
@@ -65,14 +78,14 @@ npm run android:open
 
 ## APK automática
 
-GitHub Actions genera una APK de prueba con el número de versión obtenido de `package.json`.
+GitHub Actions ejecuta pruebas, compila la web, sincroniza Capacitor y genera una APK con la versión obtenida de `package.json`.
 
 1. Abre **Actions**.
-2. Entra en la ejecución **Generar APK Android** más reciente.
-3. Descarga el artefacto `ISIVOLT-Herramientas-QR-vX.Y.Z-debug`.
+2. Entra en **Generar APK Android**.
+3. Descarga `ISIVOLT-Herramientas-QR-vX.Y.Z-debug`.
 4. Descomprime el ZIP e instala `app-debug.apk`.
 
-La APK debug es solo para pruebas internas. La versión 1.0 tendrá firma privada y un flujo de actualización controlado.
+La APK debug es solo para pruebas internas. La versión 1.0 tendrá firma privada y actualización controlada.
 
 ## Plan de producción
 

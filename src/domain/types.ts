@@ -4,6 +4,8 @@ export type MovementType = 'delivery' | 'return' | 'incident' | 'adjustment';
 
 export type ReturnCondition = 'ok' | 'review' | 'damaged';
 
+export type MovementSyncStatus = 'local' | 'pending' | 'synced' | 'error';
+
 export type Tool = {
   id: string;
   code: string;
@@ -19,6 +21,8 @@ export type Tool = {
   loanedAt?: string;
   notes?: string;
   imageDataUrl?: string;
+  photoUri?: string;
+  thumbnailUri?: string;
   imageUpdatedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -41,15 +45,19 @@ export type Technician = {
 
 export type Movement = {
   id: string;
+  sequenceNumber?: number;
   type: MovementType;
   toolId: string;
   technicianId?: string;
   operatorName: string;
+  deviceId?: string;
   occurredAt: string;
   previousStatus: ToolStatus;
   nextStatus: ToolStatus;
   condition?: ReturnCondition;
   notes?: string;
+  reversedMovementId?: string;
+  syncStatus?: MovementSyncStatus;
 };
 
 export type AppData = {

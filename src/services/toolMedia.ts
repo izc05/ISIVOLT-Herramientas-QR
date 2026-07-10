@@ -1,9 +1,11 @@
+import { Capacitor } from '@capacitor/core';
 import {
   Camera,
   CameraDirection,
   MediaTypeSelection,
   type MediaResult,
 } from '@capacitor/camera';
+import { Directory, Filesystem } from '@capacitor/filesystem';
 
 export type ToolImageSource = 'camera' | 'gallery';
 
@@ -24,6 +26,30 @@ const mediaResultToDataUrl = async (result: MediaResult): Promise<string> => {
   throw new Error('La cámara no ha devuelto una imagen utilizable.');
 };
 
+const dataUrlPayload = (dataUrl: string) => {
+  const match = /^data:image\/([a-zA-Z0-9.+-]+);base64,(.+)$/.exec(dataUrl);
+  if (!match) throw new Error('La imagen no tiene un formato compatible.');
+  return { format: match[1].replace('jpeg', 'jpg'), base64: match[2] };
+};
+
+const persistNativeImage = async (dataUrl: string): Promise<string> => {
+  const { format, base64 } = dataUrlPayload(dataUrl);
+  const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const path = `tool-images/${id}.${format}`;
+  const result = await Filesystem.writeFile({
+    path,
+    data: base64,
+    directory: Directory.Data,
+    recursive: true,
+  });
+  return Capacitor.convertFileSrc(result.uri);
+};
+
+const prepareImageResult = async (result: MediaResult): Promise<string> => {
+  const dataUrl = await mediaResultToDataUrl(result);
+  return Capacitor.isNativePlatform() ? persistNativeImage(dataUrl) : dataUrl;
+};
+
 const isCancellation = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
   return /cancel|cancelled|canceled|user/i.test(message);
@@ -39,11 +65,11 @@ export const acquireToolImage = async (source: ToolImageSource): Promise<string 
         cameraDirection: CameraDirection.Rear,
         correctOrientation: true,
         saveToGallery: false,
-        includeMetadata: true,
+        includeMetadata: false,
         editable: 'no',
         webUseInput: true,
       });
-      return mediaResultToDataUrl(result);
+      return prepareImageResult(result);
     }
 
     const { results } = await Camera.chooseFromGallery({
@@ -53,12 +79,12 @@ export const acquireToolImage = async (source: ToolImageSource): Promise<string 
       targetWidth: 960,
       targetHeight: 960,
       correctOrientation: true,
-      includeMetadata: true,
+      includeMetadata: false,
       editable: 'no',
       webUseInput: true,
     });
     if (!results[0]) return null;
-    return mediaResultToDataUrl(results[0]);
+    return prepareImageResult(results[0]);
   } catch (error) {
     if (isCancellation(error)) return null;
     throw error;

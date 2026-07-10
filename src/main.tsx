@@ -14,6 +14,7 @@ import './tool-experience.css';
 import './tool-detail-mobile.css';
 import './tool-detail-compat.css';
 import './stability.css';
+import './features/management/management.css';
 
 const root = document.getElementById('root');
 

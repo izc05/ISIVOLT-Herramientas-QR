@@ -76,4 +76,39 @@ describe('enforceAppDataIntegrity', () => {
     expect(result.data.tools[0].holderTechnicianId).toBeUndefined();
     expect(result.data.tools[0].loanedAt).toBeUndefined();
   });
+
+  it('aísla movimientos que apuntan a herramientas inexistentes', () => {
+    const data = makeData();
+    data.movements = [{
+      id: 'mov-orphan',
+      type: 'adjustment',
+      toolId: 'missing-tool',
+      operatorName: 'Sistema',
+      occurredAt: '2026-07-10T10:00:00.000Z',
+      previousStatus: 'available',
+      nextStatus: 'available',
+    }];
+
+    const result = enforceAppDataIntegrity(data);
+    expect(result.data.movements).toHaveLength(0);
+    expect(result.issues.some((issue) => issue.code === 'invalid-movement-tool')).toBe(true);
+  });
+
+  it('conserva un movimiento con técnico inexistente como movimiento de almacén', () => {
+    const data = makeData();
+    data.movements = [{
+      id: 'mov-tech',
+      type: 'adjustment',
+      toolId: 'tool-old',
+      technicianId: 'missing-tech',
+      operatorName: 'Sistema',
+      occurredAt: '2026-07-10T10:00:00.000Z',
+      previousStatus: 'available',
+      nextStatus: 'available',
+    }];
+
+    const result = enforceAppDataIntegrity(data);
+    expect(result.data.movements[0].technicianId).toBeUndefined();
+    expect(result.issues.some((issue) => issue.code === 'invalid-movement-technician')).toBe(true);
+  });
 });

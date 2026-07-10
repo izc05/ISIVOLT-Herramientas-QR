@@ -4,6 +4,7 @@ import AppV2 from './AppV2';
 import './styles.css';
 import './core.css';
 import './game-ui.css';
+import './vivid-theme.css';
 
 const root = document.getElementById('root');
 

@@ -13,7 +13,7 @@ Aplicación profesional para registrar, controlar y auditar la entrega y devoluc
 
 ## Experiencia visual
 
-La aplicación incorpora una interfaz industrial premium con animaciones fluidas, escáner QR en vivo, microinteracciones, confirmaciones visuales, panel operativo y estados claramente diferenciados.
+La aplicación incorpora una interfaz industrial premium con animaciones fluidas, microinteracciones, panel operativo, estados diferenciados, QR reales y hojas de etiquetas imprimibles.
 
 ## Tecnología
 
@@ -21,7 +21,8 @@ La aplicación incorpora una interfaz industrial premium con animaciones fluidas
 - TypeScript.
 - Vite.
 - Motion for React.
-- Capacitor para Android.
+- Capacitor 8 para Android.
+- Códigos QR SVG.
 - SQLite para almacenamiento local en la siguiente fase.
 - Exportación XLSX.
 
@@ -32,13 +33,13 @@ npm install
 npm run dev
 ```
 
-## Compilar
+## Compilar la web
 
 ```bash
 npm run build
 ```
 
-## Preparar Android
+## Preparar Android localmente
 
 Después de instalar las dependencias:
 
@@ -48,8 +49,27 @@ npm run android:sync
 npm run android:open
 ```
 
+## Descargar la APK automática
+
+GitHub Actions genera una APK de prueba cuando se actualiza la rama `main`.
+
+1. Abre la pestaña **Actions** del repositorio.
+2. Entra en la ejecución **Generar APK Android** más reciente.
+3. Baja hasta **Artifacts**.
+4. Descarga `ISIVOLT-Herramientas-QR-debug`.
+5. Descomprime el ZIP e instala `app-debug.apk` en el móvil Android.
+
+La APK debug sirve para pruebas internas. La versión final necesitará firma privada y se distribuirá como APK firmada o AAB.
+
 ## Estado actual
 
-La rama `feature/premium-app-foundation` contiene la primera base visual y técnica: panel animado, navegación móvil, movimientos en vivo, escáner QR simulado y configuración inicial de Capacitor.
+- Directorio de 76 técnicos y 12 secciones.
+- Inventario y movimientos persistentes en el navegador.
+- Entregas y devoluciones individuales o múltiples.
+- QR reales para técnicos y herramientas.
+- Impresión individual y por hojas A4.
+- Interfaz animada con estética industrial tipo videojuego.
+- Publicación web mediante GitHub Pages.
+- Generación automática de APK debug.
 
 Consulta `docs/ROADMAP.md` para ver las siguientes fases.

@@ -6,7 +6,7 @@ export type ManagementAlert = {
   id: string;
   toolId: string;
   severity: ManagementAlertSeverity;
-  type: 'overdue' | 'review' | 'calibration' | 'incident' | 'maintenance' | 'photo' | 'qr';
+  type: 'overdue' | 'review' | 'calibration' | 'incident' | 'maintenance' | 'accessory' | 'photo' | 'qr';
   title: string;
   detail: string;
   dueAt?: string;
@@ -103,6 +103,30 @@ const toolAlerts = (data: AppData, tool: Tool, now: Date): ManagementAlert[] => 
         detail: 'Consulta o actualiza su expediente de mantenimiento.',
       });
     }
+  }
+
+  const accessories = (data.accessories ?? []).filter((item) => item.toolId === tool.id && item.active);
+  const missing = accessories.filter((item) => item.condition === 'missing');
+  const damaged = accessories.filter((item) => item.condition === 'damaged');
+  if (missing.length > 0) {
+    alerts.push({
+      id: `accessory-missing-${tool.id}`,
+      toolId: tool.id,
+      severity: 'critical',
+      type: 'accessory',
+      title: `${tool.name}: faltan accesorios`,
+      detail: missing.map((item) => item.name).join(', '),
+    });
+  }
+  if (damaged.length > 0) {
+    alerts.push({
+      id: `accessory-damaged-${tool.id}`,
+      toolId: tool.id,
+      severity: 'warning',
+      type: 'accessory',
+      title: `${tool.name}: accesorios dañados`,
+      detail: damaged.map((item) => item.name).join(', '),
+    });
   }
 
   const image = tool.thumbnailUri || tool.photoUri || tool.imageDataUrl;

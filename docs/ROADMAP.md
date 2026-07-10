@@ -1,102 +1,101 @@
 # Hoja de ruta técnica
 
-## Principios del proyecto
+## Principios
 
-- Uso rápido desde un único móvil de almacén.
+- Uso rápido desde un móvil de almacén.
 - Funcionamiento local sin conexión.
-- Historial de movimientos auditable.
-- Interfaz premium con animaciones útiles y no decorativas.
+- Movimientos inmutables y auditables.
+- Interfaz móvil clara, rápida y accesible.
+- Datos protegidos mediante validaciones, transacciones y copias.
 - Arquitectura preparada para sincronización futura.
-- Generación de APK Android mediante Capacitor.
 
-## Fase 1 — Base visual y técnica
+## 0.6 — Prototipo funcional
 
-- [x] React, TypeScript y Vite.
-- [x] Sistema visual responsive.
-- [x] Animaciones con Motion.
-- [x] Panel operativo inicial.
-- [x] Escáner QR simulado.
-- [x] Configuración de Capacitor.
-- [x] Validación automática con GitHub Actions.
+- [x] React, TypeScript, Vite y Motion.
+- [x] Interfaz responsive y navegación móvil.
+- [x] Directorio de técnicos.
+- [x] Inventario y estados básicos.
+- [x] Entregas y devoluciones múltiples.
+- [x] QR reales e impresión A4.
+- [x] Cámara Android mediante ML Kit.
+- [x] Fotografías de herramientas.
+- [x] Excel y copias JSON.
+- [x] SQLite como respaldo del estado completo.
+- [x] Sonido, vibración y animaciones.
+- [x] APK debug automática.
 
-## Fase 2 — Dominio e inventario
+## 0.6.2 — Estabilización
 
-- [ ] Modelo de herramientas.
-- [ ] Modelo de técnicos.
-- [ ] Categorías y ubicaciones.
-- [ ] Fotografías y accesorios.
-- [ ] Estados operativos.
-- [ ] Alta, edición y baja lógica.
-- [ ] Importación inicial desde Excel.
+Seguimiento: issue #18.
 
-## Fase 3 — Entregas y devoluciones
+- [x] Versión centralizada para app, Excel, copias y artefacto Android.
+- [x] Entrada manual como respaldo del lector QR.
+- [x] Corregir el flujo Android para no bloquear `scan()` por permiso de cámara.
+- [x] Validación básica de códigos e identificadores duplicados.
+- [x] Limpieza de responsables y estados incoherentes.
+- [x] Protección reforzada del reinicio de demostración.
+- [x] Registro local de errores y pantalla de diagnóstico.
+- [x] Validación estructural reforzada de copias.
+- [ ] Motor único de movimientos utilizado por todos los flujos.
+- [ ] Pruebas unitarias iniciales del dominio.
+- [ ] Checklist físico de cámara, fotos, Excel y restauración.
 
-- [ ] Lectura QR real mediante cámara.
-- [ ] Identificación de técnico por QR o PIN.
-- [ ] Entrega individual y múltiple.
-- [ ] Devolución individual y múltiple.
-- [ ] Registro de estado y accesorios.
-- [ ] Fotografías y observaciones.
-- [ ] Firma opcional.
+## 0.7 — Núcleo de datos profesional
 
-## Fase 4 — Persistencia local
+Seguimiento: issue #14.
 
-- [ ] Base de datos SQLite.
+- [ ] Tablas SQLite reales para herramientas, técnicos y movimientos.
+- [ ] Categorías, ubicaciones, accesorios, usuarios y ajustes.
 - [ ] Migraciones versionadas.
-- [ ] Transacciones para movimientos.
-- [ ] Copia de seguridad y restauración.
-- [ ] Registro de auditoría no destructivo.
+- [ ] Repositorios tipados.
+- [ ] Transacciones atómicas.
+- [ ] Restricciones UNIQUE y claves foráneas.
+- [ ] Motor único de entrega, devolución, incidencia y rectificación.
+- [ ] Movimientos inmutables.
+- [ ] Fotografías en Filesystem y miniaturas.
+- [ ] Identificador del dispositivo.
+- [ ] Copia y restauración migrables.
 
-## Fase 5 — Informes
+## 0.8 — Gestión completa
 
-- [ ] Excel de movimientos.
-- [ ] Excel de inventario.
-- [ ] Herramientas prestadas por técnico.
-- [ ] Incidencias y averías.
-- [ ] Resumen por fechas y categorías.
+Seguimiento: issue #15.
 
-## Fase 6 — Android
+- [ ] Edición y baja lógica de herramientas.
+- [ ] Edición, activación y baja de técnicos.
+- [ ] Importación y actualización desde Excel.
+- [ ] Accesorios y checklist de salida/entrada.
+- [ ] Reservas.
+- [ ] Estados de reparación, calibración, extravío y fuera de servicio.
+- [ ] Incidencias, reparaciones, repuestos y costes.
+- [ ] Revisiones y calibraciones programadas.
+- [ ] Alertas por retrasos y vencimientos.
+- [ ] Estadísticas operativas.
 
-- [ ] Crear proyecto Android de Capacitor.
-- [ ] Permisos de cámara y almacenamiento.
-- [ ] Vibración y sonido opcionales.
-- [ ] Icono, splash y nombre final.
-- [ ] APK de pruebas.
-- [ ] APK firmada.
-- [ ] Compilación automática desde GitHub Actions.
+## 0.9 — Seguridad y auditoría
 
-## Modelo de datos inicial
+Seguimiento: issue #16.
 
-### Tool
+- [ ] Usuarios locales.
+- [ ] Roles Administrador, Almacén y Técnico.
+- [ ] PIN y opción biométrica.
+- [ ] Operador real en cada movimiento.
+- [ ] Área de administración protegida.
+- [ ] Rectificaciones sin modificar el movimiento original.
+- [ ] Registro de auditoría.
+- [ ] Bloqueo por inactividad.
 
-- `id`: UUID interno.
-- `code`: código visible único.
-- `qrValue`: contenido del QR.
-- `name`, `brand`, `model`, `serialNumber`.
-- `categoryId`, `homeLocationId`.
-- `status`: disponible, prestada, reservada, revisión, averiada, reparación, calibración, fuera de servicio o baja.
-- `currentTechnicianId`: técnico responsable actual.
-- `photoUri`, `notes`.
-- `createdAt`, `updatedAt`.
+## 1.0 — Producción
 
-### Technician
+Seguimiento: issue #17.
 
-- `id`: UUID interno.
-- `employeeCode`: código de empleado.
-- `qrValue`: QR personal.
-- `name`, `department`, `phone`.
-- `active`.
-- `createdAt`, `updatedAt`.
-
-### Movement
-
-- `id`: UUID inmutable.
-- `sequence`: número correlativo local.
-- `type`: entrega, devolución, traslado, incidencia, reparación, baja o rectificación.
-- `toolId`, `technicianId`, `operatorId`.
-- `previousStatus`, `newStatus`.
-- `condition`, `notes`.
-- `createdAt`, `deviceId`.
-- `syncStatus`: preparado para futura sincronización.
-
-Los movimientos no se eliminan. Los errores se corrigen mediante un nuevo movimiento de rectificación para mantener la trazabilidad.
+- [ ] Pruebas unitarias, integración y flujos completos.
+- [ ] Pruebas físicas en varios teléfonos Android.
+- [ ] APK release firmada.
+- [ ] AAB opcional.
+- [ ] Icono y splash definitivos.
+- [ ] VersionCode y versionName automáticos.
+- [ ] Actualizaciones conservando datos.
+- [ ] Manual de usuario y administrador.
+- [ ] Piloto con inventario reducido.
+- [ ] Plan de copias y recuperación.
+- [ ] Versión estable 1.0.

@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   web-build:
-    name: Probar y compilar React y TypeScript
+    name: Probar y compilar React, TypeScript y SQLite
     runs-on: ubuntu-latest
 
     steps:
@@ -32,6 +32,9 @@ jobs:
 
       - name: Ejecutar pruebas de dominio
         run: npm test
+
+      - name: Validar esquema SQLite real
+        run: python3 scripts/validate_sqlite_schema.py
 
       - name: Compilar aplicación
         run: |

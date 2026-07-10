@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Bug, ShieldCheck, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Bug, Database, ShieldCheck, Trash2, X } from 'lucide-react';
 import AppV6 from './AppV6';
 import { APP_VERSION } from './config/app';
 import type { IntegrityIssue } from './services/dataIntegrity';
@@ -7,13 +7,20 @@ import {
   clearAppErrorLog,
   getAppErrorLog,
   installGlobalErrorLogging,
+  recordAppError,
   type AppErrorEntry,
 } from './services/errorLog';
+import {
+  getNativeDatabaseHealth,
+  type NativeDatabaseHealth,
+} from './services/nativeDatabase';
 
 export default function AppStable() {
   const [integrityIssues, setIntegrityIssues] = useState<IntegrityIssue[]>([]);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [errors, setErrors] = useState<AppErrorEntry[]>(() => getAppErrorLog());
+  const [databaseHealth, setDatabaseHealth] = useState<NativeDatabaseHealth | null>(null);
+  const [databaseChecking, setDatabaseChecking] = useState(false);
 
   useEffect(() => installGlobalErrorLogging(), []);
 
@@ -31,6 +38,20 @@ export default function AppStable() {
     };
   }, []);
 
+  const openDiagnostics = async () => {
+    setErrors(getAppErrorLog());
+    setDiagnosticsOpen(true);
+    setDatabaseChecking(true);
+    try {
+      setDatabaseHealth(await getNativeDatabaseHealth());
+    } catch (error) {
+      recordAppError('database.health', error);
+      setDatabaseHealth(null);
+    } finally {
+      setDatabaseChecking(false);
+    }
+  };
+
   return (
     <>
       <AppV6 />
@@ -38,10 +59,7 @@ export default function AppStable() {
       <button
         className="stability-badge"
         type="button"
-        onClick={() => {
-          setErrors(getAppErrorLog());
-          setDiagnosticsOpen(true);
-        }}
+        onClick={() => { void openDiagnostics(); }}
         aria-label="Abrir diagnóstico de la aplicación"
       >
         <ShieldCheck size={15} /> v{APP_VERSION}
@@ -69,6 +87,22 @@ export default function AppStable() {
             </header>
 
             <p>Este registro permanece únicamente en el dispositivo y ayuda a localizar fallos de cámara, SQLite o archivos.</p>
+
+            <section className="database-health-card">
+              <div><Database size={22} /><span><small>Persistencia nativa</small><strong>SQLite normalizado</strong></span></div>
+              {databaseChecking ? (
+                <span className="database-health-loading">Comprobando…</span>
+              ) : databaseHealth ? (
+                <div className="database-health-grid">
+                  <span><small>Esquema</small><strong>v{databaseHealth.schemaVersion}</strong></span>
+                  <span><small>Herramientas</small><strong>{databaseHealth.tools}</strong></span>
+                  <span><small>Técnicos</small><strong>{databaseHealth.technicians}</strong></span>
+                  <span><small>Movimientos</small><strong>{databaseHealth.movements}</strong></span>
+                </div>
+              ) : (
+                <span className="database-health-web">Modo web · almacenamiento del navegador</span>
+              )}
+            </section>
 
             <div className="diagnostics-list">
               {errors.length === 0 ? (

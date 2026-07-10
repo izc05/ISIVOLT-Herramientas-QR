@@ -10,7 +10,11 @@ import {
   MOVEMENT_IMMUTABILITY_TRIGGERS,
 } from '../data/sqlite/schema';
 import {
+  accessoryToSqlValues,
+  maintenanceToSqlValues,
   movementToSqlValues,
+  rowToAccessory,
+  rowToMaintenance,
   rowToMovement,
   rowToTechnician,
   rowToTool,
@@ -18,7 +22,7 @@ import {
   technicianToSqlValues,
   toolToSqlValues,
 } from '../data/sqlite/mappers';
-import type { AppData, Movement } from '../domain/types';
+import type { AppData, MaintenanceRecord, Movement, ToolAccessory } from '../domain/types';
 
 const DATABASE_NAME = 'isivolt_herramientas';
 const CONNECTION_VERSION = 1;
@@ -162,8 +166,10 @@ const upsertTools = async (db: SQLiteDBConnection, data: AppData): Promise<void>
       `INSERT INTO tools (
         id, code, qr_code, name, category_id, brand, model, serial_number, location_id,
         status, holder_technician_id, loaned_at, notes, photo_uri, thumbnail_uri,
-        legacy_image_data_url, image_updated_at, active, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        legacy_image_data_url, image_updated_at, active, created_at, updated_at,
+        service_status, reserved_technician_id, purchase_date, purchase_cost, supplier,
+        next_review_date, next_calibration_date, max_loan_days
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         code = excluded.code,
         qr_code = excluded.qr_code,
@@ -182,7 +188,15 @@ const upsertTools = async (db: SQLiteDBConnection, data: AppData): Promise<void>
         legacy_image_data_url = excluded.legacy_image_data_url,
         image_updated_at = excluded.image_updated_at,
         active = excluded.active,
-        updated_at = excluded.updated_at;`,
+        updated_at = excluded.updated_at,
+        service_status = excluded.service_status,
+        reserved_technician_id = excluded.reserved_technician_id,
+        purchase_date = excluded.purchase_date,
+        purchase_cost = excluded.purchase_cost,
+        supplier = excluded.supplier,
+        next_review_date = excluded.next_review_date,
+        next_calibration_date = excluded.next_calibration_date,
+        max_loan_days = excluded.max_loan_days;`,
       toolToSqlValues(tool),
       false,
     );
@@ -211,11 +225,67 @@ const insertNewMovements = async (db: SQLiteDBConnection, movements: Movement[])
   }
 };
 
+const upsertAccessories = async (
+  db: SQLiteDBConnection,
+  accessories: ToolAccessory[] = [],
+): Promise<void> => {
+  for (const accessory of accessories) {
+    await db.run(
+      `INSERT INTO accessories (
+        id, tool_id, name, required, active, created_at, updated_at, condition, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        tool_id = excluded.tool_id,
+        name = excluded.name,
+        required = excluded.required,
+        active = excluded.active,
+        updated_at = excluded.updated_at,
+        condition = excluded.condition,
+        notes = excluded.notes;`,
+      accessoryToSqlValues(accessory),
+      false,
+    );
+  }
+};
+
+const upsertMaintenance = async (
+  db: SQLiteDBConnection,
+  records: MaintenanceRecord[] = [],
+): Promise<void> => {
+  for (const record of records) {
+    await db.run(
+      `INSERT INTO maintenance_records (
+        id, tool_id, type, status, title, description, resolution, operator_name,
+        assigned_to, opened_at, due_at, completed_at, cost, parts, notes,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        type = excluded.type,
+        status = excluded.status,
+        title = excluded.title,
+        description = excluded.description,
+        resolution = excluded.resolution,
+        operator_name = excluded.operator_name,
+        assigned_to = excluded.assigned_to,
+        opened_at = excluded.opened_at,
+        due_at = excluded.due_at,
+        completed_at = excluded.completed_at,
+        cost = excluded.cost,
+        parts = excluded.parts,
+        notes = excluded.notes,
+        updated_at = excluded.updated_at;`,
+      maintenanceToSqlValues(record),
+      false,
+    );
+  }
+};
+
 const replaceNormalizedData = async (db: SQLiteDBConnection, data: AppData): Promise<void> => {
   await withTransaction(db, async () => {
     await db.execute(DROP_MOVEMENT_IMMUTABILITY_TRIGGERS, false);
     await db.execute(
       `DELETE FROM movement_accessories;
+       DELETE FROM maintenance_records;
        DELETE FROM accessories;
        DELETE FROM movements;
        DELETE FROM users;
@@ -230,6 +300,8 @@ const replaceNormalizedData = async (db: SQLiteDBConnection, data: AppData): Pro
     await upsertTechnicians(db, data);
     await upsertTools(db, data);
     await insertNewMovements(db, data.movements);
+    await upsertAccessories(db, data.accessories);
+    await upsertMaintenance(db, data.maintenanceRecords);
     await db.execute(MOVEMENT_IMMUTABILITY_TRIGGERS, false);
     await db.run(
       `INSERT INTO app_settings (key, value, updated_at) VALUES ('last_snapshot_at', ?, ?)
@@ -246,6 +318,8 @@ const mergeNormalizedData = async (db: SQLiteDBConnection, data: AppData): Promi
     await upsertTechnicians(db, data);
     await upsertTools(db, data);
     await insertNewMovements(db, data.movements);
+    await upsertAccessories(db, data.accessories);
+    await upsertMaintenance(db, data.maintenanceRecords);
     await db.run(
       `INSERT INTO app_settings (key, value, updated_at) VALUES ('last_snapshot_at', ?, ?)
        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;`,
@@ -329,6 +403,8 @@ export type NativeDatabaseHealth = {
   tools: number;
   technicians: number;
   movements: number;
+  accessories: number;
+  maintenanceRecords: number;
   transactionActive: boolean;
 };
 
@@ -343,6 +419,8 @@ export const getNativeDatabaseHealth = async (): Promise<NativeDatabaseHealth | 
     tools: await countRows(db, 'tools'),
     technicians: await countRows(db, 'technicians'),
     movements: await countRows(db, 'movements'),
+    accessories: await countRows(db, 'accessories'),
+    maintenanceRecords: await countRows(db, 'maintenance_records'),
     transactionActive: Boolean(active.result),
   };
 };
@@ -351,24 +429,26 @@ export const readNativeAppData = async (): Promise<AppData | null> => {
   const db = await openDatabase();
   if (!db) return null;
 
-  const [technicianRows, toolRows, movementRows] = await Promise.all([
-    db.query('SELECT * FROM technicians ORDER BY name COLLATE NOCASE;'),
-    db.query(
-      `SELECT tools.*, categories.name AS category_name, locations.name AS location_name
-       FROM tools
-       JOIN categories ON categories.id = tools.category_id
-       JOIN locations ON locations.id = tools.location_id
-       ORDER BY tools.code COLLATE NOCASE;`,
-    ),
-    db.query('SELECT * FROM movements ORDER BY sequence_number DESC;'),
-  ]);
+  const technicianRows = await db.query('SELECT * FROM technicians ORDER BY name COLLATE NOCASE;');
+  const toolRows = await db.query(
+    `SELECT tools.*, categories.name AS category_name, locations.name AS location_name
+     FROM tools
+     JOIN categories ON categories.id = tools.category_id
+     JOIN locations ON locations.id = tools.location_id
+     ORDER BY tools.code COLLATE NOCASE;`,
+  );
+  const movementRows = await db.query('SELECT * FROM movements ORDER BY sequence_number DESC;');
+  const accessoryRows = await db.query('SELECT * FROM accessories ORDER BY tool_id, name COLLATE NOCASE;');
+  const maintenanceRows = await db.query('SELECT * FROM maintenance_records ORDER BY opened_at DESC;');
 
   const technicians = (technicianRows.values ?? []).map((row) => rowToTechnician(row));
   const tools = (toolRows.values ?? []).map((row) => rowToTool(row));
   const movements = (movementRows.values ?? []).map((row) => rowToMovement(row));
+  const accessories = (accessoryRows.values ?? []).map((row) => rowToAccessory(row));
+  const maintenanceRecords = (maintenanceRows.values ?? []).map((row) => rowToMaintenance(row));
 
   if (technicians.length === 0 && tools.length === 0 && movements.length === 0) return null;
-  return { schemaVersion: 1, tools, technicians, movements };
+  return { schemaVersion: 1, tools, technicians, movements, accessories, maintenanceRecords };
 };
 
 export const writeNativeAppData = async (

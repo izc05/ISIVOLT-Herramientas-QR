@@ -1,0 +1,43 @@
+name: Preparar APK instalable
+
+on:
+  push:
+    branches:
+      - fix/google-drive-apk
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prepare-installable-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    if: ${{ !contains(github.event.head_commit.message, 'chore: preparar APK instalable') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+        with:
+          ref: fix/google-drive-apk
+          fetch-depth: 0
+
+      - name: Aplicar seguridad, esquema y candidata
+        run: |
+          python3 scripts/finalize_security_branch.py
+          python3 scripts/apply_security_schema.py
+          python3 scripts/finalize_production_rc.py
+
+      - name: Confirmar todos los cambios generados
+        run: |
+          if git diff --quiet; then
+            echo "La rama ya está preparada."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: preparar APK instalable 1.0.0-rc.1"
+          git push origin HEAD:fix/google-drive-apk

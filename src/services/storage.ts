@@ -1,6 +1,7 @@
 import { seedData } from '../data/seed';
 import type { AppData } from '../domain/types';
 import { enforceAppDataIntegrity, type IntegrityIssue } from './dataIntegrity';
+import { getDeviceId } from './deviceIdentity';
 import { recordAppError } from './errorLog';
 import {
   isNativeDatabaseEnabled,
@@ -63,6 +64,29 @@ const hasRemovedIds = (previous: AppData | null, next: AppData): boolean => {
     || previous.movements.some((item) => !nextMovementIds.has(item.id));
 };
 
+const attachDeviceToNewMovements = async (
+  previous: AppData | null,
+  next: AppData,
+): Promise<AppData> => {
+  if (!isNativeDatabaseEnabled()) return next;
+
+  const known = new Set(previous?.movements.map((movement) => movement.id) ?? []);
+  const hasNewWithoutDevice = next.movements.some(
+    (movement) => !known.has(movement.id) && !movement.deviceId,
+  );
+  if (!hasNewWithoutDevice) return next;
+
+  const deviceId = await getDeviceId();
+  return {
+    ...next,
+    movements: next.movements.map((movement) =>
+      !known.has(movement.id) && !movement.deviceId
+        ? { ...movement, deviceId, syncStatus: movement.syncStatus ?? 'local' }
+        : movement,
+    ),
+  };
+};
+
 export const loadAppData = (): AppData => {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -116,7 +140,15 @@ export const saveAppData = (
     throw error;
   }
 
-  void writeNativeAppData(clean, { replace: replaceNative }).catch((error) => {
+  void (async () => {
+    const nativeData = await attachDeviceToNewMovements(previous, clean);
+    await writeNativeAppData(nativeData, { replace: replaceNative });
+
+    if (nativeData !== clean) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nativeData));
+      notifyDataUpdated(nativeData);
+    }
+  })().catch((error) => {
     recordAppError('storage.sqlite-save', error);
     console.error('No se ha podido guardar el estado en SQLite.', error);
   });

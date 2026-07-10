@@ -2,11 +2,10 @@ import { Capacitor } from '@capacitor/core';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import * as XLSX from 'xlsx';
-import type { AppData, Movement, ToolStatus } from '../domain/types';
+import { APP_VERSION, BACKUP_FORMAT } from '../config/app';
+import type { AppData, Movement, Technician, Tool, ToolStatus } from '../domain/types';
+import { enforceAppDataIntegrity } from './dataIntegrity';
 import { saveAppData } from './storage';
-
-const APP_VERSION = '0.4.0';
-const BACKUP_FORMAT = 'ISIVOLT-HERRAMIENTAS-BACKUP';
 
 const statusLabels: Record<ToolStatus, string> = {
   available: 'Disponible',
@@ -79,6 +78,7 @@ const appendJsonSheet = (
 };
 
 export const buildOperationalWorkbook = (data: AppData): XLSX.WorkBook => {
+  const clean = enforceAppDataIntegrity(data).data;
   const workbook = XLSX.utils.book_new();
   workbook.Props = {
     Title: 'ISIVOLT Herramientas QR - Informe operativo',
@@ -88,10 +88,10 @@ export const buildOperationalWorkbook = (data: AppData): XLSX.WorkBook => {
     CreatedDate: new Date(),
   };
 
-  const available = data.tools.filter((tool) => tool.status === 'available').length;
-  const loaned = data.tools.filter((tool) => tool.status === 'loaned').length;
-  const attention = data.tools.filter((tool) => tool.status === 'review' || tool.status === 'damaged').length;
-  const incidents = data.movements.filter((movement) => movement.type === 'incident').length;
+  const available = clean.tools.filter((tool) => tool.status === 'available').length;
+  const loaned = clean.tools.filter((tool) => tool.status === 'loaned').length;
+  const attention = clean.tools.filter((tool) => tool.status === 'review' || tool.status === 'damaged').length;
+  const incidents = clean.movements.filter((movement) => movement.type === 'incident').length;
 
   appendJsonSheet(
     workbook,
@@ -99,22 +99,22 @@ export const buildOperationalWorkbook = (data: AppData): XLSX.WorkBook => {
     [
       { Indicador: 'Fecha de generación', Valor: formatDateTime(new Date().toISOString()) },
       { Indicador: 'Versión de la aplicación', Valor: APP_VERSION },
-      { Indicador: 'Herramientas registradas', Valor: data.tools.length },
+      { Indicador: 'Herramientas registradas', Valor: clean.tools.length },
       { Indicador: 'Disponibles', Valor: available },
       { Indicador: 'Prestadas', Valor: loaned },
       { Indicador: 'Revisión o avería', Valor: attention },
-      { Indicador: 'Técnicos activos', Valor: data.technicians.filter((technician) => technician.active).length },
-      { Indicador: 'Movimientos registrados', Valor: data.movements.length },
+      { Indicador: 'Técnicos activos', Valor: clean.technicians.filter((technician) => technician.active).length },
+      { Indicador: 'Movimientos registrados', Valor: clean.movements.length },
       { Indicador: 'Incidencias históricas', Valor: incidents },
     ],
     [32, 28],
   );
 
-  const movements = [...data.movements]
+  const movements = [...clean.movements]
     .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
     .map((movement) => {
-      const tool = data.tools.find((item) => item.id === movement.toolId);
-      const technician = data.technicians.find((item) => item.id === movement.technicianId);
+      const tool = clean.tools.find((item) => item.id === movement.toolId);
+      const technician = clean.technicians.find((item) => item.id === movement.technicianId);
       return {
         Fecha: formatDateTime(movement.occurredAt),
         Tipo: movementLabels[movement.type],
@@ -131,10 +131,10 @@ export const buildOperationalWorkbook = (data: AppData): XLSX.WorkBook => {
     });
   appendJsonSheet(workbook, 'Movimientos', movements, [18, 15, 14, 30, 29, 20, 18, 18, 22, 16, 40]);
 
-  const loanedTools = data.tools
+  const loanedTools = clean.tools
     .filter((tool) => tool.status === 'loaned')
     .map((tool) => {
-      const technician = data.technicians.find((item) => item.id === tool.holderTechnicianId);
+      const technician = clean.technicians.find((item) => item.id === tool.holderTechnicianId);
       const loanedAt = tool.loanedAt ? new Date(tool.loanedAt) : null;
       const daysOut = loanedAt ? Math.max(0, Math.floor((Date.now() - loanedAt.getTime()) / 86_400_000)) : '';
       return {
@@ -153,10 +153,10 @@ export const buildOperationalWorkbook = (data: AppData): XLSX.WorkBook => {
     });
   appendJsonSheet(workbook, 'Prestadas', loanedTools, [14, 30, 22, 17, 18, 30, 20, 18, 12, 22, 38]);
 
-  const inventory = [...data.tools]
+  const inventory = [...clean.tools]
     .sort((a, b) => a.code.localeCompare(b.code))
     .map((tool) => {
-      const technician = data.technicians.find((item) => item.id === tool.holderTechnicianId);
+      const technician = clean.technicians.find((item) => item.id === tool.holderTechnicianId);
       return {
         Código: tool.code,
         QR: tool.qrCode,
@@ -174,10 +174,10 @@ export const buildOperationalWorkbook = (data: AppData): XLSX.WorkBook => {
     });
   appendJsonSheet(workbook, 'Inventario', inventory, [14, 28, 30, 22, 17, 18, 20, 18, 29, 23, 20, 38]);
 
-  const technicians = [...data.technicians]
+  const technicians = [...clean.technicians]
     .sort((a, b) => a.name.localeCompare(b.name, 'es'))
     .map((technician) => {
-      const assigned = data.tools.filter(
+      const assigned = clean.tools.filter(
         (tool) => tool.status === 'loaned' && tool.holderTechnicianId === technician.id,
       );
       return {
@@ -195,12 +195,12 @@ export const buildOperationalWorkbook = (data: AppData): XLSX.WorkBook => {
     });
   appendJsonSheet(workbook, 'Técnicos', technicians, [14, 31, 21, 25, 18, 13, 32, 12, 21, 55]);
 
-  const incidentRows = data.movements
+  const incidentRows = clean.movements
     .filter((movement) => movement.type === 'incident')
     .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
     .map((movement) => {
-      const tool = data.tools.find((item) => item.id === movement.toolId);
-      const technician = data.technicians.find((item) => item.id === movement.technicianId);
+      const tool = clean.tools.find((item) => item.id === movement.toolId);
+      const technician = clean.technicians.find((item) => item.id === movement.technicianId);
       return {
         Fecha: formatDateTime(movement.occurredAt),
         Código: tool?.code ?? '',
@@ -250,14 +250,14 @@ const writeAndShareNativeFile = async (
 };
 
 export const exportOperationalExcel = async (data: AppData): Promise<string> => {
-  const filename = `ISIVOLT_Herramientas_${formatDateForFilename()}.xlsx`;
+  const filename = `ISIVOLT_Herramientas_v${APP_VERSION}_${formatDateForFilename()}.xlsx`;
   const workbook = buildOperationalWorkbook(data);
 
   if (Capacitor.isNativePlatform()) {
     const base64 = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64', compression: true });
     await writeAndShareNativeFile(filename, base64, {
       title: 'Informe ISIVOLT Herramientas QR',
-      text: 'Informe Excel con inventario, préstamos, técnicos, incidencias y trazabilidad.',
+      text: `Informe Excel v${APP_VERSION} con inventario, préstamos, técnicos, incidencias y trazabilidad.`,
     });
   } else {
     const array = XLSX.write(workbook, { bookType: 'xlsx', type: 'array', compression: true });
@@ -277,18 +277,18 @@ export const createBackupEnvelope = (data: AppData): BackupEnvelope => ({
   backupVersion: 1,
   appVersion: APP_VERSION,
   createdAt: new Date().toISOString(),
-  data,
+  data: enforceAppDataIntegrity(data).data,
 });
 
 export const exportBackup = async (data: AppData): Promise<string> => {
-  const filename = `ISIVOLT_Backup_${formatDateForFilename()}.json`;
+  const filename = `ISIVOLT_Backup_v${APP_VERSION}_${formatDateForFilename()}.json`;
   const content = JSON.stringify(createBackupEnvelope(data), null, 2);
 
   if (Capacitor.isNativePlatform()) {
     await writeAndShareNativeFile(filename, content, {
       encoding: Encoding.UTF8,
       title: 'Copia de seguridad ISIVOLT',
-      text: 'Copia completa y restaurable del inventario y sus movimientos.',
+      text: `Copia completa y restaurable creada con ISIVOLT Herramientas QR v${APP_VERSION}.`,
     });
   } else {
     downloadBlob(filename, new Blob([content], { type: 'application/json;charset=utf-8' }));
@@ -297,28 +297,62 @@ export const exportBackup = async (data: AppData): Promise<string> => {
   return filename;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object';
+
+const isTool = (value: unknown): value is Tool => isRecord(value)
+  && typeof value.id === 'string'
+  && typeof value.code === 'string'
+  && typeof value.qrCode === 'string'
+  && typeof value.name === 'string'
+  && typeof value.category === 'string'
+  && typeof value.location === 'string'
+  && typeof value.status === 'string';
+
+const isTechnician = (value: unknown): value is Technician => isRecord(value)
+  && typeof value.id === 'string'
+  && typeof value.code === 'string'
+  && typeof value.name === 'string'
+  && typeof value.specialty === 'string'
+  && typeof value.active === 'boolean';
+
+const isMovement = (value: unknown): value is Movement => isRecord(value)
+  && typeof value.id === 'string'
+  && typeof value.type === 'string'
+  && typeof value.toolId === 'string'
+  && typeof value.operatorName === 'string'
+  && typeof value.occurredAt === 'string'
+  && typeof value.previousStatus === 'string'
+  && typeof value.nextStatus === 'string';
+
 const isValidAppData = (value: unknown): value is AppData => {
-  if (!value || typeof value !== 'object') return false;
+  if (!isRecord(value)) return false;
   const candidate = value as Partial<AppData>;
-  return (
-    candidate.schemaVersion === 1 &&
-    Array.isArray(candidate.tools) &&
-    Array.isArray(candidate.technicians) &&
-    Array.isArray(candidate.movements)
-  );
+  return candidate.schemaVersion === 1
+    && Array.isArray(candidate.tools)
+    && candidate.tools.every(isTool)
+    && Array.isArray(candidate.technicians)
+    && candidate.technicians.every(isTechnician)
+    && Array.isArray(candidate.movements)
+    && candidate.movements.every(isMovement);
 };
 
 export const parseBackup = (text: string): BackupEnvelope => {
   const parsed = JSON.parse(text) as Partial<BackupEnvelope>;
   if (
-    parsed.format !== BACKUP_FORMAT ||
-    parsed.backupVersion !== 1 ||
-    !parsed.createdAt ||
-    !isValidAppData(parsed.data)
+    parsed.format !== BACKUP_FORMAT
+    || parsed.backupVersion !== 1
+    || !parsed.createdAt
+    || !isValidAppData(parsed.data)
   ) {
     throw new Error('El archivo no es una copia válida de ISIVOLT Herramientas QR.');
   }
-  return parsed as BackupEnvelope;
+
+  const integrity = enforceAppDataIntegrity(parsed.data);
+  if (integrity.issues.some((issue) => issue.code.startsWith('duplicate-'))) {
+    throw new Error('La copia contiene códigos o identificadores duplicados y no puede restaurarse de forma segura.');
+  }
+
+  return { ...parsed, data: integrity.data } as BackupEnvelope;
 };
 
 export const restoreBackup = (text: string): BackupEnvelope => {

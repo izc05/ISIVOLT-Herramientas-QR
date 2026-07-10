@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Valida el SQL embebido en schema.ts usando sqlite3 real."""
+"""Valida todas las migraciones SQL embebidas en schema.ts usando sqlite3 real."""
 
 from __future__ import annotations
 
@@ -20,21 +20,28 @@ def extract_template(name: str) -> str:
 
 
 triggers = extract_template("MOVEMENT_IMMUTABILITY_TRIGGERS")
-migration_match = re.search(
-    r"name:\s*'normalized_inventory_core',\s*statements:\s*`(?P<body>.*?)`,\s*}\s*,?\s*]",
-    SOURCE,
-    re.DOTALL,
-)
-if not migration_match:
-    raise RuntimeError("No se ha encontrado la migración normalized_inventory_core")
-
-schema = migration_match.group("body").replace(
-    "${MOVEMENT_IMMUTABILITY_TRIGGERS}", triggers
-)
+migrations = [
+    (int(match.group("version")), match.group("name"), match.group("body"))
+    for match in re.finditer(
+        r"version:\s*(?P<version>\d+),\s*name:\s*'(?P<name>[^']+)',\s*statements:\s*`(?P<body>.*?)`,\s*}",
+        SOURCE,
+        re.DOTALL,
+    )
+]
+if not migrations:
+    raise RuntimeError("No se han encontrado migraciones SQLite")
 
 connection = sqlite3.connect(":memory:")
 connection.execute("PRAGMA foreign_keys = ON")
-connection.executescript(schema)
+
+for version, name, statements in sorted(migrations):
+    sql = statements.replace("${MOVEMENT_IMMUTABILITY_TRIGGERS}", triggers)
+    connection.executescript(sql)
+    connection.execute(
+        "INSERT OR REPLACE INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+        (version, name, "2026-07-10T12:00:00.000Z"),
+    )
+    connection.execute(f"PRAGMA user_version = {version}")
 
 now = "2026-07-10T12:00:00.000Z"
 connection.execute(
@@ -54,8 +61,9 @@ connection.execute(
 connection.execute(
     """INSERT INTO tools
        (id, code, qr_code, name, category_id, location_id, status,
-        holder_technician_id, loaned_at, active, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'available', NULL, NULL, 1, ?, ?)""",
+        holder_technician_id, loaned_at, active, created_at, updated_at,
+        service_status, purchase_cost, max_loan_days)
+       VALUES (?, ?, ?, ?, ?, ?, 'available', NULL, NULL, 1, ?, ?, 'none', 250.50, 7)""",
     (
         "tool-1",
         "HER-001",
@@ -66,6 +74,19 @@ connection.execute(
         now,
         now,
     ),
+)
+connection.execute(
+    """INSERT INTO accessories
+       (id, tool_id, name, required, active, created_at, updated_at, condition)
+       VALUES (?, ?, ?, 1, 1, ?, ?, 'ok')""",
+    ("acc-1", "tool-1", "Maletín", now, now),
+)
+connection.execute(
+    """INSERT INTO maintenance_records
+       (id, tool_id, type, status, title, description, operator_name,
+        opened_at, created_at, updated_at)
+       VALUES (?, ?, 'inspection', 'open', ?, ?, 'Sistema', ?, ?, ?)""",
+    ("maint-1", "tool-1", "Revisión anual", "Comprobar aislamiento", now, now, now),
 )
 connection.execute(
     """INSERT INTO movements
@@ -116,6 +137,14 @@ expect_integrity_error(
     ),
 )
 expect_integrity_error(
+    "UPDATE tools SET service_status = 'desconocido' WHERE id = 'tool-1'",
+    (),
+)
+expect_integrity_error(
+    "INSERT INTO accessories (id, tool_id, name, required, active, created_at, updated_at, condition) VALUES ('acc-2', 'tool-1', 'Maletín', 1, 1, ?, ?, 'ok')",
+    (now, now),
+)
+expect_integrity_error(
     "UPDATE movements SET notes = 'alterado' WHERE id = 'mov-1'",
     (),
 )
@@ -124,4 +153,12 @@ expect_integrity_error(
     (),
 )
 
-print("Esquema SQLite validado: tablas, relaciones, UNIQUE, CHECK y trazabilidad inmutable.")
+version = connection.execute("PRAGMA user_version").fetchone()[0]
+assert version == max(item[0] for item in migrations), "La versión SQLite no coincide con la última migración"
+assert connection.execute("SELECT COUNT(*) FROM accessories").fetchone()[0] == 1
+assert connection.execute("SELECT COUNT(*) FROM maintenance_records").fetchone()[0] == 1
+
+print(
+    f"Esquema SQLite v{version} validado: migraciones, gestión, mantenimiento, "
+    "UNIQUE, CHECK y trazabilidad inmutable."
+)

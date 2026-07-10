@@ -3,7 +3,12 @@ import { DATABASE_MIGRATIONS, MOVEMENT_IMMUTABILITY_TRIGGERS } from './schema';
 
 const schema = DATABASE_MIGRATIONS.map((migration) => migration.statements).join('\n');
 
-describe('SQLite schema 0.7', () => {
+describe('SQLite schema 0.8', () => {
+  it('mantiene las migraciones ordenadas y versionadas', () => {
+    expect(DATABASE_MIGRATIONS.map((migration) => migration.version)).toEqual([1, 2]);
+    expect(DATABASE_MIGRATIONS[1].name).toBe('asset_management_and_maintenance');
+  });
+
   it('crea las entidades principales del inventario', () => {
     for (const table of [
       'categories',
@@ -16,6 +21,7 @@ describe('SQLite schema 0.7', () => {
       'users',
       'app_settings',
       'audit_log',
+      'maintenance_records',
     ]) {
       expect(schema).toContain(`CREATE TABLE IF NOT EXISTS ${table}`);
     }
@@ -29,6 +35,14 @@ describe('SQLite schema 0.7', () => {
   it('protege el estado de préstamo mediante CHECK', () => {
     expect(schema).toContain("status = 'loaned' AND holder_technician_id IS NOT NULL AND loaned_at IS NOT NULL");
     expect(schema).toContain("status <> 'loaned' AND holder_technician_id IS NULL AND loaned_at IS NULL");
+  });
+
+  it('añade gestión de servicio, revisiones y calibraciones', () => {
+    expect(schema).toContain('service_status');
+    expect(schema).toContain('next_review_date');
+    expect(schema).toContain('next_calibration_date');
+    expect(schema).toContain('max_loan_days');
+    expect(schema).toContain('idx_maintenance_status_due');
   });
 
   it('impide modificar y borrar movimientos', () => {

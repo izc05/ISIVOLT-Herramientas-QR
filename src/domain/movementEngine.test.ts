@@ -23,6 +23,15 @@ const baseData = (): AppData => ({
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     },
+    {
+      id: 'tech-3',
+      code: 'TEC-003',
+      name: 'Otro Técnico',
+      specialty: 'Fontanería',
+      active: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    },
   ],
   tools: [
     {
@@ -33,6 +42,8 @@ const baseData = (): AppData => ({
       category: 'Medición',
       location: 'Almacén',
       status: 'available',
+      serviceStatus: 'none',
+      active: true,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     },
@@ -46,11 +57,14 @@ const baseData = (): AppData => ({
       status: 'loaned',
       holderTechnicianId: 'tech-1',
       loanedAt: '2026-07-09T08:00:00.000Z',
+      active: true,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-07-09T08:00:00.000Z',
     },
   ],
   movements: [],
+  accessories: [],
+  maintenanceRecords: [],
 });
 
 const ids = () => {
@@ -127,5 +141,53 @@ describe('applyMovementCommand', () => {
       technicianId: 'tech-1',
       operatorName: 'Almacén',
     })).toThrowError(/no está disponible/i);
+  });
+
+  it('permite entregar una reserva al técnico previsto y limpia la reserva', () => {
+    const data = baseData();
+    data.tools[0] = {
+      ...data.tools[0],
+      serviceStatus: 'reserved',
+      reservedTechnicianId: 'tech-1',
+    };
+
+    const result = applyMovementCommand(data, {
+      mode: 'delivery',
+      toolIds: ['tool-1'],
+      technicianId: 'tech-1',
+      operatorName: 'Almacén',
+    });
+    const tool = result.data.tools.find((item) => item.id === 'tool-1');
+    expect(tool?.status).toBe('loaned');
+    expect(tool?.serviceStatus).toBe('none');
+    expect(tool?.reservedTechnicianId).toBeUndefined();
+  });
+
+  it('bloquea una reserva para un técnico diferente', () => {
+    const data = baseData();
+    data.tools[0] = {
+      ...data.tools[0],
+      serviceStatus: 'reserved',
+      reservedTechnicianId: 'tech-1',
+    };
+
+    expect(() => applyMovementCommand(data, {
+      mode: 'delivery',
+      toolIds: ['tool-1'],
+      technicianId: 'tech-3',
+      operatorName: 'Almacén',
+    })).toThrowError(/reservada/i);
+  });
+
+  it('bloquea herramientas en reparación aunque estén marcadas como disponibles', () => {
+    const data = baseData();
+    data.tools[0] = { ...data.tools[0], serviceStatus: 'repair' };
+
+    expect(() => applyMovementCommand(data, {
+      mode: 'delivery',
+      toolIds: ['tool-1'],
+      technicianId: 'tech-1',
+      operatorName: 'Almacén',
+    })).toThrowError(/bloqueada/i);
   });
 });

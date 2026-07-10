@@ -1,4 +1,10 @@
-import type { Movement, Technician, Tool } from '../../domain/types';
+import type {
+  MaintenanceRecord,
+  Movement,
+  Technician,
+  Tool,
+  ToolAccessory,
+} from '../../domain/types';
 
 const normalizeName = (value: string) => value.trim().toLocaleLowerCase('es-ES');
 
@@ -32,9 +38,17 @@ export const toolToSqlValues = (tool: Tool) => [
   tool.thumbnailUri ?? null,
   tool.imageDataUrl ?? null,
   tool.imageUpdatedAt ?? null,
-  tool.status === 'retired' ? 0 : 1,
+  tool.active === false || tool.status === 'retired' ? 0 : 1,
   tool.createdAt,
   tool.updatedAt,
+  tool.serviceStatus ?? 'none',
+  tool.reservedTechnicianId ?? null,
+  tool.purchaseDate ?? null,
+  tool.purchaseCost ?? null,
+  tool.supplier ?? null,
+  tool.nextReviewDate ?? null,
+  tool.nextCalibrationDate ?? null,
+  tool.maxLoanDays ?? null,
 ];
 
 export const technicianToSqlValues = (technician: Technician) => [
@@ -74,9 +88,41 @@ export const movementToSqlValues = (
   movement.occurredAt,
 ];
 
+export const accessoryToSqlValues = (accessory: ToolAccessory) => [
+  accessory.id,
+  accessory.toolId,
+  accessory.name,
+  accessory.required ? 1 : 0,
+  accessory.active ? 1 : 0,
+  accessory.createdAt,
+  accessory.updatedAt,
+  accessory.condition ?? 'not_checked',
+  accessory.notes ?? null,
+];
+
+export const maintenanceToSqlValues = (record: MaintenanceRecord) => [
+  record.id,
+  record.toolId,
+  record.type,
+  record.status,
+  record.title,
+  record.description,
+  record.resolution ?? null,
+  record.operatorName,
+  record.assignedTo ?? null,
+  record.openedAt,
+  record.dueAt ?? null,
+  record.completedAt ?? null,
+  record.cost ?? null,
+  record.parts ?? null,
+  record.notes ?? null,
+  record.createdAt,
+  record.updatedAt,
+];
+
 const stringValue = (value: unknown, fallback = '') => typeof value === 'string' ? value : fallback;
 const optionalString = (value: unknown) => typeof value === 'string' && value.length > 0 ? value : undefined;
-const optionalNumber = (value: unknown) => Number.isFinite(Number(value)) ? Number(value) : undefined;
+const optionalNumber = (value: unknown) => value !== null && value !== undefined && Number.isFinite(Number(value)) ? Number(value) : undefined;
 
 export const rowToTechnician = (row: Record<string, unknown>): Technician => ({
   id: stringValue(row.id),
@@ -104,6 +150,8 @@ export const rowToTool = (row: Record<string, unknown>): Tool => ({
   serialNumber: optionalString(row.serial_number),
   location: stringValue(row.location_name, 'Sin ubicación'),
   status: stringValue(row.status) as Tool['status'],
+  serviceStatus: optionalString(row.service_status) as Tool['serviceStatus'],
+  reservedTechnicianId: optionalString(row.reserved_technician_id),
   holderTechnicianId: optionalString(row.holder_technician_id),
   loanedAt: optionalString(row.loaned_at),
   notes: optionalString(row.notes),
@@ -111,6 +159,13 @@ export const rowToTool = (row: Record<string, unknown>): Tool => ({
   thumbnailUri: optionalString(row.thumbnail_uri),
   imageDataUrl: optionalString(row.legacy_image_data_url),
   imageUpdatedAt: optionalString(row.image_updated_at),
+  purchaseDate: optionalString(row.purchase_date),
+  purchaseCost: optionalNumber(row.purchase_cost),
+  supplier: optionalString(row.supplier),
+  nextReviewDate: optionalString(row.next_review_date),
+  nextCalibrationDate: optionalString(row.next_calibration_date),
+  maxLoanDays: optionalNumber(row.max_loan_days),
+  active: Number(row.active) === 1,
   createdAt: stringValue(row.created_at),
   updatedAt: stringValue(row.updated_at),
 });
@@ -130,4 +185,36 @@ export const rowToMovement = (row: Record<string, unknown>): Movement => ({
   notes: optionalString(row.notes),
   reversedMovementId: optionalString(row.reversed_movement_id),
   syncStatus: optionalString(row.sync_status) as Movement['syncStatus'],
+});
+
+export const rowToAccessory = (row: Record<string, unknown>): ToolAccessory => ({
+  id: stringValue(row.id),
+  toolId: stringValue(row.tool_id),
+  name: stringValue(row.name),
+  required: Number(row.required) === 1,
+  active: Number(row.active) === 1,
+  condition: optionalString(row.condition) as ToolAccessory['condition'],
+  notes: optionalString(row.notes),
+  createdAt: stringValue(row.created_at),
+  updatedAt: stringValue(row.updated_at),
+});
+
+export const rowToMaintenance = (row: Record<string, unknown>): MaintenanceRecord => ({
+  id: stringValue(row.id),
+  toolId: stringValue(row.tool_id),
+  type: stringValue(row.type) as MaintenanceRecord['type'],
+  status: stringValue(row.status) as MaintenanceRecord['status'],
+  title: stringValue(row.title),
+  description: stringValue(row.description),
+  resolution: optionalString(row.resolution),
+  operatorName: stringValue(row.operator_name),
+  assignedTo: optionalString(row.assigned_to),
+  openedAt: stringValue(row.opened_at),
+  dueAt: optionalString(row.due_at),
+  completedAt: optionalString(row.completed_at),
+  cost: optionalNumber(row.cost),
+  parts: optionalString(row.parts),
+  notes: optionalString(row.notes),
+  createdAt: stringValue(row.created_at),
+  updatedAt: stringValue(row.updated_at),
 });

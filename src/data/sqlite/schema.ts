@@ -180,4 +180,50 @@ CREATE INDEX IF NOT EXISTS idx_audit_time ON audit_log(occurred_at DESC);
 ${MOVEMENT_IMMUTABILITY_TRIGGERS}
 `,
   },
+  {
+    version: 2,
+    name: 'asset_management_and_maintenance',
+    statements: `
+ALTER TABLE tools ADD COLUMN service_status TEXT NOT NULL DEFAULT 'none'
+  CHECK (service_status IN ('none', 'reserved', 'repair', 'waiting_parts', 'calibration', 'out_of_service', 'lost'));
+ALTER TABLE tools ADD COLUMN reserved_technician_id TEXT REFERENCES technicians(id) ON UPDATE CASCADE ON DELETE SET NULL;
+ALTER TABLE tools ADD COLUMN purchase_date TEXT;
+ALTER TABLE tools ADD COLUMN purchase_cost REAL CHECK (purchase_cost IS NULL OR purchase_cost >= 0);
+ALTER TABLE tools ADD COLUMN supplier TEXT;
+ALTER TABLE tools ADD COLUMN next_review_date TEXT;
+ALTER TABLE tools ADD COLUMN next_calibration_date TEXT;
+ALTER TABLE tools ADD COLUMN max_loan_days INTEGER CHECK (max_loan_days IS NULL OR max_loan_days >= 0);
+
+ALTER TABLE accessories ADD COLUMN condition TEXT NOT NULL DEFAULT 'not_checked'
+  CHECK (condition IN ('ok', 'missing', 'damaged', 'not_checked'));
+ALTER TABLE accessories ADD COLUMN notes TEXT;
+
+CREATE TABLE IF NOT EXISTS maintenance_records (
+  id TEXT PRIMARY KEY,
+  tool_id TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('incident', 'inspection', 'repair', 'calibration', 'status_change')),
+  status TEXT NOT NULL CHECK (status IN ('open', 'in_progress', 'waiting_parts', 'completed', 'cancelled')),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  resolution TEXT,
+  operator_name TEXT NOT NULL,
+  assigned_to TEXT,
+  opened_at TEXT NOT NULL,
+  due_at TEXT,
+  completed_at TEXT,
+  cost REAL CHECK (cost IS NULL OR cost >= 0),
+  parts TEXT,
+  notes TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (tool_id) REFERENCES tools(id) ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+CREATE INDEX IF NOT EXISTS idx_tools_service_status ON tools(service_status);
+CREATE INDEX IF NOT EXISTS idx_tools_review_date ON tools(next_review_date);
+CREATE INDEX IF NOT EXISTS idx_tools_calibration_date ON tools(next_calibration_date);
+CREATE INDEX IF NOT EXISTS idx_maintenance_tool_time ON maintenance_records(tool_id, opened_at DESC);
+CREATE INDEX IF NOT EXISTS idx_maintenance_status_due ON maintenance_records(status, due_at);
+`,
+  },
 ];

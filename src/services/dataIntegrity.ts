@@ -1,4 +1,11 @@
-import type { AppData, Movement, Technician, Tool } from '../domain/types';
+import type {
+  AppData,
+  MaintenanceRecord,
+  Movement,
+  Technician,
+  Tool,
+  ToolAccessory,
+} from '../domain/types';
 
 export type IntegrityIssue = {
   code:
@@ -8,10 +15,15 @@ export type IntegrityIssue = {
     | 'duplicate-technician-id'
     | 'duplicate-technician-code'
     | 'invalid-holder'
+    | 'invalid-reservation'
     | 'invalid-loan-state'
     | 'duplicate-movement-id'
     | 'invalid-movement-tool'
-    | 'invalid-movement-technician';
+    | 'invalid-movement-technician'
+    | 'duplicate-accessory-id'
+    | 'invalid-accessory-tool'
+    | 'duplicate-maintenance-id'
+    | 'invalid-maintenance-tool';
   message: string;
 };
 
@@ -121,6 +133,42 @@ const sanitizeMovements = (
   return { movements: valid, issues };
 };
 
+const sanitizeAccessories = (accessories: ToolAccessory[], toolIds: Set<string>) => {
+  const unique = keepLastUnique(
+    accessories,
+    (accessory) => accessory.id,
+    (accessory) => ({ code: 'duplicate-accessory-id', message: `Se ha rechazado un accesorio duplicado: ${accessory.name}.` }),
+  );
+  const issues = [...unique.issues];
+  const valid = unique.items.filter((accessory) => {
+    if (toolIds.has(accessory.toolId)) return true;
+    issues.push({
+      code: 'invalid-accessory-tool',
+      message: `El accesorio ${accessory.name} no pertenece a una herramienta existente.`,
+    });
+    return false;
+  });
+  return { accessories: valid, issues };
+};
+
+const sanitizeMaintenance = (records: MaintenanceRecord[], toolIds: Set<string>) => {
+  const unique = keepLastUnique(
+    records,
+    (record) => record.id,
+    (record) => ({ code: 'duplicate-maintenance-id', message: `Se ha rechazado un expediente de mantenimiento duplicado: ${record.title}.` }),
+  );
+  const issues = [...unique.issues];
+  const valid = unique.items.filter((record) => {
+    if (toolIds.has(record.toolId)) return true;
+    issues.push({
+      code: 'invalid-maintenance-tool',
+      message: `El expediente ${record.title} no pertenece a una herramienta existente.`,
+    });
+    return false;
+  });
+  return { maintenanceRecords: valid, issues };
+};
+
 export const enforceAppDataIntegrity = (source: AppData): { data: AppData; issues: IntegrityIssue[] } => {
   const toolResult = sanitizeTools(source.tools);
   const technicianResult = sanitizeTechnicians(source.technicians);
@@ -128,34 +176,58 @@ export const enforceAppDataIntegrity = (source: AppData): { data: AppData; issue
   const issues = [...toolResult.issues, ...technicianResult.issues];
 
   const tools = toolResult.tools.map((tool) => {
-    if (tool.status === 'loaned' && (!tool.holderTechnicianId || !technicianIds.has(tool.holderTechnicianId))) {
+    let next = { ...tool, active: tool.active ?? tool.status !== 'retired' };
+
+    if (next.status === 'loaned' && (!next.holderTechnicianId || !technicianIds.has(next.holderTechnicianId))) {
       issues.push({
         code: 'invalid-holder',
-        message: `${tool.name} figuraba prestada sin un técnico válido y se ha devuelto a disponible.`,
+        message: `${next.name} figuraba prestada sin un técnico válido y se ha devuelto a disponible.`,
       });
-      return {
-        ...tool,
-        status: 'available' as const,
+      next = {
+        ...next,
+        status: 'available',
         holderTechnicianId: undefined,
         loanedAt: undefined,
         updatedAt: new Date().toISOString(),
       };
     }
 
-    if (tool.status !== 'loaned' && (tool.holderTechnicianId || tool.loanedAt)) {
+    if (next.status !== 'loaned' && (next.holderTechnicianId || next.loanedAt)) {
       issues.push({
         code: 'invalid-loan-state',
-        message: `${tool.name} tenía datos de préstamo en un estado incompatible; se han limpiado.`,
+        message: `${next.name} tenía datos de préstamo en un estado incompatible; se han limpiado.`,
       });
-      return { ...tool, holderTechnicianId: undefined, loanedAt: undefined };
+      next = { ...next, holderTechnicianId: undefined, loanedAt: undefined };
     }
 
-    return tool;
+    if (next.reservedTechnicianId && !technicianIds.has(next.reservedTechnicianId)) {
+      issues.push({
+        code: 'invalid-reservation',
+        message: `${next.name} tenía una reserva asignada a un técnico inexistente; se ha cancelado.`,
+      });
+      next = { ...next, reservedTechnicianId: undefined, serviceStatus: 'none' };
+    }
+
+    if (next.serviceStatus === 'reserved' && !next.reservedTechnicianId) {
+      next = { ...next, serviceStatus: 'none' };
+    }
+
+    if (next.serviceStatus && ['repair', 'waiting_parts', 'calibration', 'out_of_service'].includes(next.serviceStatus) && next.status === 'available') {
+      next = { ...next, status: 'review' };
+    }
+
+    if (next.serviceStatus === 'lost') {
+      next = { ...next, status: 'retired', active: false };
+    }
+
+    return next;
   });
 
   const toolIds = new Set(tools.map((tool) => tool.id));
   const movementResult = sanitizeMovements(source.movements, toolIds, technicianIds);
-  issues.push(...movementResult.issues);
+  const accessoryResult = sanitizeAccessories(source.accessories ?? [], toolIds);
+  const maintenanceResult = sanitizeMaintenance(source.maintenanceRecords ?? [], toolIds);
+  issues.push(...movementResult.issues, ...accessoryResult.issues, ...maintenanceResult.issues);
 
   return {
     data: {
@@ -163,6 +235,8 @@ export const enforceAppDataIntegrity = (source: AppData): { data: AppData; issue
       tools,
       technicians: technicianResult.technicians,
       movements: movementResult.movements,
+      accessories: accessoryResult.accessories,
+      maintenanceRecords: maintenanceResult.maintenanceRecords,
     },
     issues,
   };

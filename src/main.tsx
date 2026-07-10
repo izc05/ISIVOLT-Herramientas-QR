@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import AppV4 from './AppV4';
+import AppV5 from './AppV5';
 import { hydrateAppDataFromNative } from './services/storage';
 import './styles.css';
 import './core.css';
@@ -9,6 +9,7 @@ import './vivid-theme.css';
 import './technician-detail.css';
 import './qr-print.css';
 import './native-scanner.css';
+import './report-center.css';
 
 const root = document.getElementById('root');
 
@@ -20,7 +21,7 @@ const bootstrap = async () => {
   await hydrateAppDataFromNative();
   createRoot(root).render(
     <StrictMode>
-      <AppV4 />
+      <AppV5 />
     </StrictMode>,
   );
 };

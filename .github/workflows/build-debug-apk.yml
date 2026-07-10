@@ -45,6 +45,9 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
+      - name: Ejecutar pruebas de dominio
+        run: npm test
+
       - name: Compilar aplicación web
         run: npm run build
 

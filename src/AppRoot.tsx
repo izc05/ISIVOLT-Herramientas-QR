@@ -22,7 +22,7 @@ export default function AppRoot() {
   const [bootMessage, setBootMessage] = useState('Preparando la base de datos local…');
 
   useEffect(() => {
-    if (bootState === 'degraded') return;
+    if (bootState !== 'loading') return;
     let active = true;
 
     void Promise.race([

@@ -20,11 +20,13 @@ const derive = async (pin: string, salt: Uint8Array, iterations: number) => {
     false,
     ['deriveBits'],
   );
+  const safeSalt = new Uint8Array(salt.byteLength);
+  safeSalt.set(salt);
   const bits = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
       hash: HASH_ALGORITHM,
-      salt,
+      salt: safeSalt,
       iterations,
     },
     material,

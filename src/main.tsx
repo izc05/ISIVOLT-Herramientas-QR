@@ -23,6 +23,7 @@ import './security/rectification.css';
 import './production/commissioning.css';
 import './boot.css';
 import './mobile-optimization.css';
+import './mobile-optimization-rc4.css';
 
 const root = document.getElementById('root');
 

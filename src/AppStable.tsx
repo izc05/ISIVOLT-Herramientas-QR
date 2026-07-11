@@ -4,6 +4,7 @@ import AppV6 from './AppV6';
 import { APP_VERSION } from './config/app';
 import ManagementCenter from './features/management/ManagementCenter';
 import ManagementFiles from './features/management/ManagementFiles';
+import TechnicianQuickCreate from './features/technicians/TechnicianQuickCreate';
 import type { IntegrityIssue } from './services/dataIntegrity';
 import {
   clearAppErrorLog,
@@ -41,6 +42,8 @@ export default function AppStable() {
     };
   }, []);
 
+  const refreshApplication = () => setAppRevision((value) => value + 1);
+
   const openDiagnostics = async () => {
     setErrors(getAppErrorLog());
     setDiagnosticsOpen(true);
@@ -58,8 +61,9 @@ export default function AppStable() {
   return (
     <>
       <AppV6 key={appRevision} />
-      <ManagementCenter onSaved={() => setAppRevision((value) => value + 1)} />
+      <ManagementCenter onSaved={refreshApplication} />
       <ManagementFiles />
+      <TechnicianQuickCreate onSaved={refreshApplication} />
 
       <button
         className="stability-badge"
@@ -85,7 +89,7 @@ export default function AppStable() {
 
       {diagnosticsOpen && (
         <div className="diagnostics-backdrop" onClick={() => setDiagnosticsOpen(false)}>
-          <section className="diagnostics-panel" onClick={(event) => event.stopPropagation()}>
+          <section className="diagnostics-panel" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
             <header>
               <div><Bug size={22} /><span><small>Soporte local</small><strong>Diagnóstico v{APP_VERSION}</strong></span></div>
               <button type="button" onClick={() => setDiagnosticsOpen(false)}><X size={20} /></button>

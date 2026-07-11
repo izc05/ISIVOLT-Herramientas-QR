@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
   Check,
+  ListFilter,
   QrCode,
   RotateCcw,
   ScanLine,
@@ -23,14 +24,15 @@ import type {
   Tool,
   ToolStatus,
 } from './domain/types';
+import TechnicianSelectorPanel from './features/technicians/TechnicianSelectorPanel';
+import { assertPermission } from './security/permissions';
+import { getCurrentOperatorName } from './security/session';
 import {
   isNativeScannerAvailable,
   parseIsivoltQr,
   scanQrCode,
 } from './services/barcodeScanner';
 import { loadAppData, saveAppData } from './services/storage';
-
-const OPERATOR_NAME = 'Isi';
 
 type NativeFeedback = {
   title: string;
@@ -61,8 +63,11 @@ const findTool = (data: AppData, code: string, raw: string) =>
 
 export default function AppV4() {
   const nativeScanner = useMemo(() => isNativeScannerAvailable(), []);
+  const reduceMotion = useReducedMotion();
+  const compactMotion = reduceMotion || window.matchMedia('(max-width: 820px)').matches;
   const [appRevision, setAppRevision] = useState(0);
   const [workflowOpen, setWorkflowOpen] = useState(false);
+  const [selectorOpen, setSelectorOpen] = useState(false);
   const [mode, setMode] = useState<OperationMode>('delivery');
   const [sessionData, setSessionData] = useState<AppData>(() => loadAppData());
   const [technician, setTechnician] = useState<Technician | null>(null);
@@ -81,6 +86,7 @@ export default function AppV4() {
     setCondition('ok');
     setNotes('');
     setScanning(false);
+    setSelectorOpen(false);
     setScannerMessage(
       nextMode === 'delivery'
         ? 'Primero identifica al técnico responsable.'
@@ -91,6 +97,11 @@ export default function AppV4() {
   const openWorkflow = () => {
     resetWorkflow('delivery');
     setWorkflowOpen(true);
+  };
+
+  const closeWorkflow = () => {
+    setSelectorOpen(false);
+    setWorkflowOpen(false);
   };
 
   useEffect(() => {
@@ -113,11 +124,24 @@ export default function AppV4() {
 
   useEffect(() => {
     if (!feedback) return undefined;
-    const timeout = window.setTimeout(() => setFeedback(null), 3600);
+    const timeout = window.setTimeout(() => setFeedback(null), 3200);
     return () => window.clearTimeout(timeout);
   }, [feedback]);
 
   const changeMode = (nextMode: OperationMode) => resetWorkflow(nextMode);
+
+  const selectTechnician = (technicianId: string) => {
+    const foundTechnician = sessionData.technicians.find((item) => item.id === technicianId);
+    if (!foundTechnician || !foundTechnician.active) {
+      setScannerMessage('El técnico no existe o está marcado como inactivo.');
+      return false;
+    }
+    setTechnician(foundTechnician);
+    setSelectorOpen(false);
+    setScannerMessage(`${foundTechnician.name} identificado. Escanea ahora una herramienta disponible.`);
+    navigator.vibrate?.([60, 35, 80]);
+    return true;
+  };
 
   const handleScan = async () => {
     if (scanning) return;
@@ -128,7 +152,7 @@ export default function AppV4() {
     setScanning(false);
 
     if (result.status === 'cancelled') {
-      setScannerMessage('Lectura cancelada. Puedes volver a intentarlo.');
+      setScannerMessage('Lectura cancelada. Puedes volver a intentarlo o seleccionar el técnico manualmente.');
       return;
     }
 
@@ -146,20 +170,17 @@ export default function AppV4() {
 
     if (mode === 'delivery' && !technician) {
       if (payload.type !== 'technician') {
-        setScannerMessage('Para una entrega debes escanear primero el QR personal del técnico.');
+        setScannerMessage('Para una entrega debes identificar primero al técnico.');
         navigator.vibrate?.([120, 60, 120]);
         return;
       }
 
       const foundTechnician = findTechnician(sessionData, payload.code);
-      if (!foundTechnician || !foundTechnician.active) {
-        setScannerMessage('El técnico no existe o está marcado como inactivo.');
+      if (!foundTechnician) {
+        setScannerMessage('El técnico no existe. Puedes buscarlo manualmente.');
         return;
       }
-
-      setTechnician(foundTechnician);
-      setScannerMessage(`${foundTechnician.name} identificado. Escanea ahora una herramienta disponible.`);
-      navigator.vibrate?.([60, 35, 80]);
+      selectTechnician(foundTechnician.id);
       return;
     }
 
@@ -199,10 +220,18 @@ export default function AppV4() {
   };
 
   const confirmOperation = () => {
+    try {
+      assertPermission('operations.execute');
+    } catch (cause) {
+      setScannerMessage(cause instanceof Error ? cause.message : 'No tienes permiso para registrar movimientos.');
+      return;
+    }
+
     const current = loadAppData();
     const selectedIds = new Set(tools.map((tool) => tool.id));
     const occurredAt = new Date().toISOString();
     const movementBatch: Movement[] = [];
+    const operatorName = getCurrentOperatorName();
 
     const updatedTools = current.tools.map((tool) => {
       if (!selectedIds.has(tool.id)) return tool;
@@ -214,7 +243,7 @@ export default function AppV4() {
           type: 'delivery',
           toolId: tool.id,
           technicianId: technician.id,
-          operatorName: OPERATOR_NAME,
+          operatorName,
           occurredAt,
           previousStatus: tool.status,
           nextStatus: 'loaned',
@@ -236,7 +265,7 @@ export default function AppV4() {
         type: condition === 'ok' ? 'return' : 'incident',
         toolId: tool.id,
         technicianId: tool.holderTechnicianId,
-        operatorName: OPERATOR_NAME,
+        operatorName,
         occurredAt,
         previousStatus: tool.status,
         nextStatus,
@@ -264,7 +293,7 @@ export default function AppV4() {
       movements: [...movementBatch, ...current.movements],
     });
 
-    setWorkflowOpen(false);
+    closeWorkflow();
     setAppRevision((value) => value + 1);
     setFeedback({
       title: mode === 'delivery' ? 'Entrega QR completada' : 'Devolución QR completada',
@@ -281,137 +310,107 @@ export default function AppV4() {
 
       <AnimatePresence>
         {workflowOpen && (
-          <motion.div
-            className="native-scan-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
+          <motion.div className="native-scan-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.section
               className="native-scan-console"
-              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              initial={compactMotion ? { opacity: 0, y: 18 } : { opacity: 0, y: 50, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 28, scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+              exit={compactMotion ? { opacity: 0, y: 12 } : { opacity: 0, y: 28, scale: 0.97 }}
+              transition={{ duration: compactMotion ? 0.18 : 0.24 }}
               role="dialog"
               aria-modal="true"
               aria-label="Operación mediante cámara QR"
             >
               <span className="native-console-glow" aria-hidden="true" />
-              <button className="native-scan-close" onClick={() => setWorkflowOpen(false)} aria-label="Cerrar escáner">
-                <X size={21} />
-              </button>
+              <button className="native-scan-close" onClick={closeWorkflow} aria-label="Cerrar escáner"><X size={21} /></button>
 
               <header className="native-scan-header">
-                <motion.span
-                  className="native-scan-emblem"
-                  animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.08, 1] }}
-                  transition={{ duration: 2.8, repeat: Infinity }}
-                >
-                  <ScanLine size={30} />
-                </motion.span>
-                <div>
-                  <span><Zap size={14} /> Cámara nativa activa</span>
-                  <h2>Operación QR</h2>
-                  <p>Lectura mediante Google ML Kit y guardado local en SQLite.</p>
-                </div>
+                <span className="native-scan-emblem"><ScanLine size={30} /></span>
+                <div><span><Zap size={14} /> Cámara nativa activa</span><h2>Operación QR</h2><p>Lectura mediante Google ML Kit y guardado local.</p></div>
               </header>
 
-              <div className="native-mode-switch">
-                <button className={mode === 'delivery' ? 'active' : ''} onClick={() => changeMode('delivery')}>
-                  <ArrowUpFromLine size={18} /> Entrega
-                </button>
-                <button className={mode === 'return' ? 'active' : ''} onClick={() => changeMode('return')}>
-                  <ArrowDownToLine size={18} /> Devolución
-                </button>
-              </div>
-
-              <div className="native-progress-grid">
-                {mode === 'delivery' && (
-                  <article className={technician ? 'completed' : 'current'}>
-                    <span><UserRound size={20} /></span>
-                    <div><small>Paso 1</small><strong>{technician?.name ?? 'Identificar técnico'}</strong></div>
-                    {technician && <Check size={19} />}
-                  </article>
-                )}
-                <article className={tools.length > 0 ? 'completed' : mode === 'return' || technician ? 'current' : ''}>
-                  <span><Wrench size={20} /></span>
-                  <div><small>{mode === 'delivery' ? 'Paso 2' : 'Paso 1'}</small><strong>{tools.length ? `${tools.length} herramienta${tools.length === 1 ? '' : 's'}` : 'Escanear herramientas'}</strong></div>
-                  {tools.length > 0 && <Check size={19} />}
-                </article>
-              </div>
-
-              <motion.button
-                className="native-camera-button"
-                onClick={handleScan}
-                disabled={scanning}
-                whileTap={{ scale: 0.95 }}
-              >
-                <motion.span
-                  animate={{ scale: scanning ? [1, 1.32, 1] : [1, 1.12, 1], opacity: [0.7, 0.2, 0.7] }}
-                  transition={{ duration: scanning ? 0.8 : 2, repeat: Infinity }}
+              {selectorOpen ? (
+                <TechnicianSelectorPanel
+                  technicians={sessionData.technicians}
+                  tools={sessionData.tools}
+                  onSelect={selectTechnician}
+                  onBack={() => setSelectorOpen(false)}
                 />
-                <QrCode size={30} />
-                <strong>{scanning ? 'Abriendo cámara…' : technician || mode === 'return' ? 'Escanear herramienta' : 'Escanear técnico'}</strong>
-              </motion.button>
+              ) : (
+                <>
+                  <div className="native-mode-switch">
+                    <button className={mode === 'delivery' ? 'active' : ''} onClick={() => changeMode('delivery')}><ArrowUpFromLine size={18} /> Entrega</button>
+                    <button className={mode === 'return' ? 'active' : ''} onClick={() => changeMode('return')}><ArrowDownToLine size={18} /> Devolución</button>
+                  </div>
 
-              <div className="native-scanner-message">
-                {scannerMessage.includes('no ') || scannerMessage.includes('No ') || scannerMessage.includes('esperaba')
-                  ? <AlertTriangle size={17} />
-                  : <Zap size={17} />}
-                <span>{scannerMessage}</span>
-              </div>
+                  <div className="native-progress-grid">
+                    {mode === 'delivery' && (
+                      <article className={technician ? 'completed' : 'current'}>
+                        <span><UserRound size={20} /></span>
+                        <div><small>Paso 1</small><strong>{technician?.name ?? 'Identificar técnico'}</strong></div>
+                        {technician && <Check size={19} />}
+                      </article>
+                    )}
+                    <article className={tools.length > 0 ? 'completed' : mode === 'return' || technician ? 'current' : ''}>
+                      <span><Wrench size={20} /></span>
+                      <div><small>{mode === 'delivery' ? 'Paso 2' : 'Paso 1'}</small><strong>{tools.length ? `${tools.length} herramienta${tools.length === 1 ? '' : 's'}` : 'Escanear herramientas'}</strong></div>
+                      {tools.length > 0 && <Check size={19} />}
+                    </article>
+                  </div>
 
-              {tools.length > 0 && (
-                <div className="native-scanned-tools">
-                  {tools.map((tool) => (
-                    <motion.button key={tool.id} onClick={() => removeTool(tool.id)} layout whileTap={{ scale: 0.95 }}>
-                      <Wrench size={15} />
-                      <span><strong>{tool.name}</strong><small>{tool.code}</small></span>
-                      <X size={15} />
-                    </motion.button>
-                  ))}
-                </div>
-              )}
+                  <motion.button className="native-camera-button" onClick={handleScan} disabled={scanning} whileTap={{ scale: 0.97 }}>
+                    <QrCode size={30} />
+                    <strong>{scanning ? 'Abriendo cámara…' : technician || mode === 'return' ? 'Escanear herramienta' : 'Escanear técnico'}</strong>
+                  </motion.button>
 
-              {mode === 'return' && tools.length > 0 && (
-                <div className="native-condition-grid">
-                  {([
-                    ['ok', 'Correcta', Check],
-                    ['review', 'Revisión', RotateCcw],
-                    ['damaged', 'Averiada', AlertTriangle],
-                  ] as const).map(([value, label, Icon]) => (
-                    <button key={value} className={condition === value ? 'active' : ''} onClick={() => setCondition(value)}>
-                      <Icon size={17} /> {label}
+                  {mode === 'delivery' && !technician && (
+                    <button className="native-manual-technician" type="button" onClick={() => setSelectorOpen(true)}>
+                      <ListFilter size={19} />
+                      <span><strong>Seleccionar técnico manualmente</strong><small>Buscar por nombre, código o categoría</small></span>
                     </button>
-                  ))}
-                </div>
+                  )}
+
+                  <div className="native-scanner-message">
+                    {scannerMessage.includes('no ') || scannerMessage.includes('No ') || scannerMessage.includes('esperaba')
+                      ? <AlertTriangle size={17} /> : <Zap size={17} />}
+                    <span>{scannerMessage}</span>
+                  </div>
+
+                  {tools.length > 0 && (
+                    <div className="native-scanned-tools">
+                      {tools.map((tool) => (
+                        <button key={tool.id} onClick={() => removeTool(tool.id)}><Wrench size={15} /><span><strong>{tool.name}</strong><small>{tool.code}</small></span><X size={15} /></button>
+                      ))}
+                    </div>
+                  )}
+
+                  {mode === 'return' && tools.length > 0 && (
+                    <div className="native-condition-grid">
+                      {([
+                        ['ok', 'Correcta', Check],
+                        ['review', 'Revisión', RotateCcw],
+                        ['damaged', 'Averiada', AlertTriangle],
+                      ] as const).map(([value, label, Icon]) => (
+                        <button key={value} className={condition === value ? 'active' : ''} onClick={() => setCondition(value)}><Icon size={17} /> {label}</button>
+                      ))}
+                    </div>
+                  )}
+
+                  <label className="native-notes-field">Observaciones<textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Accesorios, estado o incidencia…" /></label>
+
+                  <footer className="native-scan-footer">
+                    <span>{tools.length} activo{tools.length === 1 ? '' : 's'} preparado{tools.length === 1 ? '' : 's'}</span>
+                    <motion.button disabled={!canConfirm} onClick={confirmOperation} whileTap={{ scale: 0.97 }}><Check size={19} /> Confirmar operación</motion.button>
+                  </footer>
+                </>
               )}
-
-              <label className="native-notes-field">
-                Observaciones
-                <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Accesorios, estado o incidencia…" />
-              </label>
-
-              <footer className="native-scan-footer">
-                <span>{tools.length} activo{tools.length === 1 ? '' : 's'} preparado{tools.length === 1 ? '' : 's'}</span>
-                <motion.button disabled={!canConfirm} onClick={confirmOperation} whileTap={{ scale: 0.96 }}>
-                  <Check size={19} /> Confirmar operación
-                </motion.button>
-              </footer>
             </motion.section>
           </motion.div>
         )}
 
         {feedback && (
-          <motion.div
-            className={`native-feedback native-feedback-${feedback.tone}`}
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-          >
-            <Check size={21} />
-            <span><strong>{feedback.title}</strong><small>{feedback.detail}</small></span>
+          <motion.div className={`native-feedback native-feedback-${feedback.tone}`} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}>
+            <Check size={21} /><span><strong>{feedback.title}</strong><small>{feedback.detail}</small></span>
           </motion.div>
         )}
       </AnimatePresence>

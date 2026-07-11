@@ -1,0 +1,105 @@
+.technician-create-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 7000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 5, 15, .9);
+}
+
+.technician-create-modal {
+  width: min(620px, 100%);
+  max-height: calc(100dvh - 32px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid rgba(67, 218, 255, .28);
+  border-radius: 24px;
+  color: #effbff;
+  background: linear-gradient(160deg, #0a1d34, #050a16 66%, #120a21);
+  box-shadow: 0 24px 70px rgba(0,0,0,.56);
+}
+
+.technician-create-modal > header,
+.technician-create-modal > header > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.technician-create-modal > header {
+  padding: 17px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.technician-create-modal > header > div { justify-content: flex-start; min-width: 0; }
+.technician-create-modal > header > div > span { display: grid; place-items: center; width: 46px; height: 46px; flex: 0 0 46px; border-radius: 15px; color: #70eaff; background: rgba(50, 207, 245, .1); }
+.technician-create-modal header h2 { margin: 1px 0; font-size: 1.25rem; }
+.technician-create-modal header small { color: #6feaff; font-size: .72rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.technician-create-modal header p { margin: 0; color: rgba(222,245,255,.58); font-size: .78rem; line-height: 1.35; }
+.technician-create-modal header button { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border: 1px solid rgba(255,255,255,.09); border-radius: 12px; color: #fff; background: rgba(255,255,255,.035); }
+
+.technician-create-modal > main {
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 11px;
+  padding: 16px 18px;
+}
+
+.technician-create-modal label {
+  display: grid;
+  gap: 6px;
+  color: rgba(222,245,255,.66);
+  font-size: .78rem;
+  font-weight: 760;
+}
+
+.technician-create-modal label.wide,
+.technician-create-error { grid-column: 1 / -1; }
+
+.technician-create-modal input,
+.technician-create-modal select {
+  width: 100%;
+  min-height: 45px;
+  padding: 10px 11px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 12px;
+  outline: 0;
+  color: #fff;
+  background: rgba(1,8,18,.68);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.technician-create-modal select option { color: #fff; background: #071322; }
+.technician-create-error { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 10px; border: 1px solid rgba(255,84,99,.25); border-radius: 12px; color: #ffc2c9; background: rgba(255,58,77,.07); }
+
+.technician-create-modal > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(255,255,255,.07);
+  background: rgba(3,9,18,.96);
+}
+
+.technician-create-modal > footer > span { color: rgba(222,245,255,.56); font-size: .76rem; }
+.technician-create-modal > footer button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 10px 14px; border: 1px solid rgba(77,224,255,.34); border-radius: 12px; color: #06131d; background: linear-gradient(135deg, #73eaff, #64efb8); font: inherit; font-weight: 900; }
+.technician-create-modal > footer button:disabled { opacity: .45; }
+
+@media (max-width: 620px) {
+  .technician-create-backdrop { align-items: end; padding: 0; }
+  .technician-create-modal { width: 100%; max-height: 100dvh; height: 100dvh; border: 0; border-radius: 0; }
+  .technician-create-modal > header { padding: calc(14px + env(safe-area-inset-top)) 14px 12px; }
+  .technician-create-modal > main { grid-template-columns: 1fr; padding: 14px; scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .technician-create-modal label.wide,
+  .technician-create-error { grid-column: auto; }
+  .technician-create-modal > footer { display: grid; grid-template-columns: 1fr; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .technician-create-modal > footer button { width: 100%; }
+}

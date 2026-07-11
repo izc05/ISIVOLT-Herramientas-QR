@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Database, LoaderCircle, RefreshCcw, ShieldCheck } from 'lucide-react';
 import AppStable from './AppStable';
 import BootErrorBoundary from './BootErrorBoundary';
+import MobileToolsMenu from './components/MobileToolsMenu';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
 import CommissioningCenter from './production/CommissioningCenter';
 import RectificationCenter from './security/RectificationCenter';
 import SecurityController from './security/SecurityController';
 import { recordAppError } from './services/errorLog';
 import { hydrateAppDataFromNative } from './services/storage';
+import { installModalStateObserver } from './ui/modalState';
 
 type BootState = 'loading' | 'ready' | 'degraded';
 
@@ -20,6 +22,8 @@ export default function AppRoot() {
     window.sessionStorage.getItem('isivolt:skip-native-hydration') === '1' ? 'degraded' : 'loading',
   );
   const [bootMessage, setBootMessage] = useState('Preparando la base de datos local…');
+
+  useEffect(() => installModalStateObserver(), []);
 
   useEffect(() => {
     if (bootState !== 'loading') return;
@@ -84,6 +88,7 @@ export default function AppRoot() {
           <MaintenanceBoard onSaved={() => window.dispatchEvent(new CustomEvent('isivolt:management-refresh'))} />
           <RectificationCenter />
           <CommissioningCenter />
+          <MobileToolsMenu />
           {bootState === 'ready' && (
             <span className="boot-ready-marker" aria-label="Arranque protegido completado"><ShieldCheck size={14} /></span>
           )}

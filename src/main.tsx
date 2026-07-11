@@ -13,6 +13,7 @@ import './tool-experience.css';
 import './tool-detail-mobile.css';
 import './tool-detail-compat.css';
 import './stability.css';
+import './components/mobile-tools-menu.css';
 import './features/management/management.css';
 import './features/management/management-files.css';
 import './features/management/maintenance-board.css';

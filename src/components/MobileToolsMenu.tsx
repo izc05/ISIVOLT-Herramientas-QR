@@ -24,8 +24,15 @@ export default function MobileToolsMenu() {
 
   useEffect(() => {
     const close = () => setOpen(false);
+    const closeOnModal = (event: Event) => {
+      if ((event as CustomEvent<boolean>).detail) setOpen(false);
+    };
     window.addEventListener('isivolt:security-session', close);
-    return () => window.removeEventListener('isivolt:security-session', close);
+    window.addEventListener('isivolt:modal-state', closeOnModal);
+    return () => {
+      window.removeEventListener('isivolt:security-session', close);
+      window.removeEventListener('isivolt:modal-state', closeOnModal);
+    };
   }, []);
 
   const launch = (selector: string) => {

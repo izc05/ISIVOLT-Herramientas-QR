@@ -60,8 +60,8 @@ jobs:
       - name: Crear Android temporal
         run: npx cap add android
 
-      - name: Generar iconos y splash
-        run: npx --yes @capacitor/assets generate --android
+      - name: Conservar recursos Android generados por Capacitor
+        run: echo "Se usan los recursos launcher y splash del proyecto Android temporal."
 
       - name: Aplicar configuración nativa
         run: npm run android:configure

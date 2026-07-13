@@ -6,7 +6,8 @@
   .management-files-launcher,
   .maintenance-board-launcher,
   .rectification-launcher,
-  .commissioning-launcher {
+  .commissioning-launcher,
+  .qr-label-launcher {
     display: none !important;
   }
 

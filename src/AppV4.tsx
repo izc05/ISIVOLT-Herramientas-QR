@@ -24,6 +24,7 @@ import type {
   Tool,
   ToolStatus,
 } from './domain/types';
+import { formatOperationDateTime, getDeliveryAlert } from './features/inventory/inventoryOperations';
 import TechnicianSelectorPanel from './features/technicians/TechnicianSelectorPanel';
 import { assertPermission } from './security/permissions';
 import { getCurrentOperatorName } from './security/session';
@@ -77,6 +78,7 @@ export default function AppV4() {
   const [scanning, setScanning] = useState(false);
   const [scannerMessage, setScannerMessage] = useState('Selecciona el tipo de operación y comienza a escanear.');
   const [feedback, setFeedback] = useState<NativeFeedback>(null);
+  const [scanAlert, setScanAlert] = useState<{ tool: Tool; title: string; detail: string } | null>(null);
 
   const resetWorkflow = (nextMode: OperationMode = 'delivery') => {
     setSessionData(loadAppData());
@@ -87,6 +89,7 @@ export default function AppV4() {
     setNotes('');
     setScanning(false);
     setSelectorOpen(false);
+    setScanAlert(null);
     setScannerMessage(
       nextMode === 'delivery'
         ? 'Primero identifica al técnico responsable.'
@@ -101,6 +104,7 @@ export default function AppV4() {
 
   const closeWorkflow = () => {
     setSelectorOpen(false);
+    setScanAlert(null);
     setWorkflowOpen(false);
   };
 
@@ -194,6 +198,17 @@ export default function AppV4() {
     if (!foundTool) {
       setScannerMessage(`No existe ninguna herramienta registrada con el código ${payload.code}.`);
       return;
+    }
+
+    if (mode === 'delivery') {
+      const deliveryAlert = getDeliveryAlert(foundTool, technician?.id);
+      if (deliveryAlert) {
+        setScanAlert({ tool: foundTool, title: deliveryAlert.title, detail: deliveryAlert.detail });
+        setScannerMessage(`${deliveryAlert.title}: ${deliveryAlert.detail}`);
+        setFeedback({ title: deliveryAlert.title, detail: deliveryAlert.detail, tone: 'error' });
+        navigator.vibrate?.([180, 70, 180, 70, 220]);
+        return;
+      }
     }
 
     const requiredStatus: ToolStatus = mode === 'delivery' ? 'available' : 'loaned';
@@ -297,7 +312,7 @@ export default function AppV4() {
     setAppRevision((value) => value + 1);
     setFeedback({
       title: mode === 'delivery' ? 'Entrega QR completada' : 'Devolución QR completada',
-      detail: `${movementBatch.length} movimiento${movementBatch.length === 1 ? '' : 's'} guardado${movementBatch.length === 1 ? '' : 's'} en el dispositivo.`,
+      detail: `${movementBatch.length} movimiento${movementBatch.length === 1 ? '' : 's'} guardado${movementBatch.length === 1 ? '' : 's'} · ${formatOperationDateTime(occurredAt)}.`,
       tone: condition === 'damaged' ? 'warning' : 'success',
     });
   };
@@ -408,9 +423,23 @@ export default function AppV4() {
           </motion.div>
         )}
 
+        {scanAlert && (
+          <motion.div className="native-tool-alert-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setScanAlert(null)}>
+            <motion.section className="native-tool-alert" initial={{ opacity: 0, y: 30, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: 0.97 }} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Aviso de herramienta bloqueada">
+              <span className="native-tool-alert-icon"><AlertTriangle size={34} /></span>
+              <small>Entrega bloqueada</small>
+              <h2>{scanAlert.title}</h2>
+              <strong>{scanAlert.tool.code} · {scanAlert.tool.name}</strong>
+              <p>{scanAlert.detail}</p>
+              {scanAlert.tool.notes && <blockquote>{scanAlert.tool.notes}</blockquote>}
+              <button type="button" onClick={() => setScanAlert(null)}><X size={18} /> Entendido</button>
+            </motion.section>
+          </motion.div>
+        )}
+
         {feedback && (
           <motion.div className={`native-feedback native-feedback-${feedback.tone}`} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}>
-            <Check size={21} /><span><strong>{feedback.title}</strong><small>{feedback.detail}</small></span>
+            {feedback.tone === 'success' ? <Check size={21} /> : <AlertTriangle size={21} />}<span><strong>{feedback.title}</strong><small>{feedback.detail}</small></span>
           </motion.div>
         )}
       </AnimatePresence>

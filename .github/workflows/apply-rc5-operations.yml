@@ -1,0 +1,39 @@
+name: Aplicar operaciones rc.5
+
+on:
+  push:
+    branches:
+      - feature/inventory-operations-1.0.0-rc.5
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-rc5-operations-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, 'chore: aplicar operaciones rc.5') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+        with:
+          ref: feature/inventory-operations-1.0.0-rc.5
+          fetch-depth: 0
+
+      - name: Aplicar integración
+        run: python3 scripts/apply_rc5_operations.py
+
+      - name: Confirmar cambios
+        run: |
+          if git diff --quiet; then
+            echo "La integración ya estaba aplicada."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/AppV4.tsx
+          git commit -m "chore: aplicar operaciones rc.5"
+          git push origin HEAD:feature/inventory-operations-1.0.0-rc.5

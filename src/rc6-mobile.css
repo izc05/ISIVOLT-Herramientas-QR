@@ -1,0 +1,271 @@
+.tool-selector-panel {
+  display: grid;
+  min-height: 0;
+  gap: 12px;
+}
+
+.tool-selector-panel > header,
+.tool-selector-panel > header > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tool-selector-panel > header button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(107, 231, 255, .18);
+  border-radius: 13px;
+  color: #e8fbff;
+  background: rgba(255,255,255,.035);
+}
+
+.tool-selector-panel > header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.tool-selector-panel > header small,
+.tool-selector-copy small {
+  color: rgba(223, 244, 255, .56);
+}
+
+.tool-selector-panel > header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.tool-selector-search,
+.tool-selector-category {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 1px solid rgba(83, 225, 255, .14);
+  border-radius: 14px;
+  color: #72eaff;
+  background: rgba(3, 14, 29, .72);
+}
+
+.tool-selector-search input,
+.tool-selector-category select {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #f2fbff;
+  background: transparent;
+  font: inherit;
+}
+
+.tool-selector-category select option {
+  color: #fff;
+  background: #071526;
+}
+
+.tool-selector-results {
+  min-height: 180px;
+  max-height: 46dvh;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  padding-right: 2px;
+  overscroll-behavior: contain;
+}
+
+.tool-selector-results > button {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 66px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+  color: #effbff;
+  background: rgba(255,255,255,.028);
+  text-align: left;
+}
+
+.tool-selector-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: #69eaff;
+  background: rgba(48, 196, 238, .1);
+}
+
+.tool-selector-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tool-selector-copy strong,
+.tool-selector-copy small {
+  overflow-wrap: anywhere;
+}
+
+.tool-selector-empty {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  min-height: 190px;
+  color: rgba(226, 244, 255, .62);
+  text-align: center;
+}
+
+.native-manual-tool {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 68px;
+  padding: 12px 16px;
+  border: 1px solid rgba(135, 93, 255, .38);
+  border-radius: 18px;
+  color: #f5f1ff;
+  background: linear-gradient(135deg, rgba(51, 30, 117, .5), rgba(12, 30, 63, .72));
+  text-align: left;
+}
+
+.native-manual-tool span {
+  display: grid;
+  gap: 3px;
+}
+
+.native-manual-tool small {
+  color: rgba(226, 240, 255, .57);
+}
+
+.qr-label-selection-bar {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.qr-label-selection-bar button,
+.qr-label-card-actions button {
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid rgba(76, 224, 255, .17);
+  border-radius: 11px;
+  color: #e8fbff;
+  background: rgba(255,255,255,.035);
+  font: inherit;
+}
+
+.qr-label-card {
+  position: relative;
+}
+
+.qr-label-card-select {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  accent-color: #25d9d0;
+}
+
+.qr-label-card-actions {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+}
+
+.qr-label-card-actions button {
+  min-height: 34px;
+  padding: 5px 8px;
+  color: #06202a;
+  background: #7cebdc;
+  font-size: .72rem;
+  font-weight: 850;
+}
+
+.qr-print-status {
+  color: rgba(224, 246, 255, .65);
+  font-size: .76rem;
+}
+
+@media (max-width: 820px) {
+  :root {
+    --android-nav-clearance: 54px;
+  }
+
+  .bottom-nav,
+  .core-bottom-nav,
+  .game-bottom-nav {
+    bottom: max(var(--android-nav-clearance), env(safe-area-inset-bottom)) !important;
+  }
+
+  .mobile-tools-menu {
+    bottom: calc(max(var(--android-nav-clearance), env(safe-area-inset-bottom)) + 82px) !important;
+  }
+
+  .app-shell,
+  .core-app-shell,
+  .game-app-shell,
+  .page-section {
+    padding-bottom: calc(160px + max(var(--android-nav-clearance), env(safe-area-inset-bottom))) !important;
+  }
+
+  .native-scan-console,
+  .qr-label-center,
+  .technician-selector-panel,
+  .tool-selector-panel {
+    padding-bottom: calc(36px + max(var(--android-nav-clearance), env(safe-area-inset-bottom))) !important;
+  }
+
+  .native-scan-footer {
+    position: sticky;
+    bottom: max(var(--android-nav-clearance), env(safe-area-inset-bottom));
+    z-index: 5;
+  }
+
+  .qr-label-center {
+    max-height: calc(100dvh - max(var(--android-nav-clearance), env(safe-area-inset-bottom))) !important;
+  }
+
+  .qr-label-sheet {
+    padding-bottom: calc(80px + max(var(--android-nav-clearance), env(safe-area-inset-bottom))) !important;
+  }
+
+  .qr-label-selection-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .qr-label-selection-bar .qr-print-status {
+    grid-column: 1 / -1;
+  }
+
+  .qr-label-card-actions {
+    position: static;
+    grid-column: 2;
+    justify-self: end;
+    margin-top: 8px;
+  }
+
+  .tool-selector-results {
+    max-height: none;
+    min-height: 240px;
+  }
+}
+
+@media print {
+  .qr-label-card-select,
+  .qr-label-card-actions,
+  .qr-label-selection-bar {
+    display: none !important;
+  }
+}

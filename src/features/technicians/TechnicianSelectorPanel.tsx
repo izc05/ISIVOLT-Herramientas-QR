@@ -25,6 +25,10 @@ export default function TechnicianSelectorPanel({ technicians, tools, onSelect, 
     [technicians, query, category],
   );
 
+  const categoryCount = (item: string) => item === 'Todas'
+    ? technicians.filter((technician) => technician.active).length
+    : technicians.filter((technician) => technician.active && technician.specialty === item).length;
+
   return (
     <section className="technician-selector-panel" aria-label="Seleccionar técnico manualmente">
       <header>
@@ -41,6 +45,19 @@ export default function TechnicianSelectorPanel({ technicians, tools, onSelect, 
           autoFocus
         />
       </label>
+
+      <div className="technician-selector-categories" aria-label="Filtrar técnicos por categoría">
+        {['Todas', ...categories].map((item) => (
+          <button
+            type="button"
+            key={item}
+            className={category === item ? 'active' : ''}
+            onClick={() => setCategory(item)}
+          >
+            {item} · {categoryCount(item)}
+          </button>
+        ))}
+      </div>
 
       <label className="technician-selector-category">
         <Users size={18} />

@@ -26,6 +26,8 @@ import './production/commissioning.css';
 import './boot.css';
 import './mobile-optimization.css';
 import './mobile-optimization-rc4.css';
+import './rc6-mobile.css';
+import './qr-print-rc6.css';
 
 const root = document.getElementById('root');
 

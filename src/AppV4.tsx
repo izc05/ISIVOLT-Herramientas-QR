@@ -25,6 +25,7 @@ import type {
   ToolStatus,
 } from './domain/types';
 import { formatOperationDateTime, getDeliveryAlert } from './features/inventory/inventoryOperations';
+import ToolSelectorPanel from './features/inventory/ToolSelectorPanel';
 import TechnicianSelectorPanel from './features/technicians/TechnicianSelectorPanel';
 import { assertPermission } from './security/permissions';
 import { getCurrentOperatorName } from './security/session';
@@ -69,6 +70,7 @@ export default function AppV4() {
   const [appRevision, setAppRevision] = useState(0);
   const [workflowOpen, setWorkflowOpen] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [toolSelectorOpen, setToolSelectorOpen] = useState(false);
   const [mode, setMode] = useState<OperationMode>('delivery');
   const [sessionData, setSessionData] = useState<AppData>(() => loadAppData());
   const [technician, setTechnician] = useState<Technician | null>(null);
@@ -89,11 +91,12 @@ export default function AppV4() {
     setNotes('');
     setScanning(false);
     setSelectorOpen(false);
+    setToolSelectorOpen(false);
     setScanAlert(null);
     setScannerMessage(
       nextMode === 'delivery'
         ? 'Primero identifica al técnico responsable.'
-        : 'Escanea la primera herramienta que regresa al almacén.',
+        : 'Escanea o busca la primera herramienta que regresa al almacén.',
     );
   };
 
@@ -104,6 +107,7 @@ export default function AppV4() {
 
   const closeWorkflow = () => {
     setSelectorOpen(false);
+    setToolSelectorOpen(false);
     setScanAlert(null);
     setWorkflowOpen(false);
   };
@@ -142,9 +146,51 @@ export default function AppV4() {
     }
     setTechnician(foundTechnician);
     setSelectorOpen(false);
-    setScannerMessage(`${foundTechnician.name} identificado. Escanea ahora una herramienta disponible.`);
+    setToolSelectorOpen(false);
+    setScannerMessage(`${foundTechnician.name} identificado. Escanea o busca ahora una herramienta disponible.`);
     navigator.vibrate?.([60, 35, 80]);
     return true;
+  };
+
+  const addToolToOperation = (foundTool: Tool) => {
+    if (mode === 'delivery') {
+      const deliveryAlert = getDeliveryAlert(foundTool, technician?.id);
+      if (deliveryAlert) {
+        setScanAlert({ tool: foundTool, title: deliveryAlert.title, detail: deliveryAlert.detail });
+        setScannerMessage(`${deliveryAlert.title}: ${deliveryAlert.detail}`);
+        setFeedback({ title: deliveryAlert.title, detail: deliveryAlert.detail, tone: 'error' });
+        navigator.vibrate?.([180, 70, 180, 70, 220]);
+        return false;
+      }
+    }
+
+    const requiredStatus: ToolStatus = mode === 'delivery' ? 'available' : 'loaned';
+    if (foundTool.status !== requiredStatus) {
+      setScannerMessage(
+        `${foundTool.name} está ${toolStatusLabel[foundTool.status].toLowerCase()} y no puede usarse en esta operación.`,
+      );
+      navigator.vibrate?.([120, 60, 120]);
+      return false;
+    }
+
+    if (tools.some((tool) => tool.id === foundTool.id)) {
+      setScannerMessage(`${foundTool.name} ya estaba añadida a esta operación.`);
+      return false;
+    }
+
+    setTools((current) => [...current, foundTool]);
+    setScannerMessage(`${foundTool.name} añadida. Puedes incorporar otra o confirmar la operación.`);
+    navigator.vibrate?.([60, 35, 80]);
+    return true;
+  };
+
+  const selectToolManually = (toolId: string) => {
+    const foundTool = sessionData.tools.find((item) => item.id === toolId);
+    if (!foundTool) {
+      setScannerMessage('La herramienta seleccionada ya no existe en el inventario.');
+      return false;
+    }
+    return addToolToOperation(foundTool);
   };
 
   const handleScan = async () => {
@@ -156,7 +202,7 @@ export default function AppV4() {
     setScanning(false);
 
     if (result.status === 'cancelled') {
-      setScannerMessage('Lectura cancelada. Puedes volver a intentarlo o seleccionar el técnico manualmente.');
+      setScannerMessage('Lectura cancelada. Puedes volver a intentarlo o usar la selección manual.');
       return;
     }
 
@@ -200,34 +246,7 @@ export default function AppV4() {
       return;
     }
 
-    if (mode === 'delivery') {
-      const deliveryAlert = getDeliveryAlert(foundTool, technician?.id);
-      if (deliveryAlert) {
-        setScanAlert({ tool: foundTool, title: deliveryAlert.title, detail: deliveryAlert.detail });
-        setScannerMessage(`${deliveryAlert.title}: ${deliveryAlert.detail}`);
-        setFeedback({ title: deliveryAlert.title, detail: deliveryAlert.detail, tone: 'error' });
-        navigator.vibrate?.([180, 70, 180, 70, 220]);
-        return;
-      }
-    }
-
-    const requiredStatus: ToolStatus = mode === 'delivery' ? 'available' : 'loaned';
-    if (foundTool.status !== requiredStatus) {
-      setScannerMessage(
-        `${foundTool.name} está ${toolStatusLabel[foundTool.status].toLowerCase()} y no puede usarse en esta operación.`,
-      );
-      navigator.vibrate?.([120, 60, 120]);
-      return;
-    }
-
-    if (tools.some((tool) => tool.id === foundTool.id)) {
-      setScannerMessage(`${foundTool.name} ya estaba añadida a esta operación.`);
-      return;
-    }
-
-    setTools((current) => [...current, foundTool]);
-    setScannerMessage(`${foundTool.name} añadida. Puedes escanear otra o confirmar la operación.`);
-    navigator.vibrate?.([60, 35, 80]);
+    addToolToOperation(foundTool);
   };
 
   const removeTool = (toolId: string) => {
@@ -317,7 +336,9 @@ export default function AppV4() {
     });
   };
 
-  const canConfirm = tools.length > 0 && (mode === 'return' || Boolean(technician));
+  const canConfirm = tools.length > 0
+    && (mode === 'return' || Boolean(technician))
+    && (mode !== 'return' || condition === 'ok' || notes.trim().length > 0);
 
   return (
     <>
@@ -350,6 +371,16 @@ export default function AppV4() {
                   tools={sessionData.tools}
                   onSelect={selectTechnician}
                   onBack={() => setSelectorOpen(false)}
+                />
+              ) : toolSelectorOpen ? (
+                <ToolSelectorPanel
+                  tools={sessionData.tools}
+                  technicians={sessionData.technicians}
+                  mode={mode}
+                  technicianId={technician?.id}
+                  selectedIds={tools.map((tool) => tool.id)}
+                  onSelect={selectToolManually}
+                  onBack={() => setToolSelectorOpen(false)}
                 />
               ) : (
                 <>
@@ -385,6 +416,13 @@ export default function AppV4() {
                     </button>
                   )}
 
+                  {(mode === 'return' || Boolean(technician)) && (
+                    <button className="native-manual-tool" type="button" onClick={() => setToolSelectorOpen(true)}>
+                      <ListFilter size={19} />
+                      <span><strong>Buscar herramienta manualmente</strong><small>Nombre, código, categoría, ubicación o marca</small></span>
+                    </button>
+                  )}
+
                   <div className="native-scanner-message">
                     {scannerMessage.includes('no ') || scannerMessage.includes('No ') || scannerMessage.includes('esperaba')
                       ? <AlertTriangle size={17} /> : <Zap size={17} />}
@@ -411,7 +449,10 @@ export default function AppV4() {
                     </div>
                   )}
 
-                  <label className="native-notes-field">Observaciones<textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Accesorios, estado o incidencia…" /></label>
+                  <label className="native-notes-field">
+                    {mode === 'return' && condition !== 'ok' ? 'Observaciones obligatorias' : 'Observaciones'}
+                    <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Accesorios, estado o incidencia…" />
+                  </label>
 
                   <footer className="native-scan-footer">
                     <span>{tools.length} activo{tools.length === 1 ? '' : 's'} preparado{tools.length === 1 ? '' : 's'}</span>

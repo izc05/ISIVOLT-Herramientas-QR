@@ -3,6 +3,7 @@ import { Database, LoaderCircle, RefreshCcw, ShieldCheck } from 'lucide-react';
 import AppStable from './AppStable';
 import BootErrorBoundary from './BootErrorBoundary';
 import MobileToolsMenu from './components/MobileToolsMenu';
+import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
 import CommissioningCenter from './production/CommissioningCenter';
 import RectificationCenter from './security/RectificationCenter';
@@ -85,6 +86,7 @@ export default function AppRoot() {
             </aside>
           )}
           <AppStable />
+          <InventoryOperationalEnhancer />
           <MaintenanceBoard onSaved={() => window.dispatchEvent(new CustomEvent('isivolt:management-refresh'))} />
           <RectificationCenter />
           <CommissioningCenter />

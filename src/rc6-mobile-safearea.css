@@ -1,0 +1,185 @@
+:root {
+  --android-bottom-clearance: max(34px, env(safe-area-inset-bottom));
+}
+
+.qr-label-print-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qr-select-all,
+.qr-label-print-one {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 12px;
+  color: #dff8ff;
+  background: rgba(255,255,255,.035);
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.qr-print-button:disabled,
+.qr-label-print-one:disabled {
+  opacity: .45;
+}
+
+.qr-print-status {
+  flex-basis: 100%;
+  margin: 0;
+  color: #9defff;
+  font-size: .7rem;
+  line-height: 1.35;
+}
+
+.qr-label-card {
+  position: relative;
+  padding-bottom: 48px;
+  transition: border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+
+.qr-label-card:not(.selected) {
+  opacity: .68;
+}
+
+.qr-label-card.selected {
+  border-color: rgba(34, 180, 224, .65);
+  box-shadow: 0 0 0 2px rgba(38, 206, 244, .12), 0 12px 30px rgba(0,0,0,.2);
+}
+
+.qr-label-select {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(6, 48, 76, .16);
+  border-radius: 10px;
+  color: #0d75b7;
+  background: rgba(255,255,255,.92);
+}
+
+.qr-label-print-one {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  min-height: 32px;
+  color: #fff;
+  background: #0a2b46;
+}
+
+.technician-selector-category {
+  position: relative;
+}
+
+.technician-selector-category::before {
+  content: 'Categoría / especialidad';
+  position: absolute;
+  left: 48px;
+  top: -8px;
+  padding: 0 5px;
+  color: #77eaff;
+  background: #071426;
+  font-size: .58rem;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 820px) {
+  html,
+  body,
+  #root {
+    min-height: 100dvh;
+  }
+
+  .app-shell,
+  .core-app-shell,
+  .game-app-shell {
+    padding-bottom: calc(150px + var(--android-bottom-clearance)) !important;
+  }
+
+  .bottom-nav,
+  .core-bottom-nav,
+  .game-bottom-nav {
+    bottom: var(--android-bottom-clearance) !important;
+  }
+
+  .mobile-tools-menu {
+    bottom: calc(98px + var(--android-bottom-clearance)) !important;
+  }
+
+  .native-scan-backdrop,
+  .qr-label-backdrop,
+  .modal-backdrop,
+  .management-backdrop,
+  .maintenance-board-backdrop,
+  .rectification-backdrop,
+  .commissioning-backdrop {
+    padding-bottom: var(--android-bottom-clearance) !important;
+  }
+
+  .native-scan-console,
+  .qr-label-center,
+  .core-modal,
+  .management-center,
+  .maintenance-board,
+  .rectification-center,
+  .commissioning-center {
+    max-height: calc(100dvh - var(--android-bottom-clearance) - 10px) !important;
+  }
+
+  .native-scan-footer {
+    position: sticky;
+    z-index: 8;
+    bottom: 0;
+    margin: 0 -2px;
+    padding-top: 12px !important;
+    padding-bottom: calc(12px + var(--android-bottom-clearance)) !important;
+    background: linear-gradient(180deg, rgba(5,16,31,.84), #05101f 34%);
+  }
+
+  .qr-label-center {
+    padding-bottom: calc(18px + var(--android-bottom-clearance)) !important;
+  }
+
+  .qr-label-toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .qr-label-print-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .qr-select-all,
+  .qr-print-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .qr-label-card {
+    padding-bottom: 50px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  :root {
+    --android-bottom-clearance: max(40px, env(safe-area-inset-bottom));
+  }
+
+  .qr-label-tabs {
+    grid-template-columns: 1fr !important;
+  }
+}

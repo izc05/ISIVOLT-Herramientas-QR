@@ -1,0 +1,47 @@
+name: Aplicar integración rc.6
+
+on:
+  push:
+    branches:
+      - feature/rc6-manual-tools-print-safearea
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-rc6-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, 'chore: aplicar integración rc.6') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+        with:
+          ref: feature/rc6-manual-tools-print-safearea
+          fetch-depth: 0
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Aplicar integración
+        run: python3 scripts/apply_rc6.py
+
+      - name: Actualizar package-lock
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Confirmar cambios
+        run: |
+          if git diff --quiet; then
+            echo "La integración ya estaba aplicada."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/AppV4.tsx src/main.tsx src/config/app.ts package.json package-lock.json .github/workflows/production-readiness.yml
+          git commit -m "chore: aplicar integración rc.6"
+          git push origin HEAD:feature/rc6-manual-tools-print-safearea

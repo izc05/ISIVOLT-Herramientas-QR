@@ -16,6 +16,7 @@ import './stability.css';
 import './components/mobile-tools-menu.css';
 import './features/inventory/inventory-operational.css';
 import './features/inventory/tool-scan-alert.css';
+import './features/inventory/tool-selector.css';
 import './features/management/management.css';
 import './features/management/management-files.css';
 import './features/management/maintenance-board.css';
@@ -26,6 +27,7 @@ import './production/commissioning.css';
 import './boot.css';
 import './mobile-optimization.css';
 import './mobile-optimization-rc4.css';
+import './rc6-mobile-safearea.css';
 
 const root = document.getElementById('root');
 

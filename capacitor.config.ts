@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.isivolt.herramientasqr.rc9',
-  appName: 'ISIVOLT Herramientas QR RC9',
+  appId: 'com.isivolt.herramientasqr.rc10',
+  appName: 'ISIVOLT Herramientas QR RC10',
   webDir: 'dist',
   android: {
     allowMixedContent: false,

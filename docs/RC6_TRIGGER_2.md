@@ -1,0 +1,1 @@
+Relanzamiento del diagnóstico del parche rc.6.

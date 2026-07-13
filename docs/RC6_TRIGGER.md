@@ -1,0 +1,1 @@
+Disparo de integración automática para la candidata 1.0.0-rc.6.

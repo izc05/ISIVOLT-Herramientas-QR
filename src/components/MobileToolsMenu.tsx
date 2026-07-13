@@ -6,6 +6,7 @@ import {
   Hammer,
   History,
   SlidersHorizontal,
+  Tags,
   TestTube2,
   X,
 } from 'lucide-react';
@@ -13,6 +14,7 @@ import {
 const actions = [
   { label: 'Gestión', detail: 'Herramientas y técnicos', selector: '.management-launcher', Icon: SlidersHorizontal },
   { label: 'Informes', detail: 'Excel y copias', selector: '.report-center-launcher', Icon: FileSpreadsheet },
+  { label: 'Etiquetas QR', detail: 'Imprimir códigos', selector: '.qr-label-launcher', Icon: Tags },
   { label: 'Archivos', detail: 'Informe de gestión', selector: '.management-files-launcher', Icon: Files },
   { label: 'Mantenimiento', detail: 'Actuaciones técnicas', selector: '.maintenance-board-launcher', Icon: Hammer },
   { label: 'Rectificaciones', detail: 'Corregir movimientos', selector: '.rectification-launcher', Icon: History },

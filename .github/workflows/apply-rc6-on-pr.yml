@@ -1,0 +1,32 @@
+name: Aplicar parche rc.6 en PR
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ github.head_ref == 'feature/rc6-mobile-operations-printing' && !contains(github.event.pull_request.head.label, 'fork:') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/rc6-mobile-operations-printing
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: python3 scripts/apply_rc6_mobile_operations.py
+      - name: Confirmar integración
+        run: |
+          if git diff --quiet; then
+            echo "Integración ya aplicada"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/AppV4.tsx src/features/technicians/TechnicianSelectorPanel.tsx src/main.tsx src/config/app.ts package.json package-lock.json .github/workflows/production-readiness.yml
+          git commit -m "chore: aplicar integración rc.6"
+          git push origin HEAD:feature/rc6-mobile-operations-printing

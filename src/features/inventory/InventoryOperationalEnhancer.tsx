@@ -66,27 +66,36 @@ export default function InventoryOperationalEnhancer() {
         card.querySelector('.tool-details')?.after(meta);
       }
       const times = buildToolMovementTimes(data, tool.id);
-      meta.innerHTML = `
+      const nextHtml = `
         <span><small>Última salida</small><strong>${formatOperationDateTime(times.checkout?.occurredAt)}</strong></span>
         <span><small>Última entrada</small><strong>${formatOperationDateTime(times.checkin?.occurredAt)}</strong></span>
       `;
+      if (meta.innerHTML !== nextHtml) meta.innerHTML = nextHtml;
     });
   }, [data, toolByCode, visibleIds]);
 
   useEffect(() => {
+    let frame = 0;
     const refresh = () => {
-      setHost(findInventoryHost());
-      applyInventoryCards();
-      document.querySelectorAll<HTMLElement>('.stat-card').forEach((card) => {
-        card.classList.add('stat-card-actionable');
-        card.setAttribute('role', 'button');
-        card.tabIndex = 0;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const nextHost = findInventoryHost();
+        setHost((current) => current === nextHost ? current : nextHost);
+        applyInventoryCards();
+        document.querySelectorAll<HTMLElement>('.stat-card').forEach((card) => {
+          card.classList.add('stat-card-actionable');
+          card.setAttribute('role', 'button');
+          card.tabIndex = 0;
+        });
       });
     };
     refresh();
     const observer = new MutationObserver(refresh);
     observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+    };
   }, [applyInventoryCards]);
 
   useEffect(() => {

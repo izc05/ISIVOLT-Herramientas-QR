@@ -3,10 +3,11 @@ import { DATABASE_MIGRATIONS, MOVEMENT_IMMUTABILITY_TRIGGERS } from './schema';
 
 const schema = DATABASE_MIGRATIONS.map((migration) => migration.statements).join('\n');
 
-describe('SQLite schema 0.8', () => {
+describe('SQLite schema 0.9 NFC', () => {
   it('mantiene las migraciones ordenadas y versionadas', () => {
-    expect(DATABASE_MIGRATIONS.map((migration) => migration.version)).toEqual([1, 2]);
+    expect(DATABASE_MIGRATIONS.map((migration) => migration.version)).toEqual([1, 2, 3]);
     expect(DATABASE_MIGRATIONS[1].name).toBe('asset_management_and_maintenance');
+    expect(DATABASE_MIGRATIONS[2].name).toBe('nfc_identification');
   });
 
   it('crea las entidades principales del inventario', () => {
@@ -30,6 +31,13 @@ describe('SQLite schema 0.8', () => {
   it('impone códigos y QR únicos', () => {
     expect(schema).toMatch(/code TEXT NOT NULL COLLATE NOCASE UNIQUE/);
     expect(schema).toMatch(/qr_code TEXT NOT NULL COLLATE NOCASE UNIQUE/);
+  });
+
+  it('añade UID NFC único para técnicos y herramientas', () => {
+    expect(schema).toContain('ALTER TABLE technicians ADD COLUMN nfc_uid TEXT');
+    expect(schema).toContain('ALTER TABLE tools ADD COLUMN nfc_uid TEXT');
+    expect(schema).toContain('idx_technicians_nfc_uid');
+    expect(schema).toContain('idx_tools_nfc_uid');
   });
 
   it('protege el estado de préstamo mediante CHECK', () => {

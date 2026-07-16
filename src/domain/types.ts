@@ -25,6 +25,7 @@ export type Tool = {
   id: string;
   code: string;
   qrCode: string;
+  nfcUid?: string;
   name: string;
   category: string;
   brand?: string;
@@ -55,6 +56,7 @@ export type Tool = {
 export type Technician = {
   id: string;
   code: string;
+  nfcUid?: string;
   name: string;
   specialty: string;
   role?: string;

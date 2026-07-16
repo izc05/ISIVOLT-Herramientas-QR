@@ -2,9 +2,10 @@ import { Capacitor } from '@capacitor/core';
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
 import { Preferences } from '@capacitor/preferences';
 import { APP_VERSION, DATABASE_SCHEMA_VERSION } from '../config/app';
-import { getNativeDatabaseHealth } from '../services/nativeDatabase';
-import { loadAppData } from '../services/storage';
 import { getSecurityUsersSync } from '../security/store';
+import { getNativeDatabaseHealth } from '../services/nativeDatabase';
+import { getNfcAvailability, normalizeNfcUid } from '../services/nfcScanner';
+import { loadAppData } from '../services/storage';
 
 const STORAGE_KEY = 'isivolt-commissioning-v1';
 
@@ -40,8 +41,11 @@ export const DEFAULT_MANUAL_CHECKS: CommissioningManualCheck[] = [
   { id: 'camera-permission', title: 'Permiso y apertura de cámara', detail: 'Aceptar el permiso y abrir el lector QR.', status: 'pending' },
   { id: 'technician-qr', title: 'Escaneo QR de técnico', detail: 'Identificar un técnico real mediante su etiqueta.', status: 'pending' },
   { id: 'tool-qr', title: 'Escaneo QR de herramienta', detail: 'Leer una herramienta real e identificarla correctamente.', status: 'pending' },
-  { id: 'manual-code', title: 'Entrada manual de respaldo', detail: 'Completar una operación sin utilizar la cámara.', status: 'pending' },
-  { id: 'checkout-return', title: 'Entrega y devolución completas', detail: 'Registrar una salida y su posterior entrada.', status: 'pending' },
+  { id: 'technician-nfc', title: 'Tarjeta NFC de técnico', detail: 'Leer la misma tarjeta tres veces y confirmar que mantiene el UID.', status: 'pending' },
+  { id: 'tool-nfc', title: 'Pegatina NFC de herramienta', detail: 'Vincular una etiqueta, leerla y localizar la herramienta correcta.', status: 'pending' },
+  { id: 'nfc-bulk-return', title: 'Devolución completa por tarjeta', detail: 'Pasar la tarjeta del técnico, revisar todas sus herramientas y confirmar la entrada.', status: 'pending' },
+  { id: 'manual-code', title: 'Entrada manual de respaldo', detail: 'Completar una operación sin utilizar cámara ni NFC.', status: 'pending' },
+  { id: 'checkout-return', title: 'Entrega y devolución completas', detail: 'Registrar una salida y su posterior entrada mediante QR o NFC.', status: 'pending' },
   { id: 'incident', title: 'Devolución con incidencia', detail: 'Comprobar observación obligatoria y bloqueo de la herramienta.', status: 'pending' },
   { id: 'photo', title: 'Fotografía persistente', detail: 'Hacer foto, cerrar, abrir y comprobarla.', status: 'pending' },
   { id: 'excel', title: 'Excel compartible', detail: 'Generar y abrir el informe operativo y de gestión.', status: 'pending' },
@@ -67,6 +71,11 @@ const readLocal = (): CommissioningState | null => {
   }
 };
 
+const mergeManualChecks = (stored: CommissioningManualCheck[]) => {
+  const byId = new Map(stored.map((item) => [item.id, item]));
+  return DEFAULT_MANUAL_CHECKS.map((item) => byId.get(item.id) ?? item);
+};
+
 export const loadCommissioningState = async (): Promise<CommissioningState> => {
   let stored: string | null = null;
   try {
@@ -78,14 +87,14 @@ export const loadCommissioningState = async (): Promise<CommissioningState> => {
   if (stored) {
     try {
       const parsed = JSON.parse(stored) as CommissioningState;
-      if (Array.isArray(parsed.manual)) return parsed;
+      if (Array.isArray(parsed.manual)) return { ...parsed, appVersion: APP_VERSION, manual: mergeManualChecks(parsed.manual) };
     } catch {
       // Se crea un estado nuevo.
     }
   }
 
   const local = readLocal();
-  if (local) return local;
+  if (local) return { ...local, appVersion: APP_VERSION, manual: mergeManualChecks(local.manual) };
   const timestamp = new Date().toISOString();
   return {
     appVersion: APP_VERSION,
@@ -123,6 +132,8 @@ export const runAutomaticCommissioningChecks = async (): Promise<CommissioningAu
   const native = Capacitor.isNativePlatform();
   let cameraSupported = false;
   let cameraPermission = 'no disponible';
+  let nfcAvailable = false;
+  let nfcEnabled = false;
   let databaseSchema = 0;
   let databaseMatches = false;
 
@@ -132,6 +143,14 @@ export const runAutomaticCommissioningChecks = async (): Promise<CommissioningAu
       cameraPermission = (await BarcodeScanner.checkPermissions()).camera;
     } catch {
       cameraSupported = false;
+    }
+    try {
+      const nfc = await getNfcAvailability();
+      nfcAvailable = nfc.available;
+      nfcEnabled = nfc.enabled;
+    } catch {
+      nfcAvailable = false;
+      nfcEnabled = false;
     }
     try {
       const health = await getNativeDatabaseHealth();
@@ -149,6 +168,11 @@ export const runAutomaticCommissioningChecks = async (): Promise<CommissioningAu
 
   const uniqueCodes = new Set(data.tools.map((tool) => tool.code.trim().toUpperCase())).size === data.tools.length;
   const uniqueQr = new Set(data.tools.map((tool) => tool.qrCode.trim().toUpperCase())).size === data.tools.length;
+  const nfcValues = [
+    ...data.technicians.map((item) => normalizeNfcUid(item.nfcUid)),
+    ...data.tools.map((item) => normalizeNfcUid(item.nfcUid)),
+  ].filter(Boolean);
+  const uniqueNfc = new Set(nfcValues).size === nfcValues.length;
   const hasAdmin = users.some((user) => user.active && user.role === 'admin');
   const brokenMovements = data.movements.filter((movement) => !data.tools.some((tool) => tool.id === movement.toolId)).length;
 
@@ -158,9 +182,11 @@ export const runAutomaticCommissioningChecks = async (): Promise<CommissioningAu
     { id: 'database-schema', title: 'Esquema SQLite', detail: `Detectado v${databaseSchema} · requerido v${DATABASE_SCHEMA_VERSION}`, passed: native && databaseSchema >= DATABASE_SCHEMA_VERSION },
     { id: 'database-counts', title: 'Contadores SQLite', detail: databaseMatches ? 'Coinciden con la aplicación' : 'No coinciden o no disponibles', passed: native && databaseMatches },
     { id: 'camera', title: 'Compatibilidad de cámara QR', detail: `Compatible: ${cameraSupported ? 'sí' : 'no'} · permiso: ${cameraPermission}`, passed: native && cameraSupported },
+    { id: 'nfc', title: 'Compatibilidad NFC', detail: nfcAvailable ? `Lector disponible · ${nfcEnabled ? 'activado' : 'desactivado'}` : 'Sin lector NFC', passed: native && nfcAvailable },
     { id: 'admin', title: 'Administrador activo', detail: hasAdmin ? 'Configurado' : 'No existe', passed: hasAdmin },
     { id: 'codes', title: 'Códigos únicos', detail: uniqueCodes ? 'Sin duplicados' : 'Hay códigos repetidos', passed: uniqueCodes },
     { id: 'qr', title: 'QR únicos', detail: uniqueQr ? 'Sin duplicados' : 'Hay QR repetidos', passed: uniqueQr },
+    { id: 'nfc-unique', title: 'UID NFC únicos', detail: uniqueNfc ? `${nfcValues.length} identificadores vinculados sin duplicados` : 'Hay un UID NFC repetido', passed: uniqueNfc },
     { id: 'history', title: 'Integridad del historial', detail: brokenMovements === 0 ? 'Sin movimientos huérfanos' : `${brokenMovements} movimientos huérfanos`, passed: brokenMovements === 0 },
   ];
 };

@@ -49,6 +49,7 @@ export const toolToSqlValues = (tool: Tool) => [
   tool.nextReviewDate ?? null,
   tool.nextCalibrationDate ?? null,
   tool.maxLoanDays ?? null,
+  tool.nfcUid ?? null,
 ];
 
 export const technicianToSqlValues = (technician: Technician) => [
@@ -61,6 +62,7 @@ export const technicianToSqlValues = (technician: Technician) => [
   technician.extension ?? null,
   technician.previousPhone ?? null,
   technician.email ?? null,
+  technician.nfcUid ?? null,
   technician.active ? 1 : 0,
   technician.createdAt,
   technician.updatedAt,
@@ -127,6 +129,7 @@ const optionalNumber = (value: unknown) => value !== null && value !== undefined
 export const rowToTechnician = (row: Record<string, unknown>): Technician => ({
   id: stringValue(row.id),
   code: stringValue(row.code),
+  nfcUid: optionalString(row.nfc_uid),
   name: stringValue(row.name),
   specialty: stringValue(row.specialty),
   role: optionalString(row.role),
@@ -143,6 +146,7 @@ export const rowToTool = (row: Record<string, unknown>): Tool => ({
   id: stringValue(row.id),
   code: stringValue(row.code),
   qrCode: stringValue(row.qr_code),
+  nfcUid: optionalString(row.nfc_uid),
   name: stringValue(row.name),
   category: stringValue(row.category_name, 'Sin categoría'),
   brand: optionalString(row.brand),

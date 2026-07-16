@@ -226,4 +226,19 @@ CREATE INDEX IF NOT EXISTS idx_maintenance_tool_time ON maintenance_records(tool
 CREATE INDEX IF NOT EXISTS idx_maintenance_status_due ON maintenance_records(status, due_at);
 `,
   },
+  {
+    version: 3,
+    name: 'nfc_identification',
+    statements: `
+ALTER TABLE technicians ADD COLUMN nfc_uid TEXT;
+ALTER TABLE tools ADD COLUMN nfc_uid TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_technicians_nfc_uid
+  ON technicians(nfc_uid COLLATE NOCASE)
+  WHERE nfc_uid IS NOT NULL AND nfc_uid <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tools_nfc_uid
+  ON tools(nfc_uid COLLATE NOCASE)
+  WHERE nfc_uid IS NOT NULL AND nfc_uid <> '';
+`,
+  },
 ];

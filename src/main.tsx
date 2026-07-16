@@ -20,6 +20,7 @@ import './features/management/management.css';
 import './features/management/management-files.css';
 import './features/management/maintenance-board.css';
 import './features/technicians/technician-create.css';
+import './features/nfc/nfc-management.css';
 import './security/security.css';
 import './security/rectification.css';
 import './production/commissioning.css';

@@ -6,6 +6,7 @@ const tool: Tool = {
   id: 'tool-1',
   code: 'HER-001',
   qrCode: 'ISIVOLT:TOOL:HER-001',
+  nfcUid: '04A1B2C3D4E5',
   name: 'Multímetro',
   category: 'Medición eléctrica',
   brand: 'Fluke',
@@ -20,6 +21,7 @@ const tool: Tool = {
 const technician: Technician = {
   id: 'tech-1',
   code: 'TEC-001',
+  nfcUid: 'AABBCCDDEE01',
   name: 'Técnico Uno',
   specialty: 'Electricidad',
   active: true,
@@ -33,13 +35,14 @@ describe('SQLite mappers', () => {
     expect(stableLookupId('cat', 'Medición eléctrica')).not.toBe(stableLookupId('loc', 'Medición eléctrica'));
   });
 
-  it('convierte herramientas a valores SQL con relaciones estables', () => {
+  it('convierte herramientas a valores SQL con relaciones estables y NFC', () => {
     const values = toolToSqlValues(tool);
     expect(values[0]).toBe(tool.id);
     expect(values[4]).toBe(stableLookupId('cat', tool.category));
     expect(values[8]).toBe(stableLookupId('loc', tool.location));
     expect(values[9]).toBe('loaned');
     expect(values[10]).toBe('tech-1');
+    expect(values[28]).toBe(tool.nfcUid);
   });
 
   it('recupera una herramienta desde una fila SQL', () => {
@@ -47,6 +50,7 @@ describe('SQLite mappers', () => {
       id: tool.id,
       code: tool.code,
       qr_code: tool.qrCode,
+      nfc_uid: tool.nfcUid,
       name: tool.name,
       category_name: tool.category,
       brand: tool.brand,
@@ -60,14 +64,16 @@ describe('SQLite mappers', () => {
     expect(recovered).toMatchObject(tool);
   });
 
-  it('convierte y recupera técnicos', () => {
+  it('convierte y recupera técnicos con UID NFC', () => {
     const values = technicianToSqlValues(technician);
     expect(values[0]).toBe('tech-1');
-    expect(values[9]).toBe(1);
+    expect(values[9]).toBe(technician.nfcUid);
+    expect(values[10]).toBe(1);
 
     const recovered = rowToTechnician({
       id: technician.id,
       code: technician.code,
+      nfc_uid: technician.nfcUid,
       name: technician.name,
       specialty: technician.specialty,
       active: 1,

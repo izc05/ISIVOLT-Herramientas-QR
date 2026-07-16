@@ -1,0 +1,60 @@
+name: Diagnóstico RC7 NFC
+
+on:
+  push:
+    branches:
+      - feature/nfc-qr-dual-rc7
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Capturar pruebas
+        shell: bash
+        run: |
+          set +e
+          npm test > test.log 2>&1
+          echo $? > test-exit.txt
+          exit 0
+
+      - name: Capturar SQLite
+        shell: bash
+        run: |
+          set +e
+          python3 scripts/validate_sqlite_schema.py > sqlite.log 2>&1
+          echo $? > sqlite-exit.txt
+          exit 0
+
+      - name: Capturar compilación web
+        shell: bash
+        run: |
+          set +e
+          npm run build > build.log 2>&1
+          echo $? > build-exit.txt
+          exit 0
+
+      - name: Subir diagnóstico
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc7-diagnostics
+          path: |
+            test.log
+            test-exit.txt
+            sqlite.log
+            sqlite-exit.txt
+            build.log
+            build-exit.txt
+          if-no-files-found: error

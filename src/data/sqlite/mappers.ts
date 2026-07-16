@@ -62,10 +62,10 @@ export const technicianToSqlValues = (technician: Technician) => [
   technician.extension ?? null,
   technician.previousPhone ?? null,
   technician.email ?? null,
+  technician.nfcUid ?? null,
   technician.active ? 1 : 0,
   technician.createdAt,
   technician.updatedAt,
-  technician.nfcUid ?? null,
 ];
 
 export const movementToSqlValues = (

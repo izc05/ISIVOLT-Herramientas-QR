@@ -50,6 +50,7 @@ export default function ToolSelectorPanel({
     return tools
       .filter((tool) => tool.active !== false)
       .filter((tool) => mode === 'return' ? tool.status === 'loaned' : true)
+      .filter((tool) => mode !== 'return' || !technicianId || tool.holderTechnicianId === technicianId)
       .filter((tool) => category === 'Todas' || tool.category === category)
       .filter((tool) => !needle || [
         tool.name,
@@ -59,6 +60,7 @@ export default function ToolSelectorPanel({
         tool.brand ?? '',
         tool.model ?? '',
         tool.serialNumber ?? '',
+        tool.nfcUid ?? '',
       ].some((value) => normalize(value).includes(needle)))
       .sort((a, b) => {
         const selectedDifference = Number(selected.has(b.id)) - Number(selected.has(a.id));
@@ -67,7 +69,7 @@ export default function ToolSelectorPanel({
         if (a.status !== 'available' && b.status === 'available') return 1;
         return a.name.localeCompare(b.name, 'es');
       });
-  }, [tools, mode, category, query, selected]);
+  }, [tools, mode, technicianId, category, query, selected]);
 
   return (
     <section className="tool-selector-panel" aria-label="Seleccionar herramienta manualmente">
@@ -85,7 +87,7 @@ export default function ToolSelectorPanel({
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Nombre, código, ubicación o marca…"
+          placeholder="Nombre, código, ubicación, marca o NFC…"
           autoFocus
         />
       </label>
@@ -120,7 +122,7 @@ export default function ToolSelectorPanel({
               </span>
               <span className="tool-selector-copy">
                 <strong>{tool.name}</strong>
-                <small>{tool.code} · {tool.category}</small>
+                <small>{tool.code} · {tool.category}{tool.nfcUid ? ' · NFC' : ''}</small>
                 <em><MapPin size={13} /> {mode === 'return' ? holder?.name ?? 'Sin responsable' : tool.location}</em>
               </span>
               <span className={`tool-selector-status status-${tool.status}`}>

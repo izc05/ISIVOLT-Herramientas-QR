@@ -141,8 +141,8 @@ const upsertTechnicians = async (db: SQLiteDBConnection, data: AppData): Promise
     await db.run(
       `INSERT INTO technicians (
         id, code, name, specialty, role, phone, extension, previous_phone, email,
-        active, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        nfc_uid, active, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         code = excluded.code,
         name = excluded.name,
@@ -152,6 +152,7 @@ const upsertTechnicians = async (db: SQLiteDBConnection, data: AppData): Promise
         extension = excluded.extension,
         previous_phone = excluded.previous_phone,
         email = excluded.email,
+        nfc_uid = excluded.nfc_uid,
         active = excluded.active,
         updated_at = excluded.updated_at;`,
       technicianToSqlValues(technician),
@@ -168,8 +169,8 @@ const upsertTools = async (db: SQLiteDBConnection, data: AppData): Promise<void>
         status, holder_technician_id, loaned_at, notes, photo_uri, thumbnail_uri,
         legacy_image_data_url, image_updated_at, active, created_at, updated_at,
         service_status, reserved_technician_id, purchase_date, purchase_cost, supplier,
-        next_review_date, next_calibration_date, max_loan_days
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        next_review_date, next_calibration_date, max_loan_days, nfc_uid
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         code = excluded.code,
         qr_code = excluded.qr_code,
@@ -196,7 +197,8 @@ const upsertTools = async (db: SQLiteDBConnection, data: AppData): Promise<void>
         supplier = excluded.supplier,
         next_review_date = excluded.next_review_date,
         next_calibration_date = excluded.next_calibration_date,
-        max_loan_days = excluded.max_loan_days;`,
+        max_loan_days = excluded.max_loan_days,
+        nfc_uid = excluded.nfc_uid;`,
       toolToSqlValues(tool),
       false,
     );

@@ -5,6 +5,7 @@ import {
   Files,
   Hammer,
   History,
+  ScanLine,
   SlidersHorizontal,
   Tags,
   TestTube2,
@@ -13,6 +14,7 @@ import {
 
 const actions = [
   { label: 'Gestión', detail: 'Herramientas y técnicos', selector: '.management-launcher', Icon: SlidersHorizontal },
+  { label: 'NFC', detail: 'Tarjetas y etiquetas', selector: '.nfc-management-launcher', Icon: ScanLine },
   { label: 'Informes', detail: 'Excel y copias', selector: '.report-center-launcher', Icon: FileSpreadsheet },
   { label: 'Etiquetas QR', detail: 'Imprimir códigos', selector: '.qr-label-launcher', Icon: Tags },
   { label: 'Archivos', detail: 'Informe de gestión', selector: '.management-files-launcher', Icon: Files },

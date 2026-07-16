@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/nfc-qr-dual-rc7
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:

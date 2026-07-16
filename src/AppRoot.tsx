@@ -5,6 +5,7 @@ import BootErrorBoundary from './BootErrorBoundary';
 import MobileToolsMenu from './components/MobileToolsMenu';
 import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
+import NfcManagementCenter from './features/nfc/NfcManagementCenter';
 import CommissioningCenter from './production/CommissioningCenter';
 import RectificationCenter from './security/RectificationCenter';
 import SecurityController from './security/SecurityController';
@@ -88,6 +89,7 @@ export default function AppRoot() {
           <AppStable />
           <InventoryOperationalEnhancer />
           <MaintenanceBoard onSaved={() => window.dispatchEvent(new CustomEvent('isivolt:management-refresh'))} />
+          <NfcManagementCenter />
           <RectificationCenter />
           <CommissioningCenter />
           <MobileToolsMenu />

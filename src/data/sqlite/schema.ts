@@ -251,4 +251,14 @@ CREATE INDEX IF NOT EXISTS idx_movements_operation_id
   WHERE operation_id IS NOT NULL AND operation_id <> '';
 `,
   },
+  {
+    version: 5,
+    name: 'technician_barcode_identification',
+    statements: `
+ALTER TABLE technicians ADD COLUMN barcode_value TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_technicians_barcode_value
+  ON technicians(barcode_value COLLATE NOCASE)
+  WHERE barcode_value IS NOT NULL AND barcode_value <> '';
+`,
+  },
 ];

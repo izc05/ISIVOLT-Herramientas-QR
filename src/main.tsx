@@ -19,6 +19,7 @@ import './features/inventory/tool-scan-alert.css';
 import './features/management/management.css';
 import './features/management/management-files.css';
 import './features/management/maintenance-board.css';
+import './features/operations/operation-review.css';
 import './features/technicians/technician-create.css';
 import './features/nfc/nfc-management.css';
 import './security/security.css';

@@ -71,6 +71,7 @@ export type Technician = {
 
 export type Movement = {
   id: string;
+  operationId?: string;
   sequenceNumber?: number;
   type: MovementType;
   toolId: string;

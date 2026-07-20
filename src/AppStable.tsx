@@ -5,6 +5,7 @@ import { APP_VERSION } from './config/app';
 import MovementHistoryCenter from './features/history/MovementHistoryCenter';
 import ManagementCenter from './features/management/ManagementCenter';
 import ManagementFiles from './features/management/ManagementFiles';
+import GreetingSettings from './features/personalization/GreetingSettings';
 import TechnicianBarcodeCenter from './features/technicians/TechnicianBarcodeCenter';
 import TechnicianQuickCreate from './features/technicians/TechnicianQuickCreate';
 import TechnicianVisualEnhancer from './features/technicians/TechnicianVisualEnhancer';
@@ -65,6 +66,7 @@ export default function AppStable() {
     <>
       <AppV6 key={appRevision} />
       <TechnicianVisualEnhancer />
+      <GreetingSettings />
       <MovementHistoryCenter />
       <ManagementCenter onSaved={refreshApplication} />
       <ManagementFiles />

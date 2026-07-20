@@ -1,4 +1,4 @@
-name: Generar APK RC24 paralela
+name: Generar APK RC30 paralela
 
 on:
   pull_request:
@@ -30,24 +30,7 @@ jobs:
         run: |
           npm test
           python3 scripts/validate_sqlite_schema.py
-
-      - name: Marcar compilación interna RC24
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import json
-
-          package_path = Path('package.json')
-          package = json.loads(package_path.read_text(encoding='utf-8'))
-          package['version'] = '1.0.0-rc.24'
-          package_path.write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-
-          app_config = Path('src/config/app.ts')
-          text = app_config.read_text(encoding='utf-8')
-          text = text.replace("APP_VERSION = '1.0.0-rc.7'", "APP_VERSION = '1.0.0-rc.24'")
-          app_config.write_text(text, encoding='utf-8')
-          PY
+          node scripts/validate-production.mjs
           npm run build
 
       - name: Crear proyecto Android temporal
@@ -57,7 +40,7 @@ jobs:
           npm run android:configure
           npx cap sync android
 
-      - name: Separar RC24 de la aplicación instalada
+      - name: Separar RC30 de la aplicación instalada
         shell: bash
         run: |
           python3 - <<'PY'
@@ -68,16 +51,16 @@ jobs:
           text = gradle.read_text(encoding='utf-8')
           text, count = re.subn(
               r'applicationId\s+["\']com\.isivolt\.herramientasqr["\']',
-              'applicationId "com.isivolt.herramientasqr.rc24"',
+              'applicationId "com.isivolt.herramientasqr.rc30"',
               text,
               count=1,
           )
           if count != 1:
-              raise SystemExit('No se ha podido cambiar el applicationId de RC24.')
-          text = re.sub(r'versionCode\s+\d+', 'versionCode 24001', text, count=1)
+              raise SystemExit('No se ha podido cambiar el applicationId de RC30.')
+          text = re.sub(r'versionCode\s+\d+', 'versionCode 30001', text, count=1)
           text = re.sub(
               r'versionName\s+["\'][^"\']+["\']',
-              'versionName "1.0.0-rc.24-test"',
+              'versionName "1.0.0-rc.30-test"',
               text,
               count=1,
           )
@@ -87,17 +70,17 @@ jobs:
           values = strings.read_text(encoding='utf-8')
           values = values.replace(
               '<string name="app_name">ISIVOLT Herramientas QR</string>',
-              '<string name="app_name">ISIVOLT RC24 Pruebas</string>',
+              '<string name="app_name">ISIVOLT RC30 Pruebas</string>',
           )
           values = values.replace(
               '<string name="title_activity_main">ISIVOLT Herramientas QR</string>',
-              '<string name="title_activity_main">ISIVOLT RC24 Pruebas</string>',
+              '<string name="title_activity_main">ISIVOLT RC30 Pruebas</string>',
           )
           strings.write_text(values, encoding='utf-8')
           PY
 
           grep -n "applicationId\|versionCode\|versionName" android/app/build.gradle
-          grep -n "RC24 Pruebas" android/app/src/main/res/values/strings.xml
+          grep -n "RC30 Pruebas" android/app/src/main/res/values/strings.xml
 
       - name: Compilar APK de pruebas
         working-directory: android
@@ -107,13 +90,13 @@ jobs:
         run: |
           mkdir -p release
           cp android/app/build/outputs/apk/debug/app-debug.apk \
-            release/ISIVOLT-Herramientas-QR-RC24-Pruebas.apk
-          sha256sum release/ISIVOLT-Herramientas-QR-RC24-Pruebas.apk \
-            > release/ISIVOLT-Herramientas-QR-RC24-Pruebas.sha256
+            release/ISIVOLT-Herramientas-QR-RC30-Pruebas.apk
+          sha256sum release/ISIVOLT-Herramientas-QR-RC30-Pruebas.apk \
+            > release/ISIVOLT-Herramientas-QR-RC30-Pruebas.sha256
 
       - name: Subir APK paralela
         uses: actions/upload-artifact@v4
         with:
-          name: ISIVOLT-Herramientas-QR-RC24-Pruebas-paralela
+          name: ISIVOLT-Herramientas-QR-RC30-Pruebas-paralela
           path: release/*
           retention-days: 30

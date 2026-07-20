@@ -7,6 +7,7 @@ import ManagementCenter from './features/management/ManagementCenter';
 import ManagementFiles from './features/management/ManagementFiles';
 import TechnicianBarcodeCenter from './features/technicians/TechnicianBarcodeCenter';
 import TechnicianQuickCreate from './features/technicians/TechnicianQuickCreate';
+import TechnicianVisualEnhancer from './features/technicians/TechnicianVisualEnhancer';
 import type { IntegrityIssue } from './services/dataIntegrity';
 import {
   clearAppErrorLog,
@@ -63,6 +64,7 @@ export default function AppStable() {
   return (
     <>
       <AppV6 key={appRevision} />
+      <TechnicianVisualEnhancer />
       <MovementHistoryCenter />
       <ManagementCenter onSaved={refreshApplication} />
       <ManagementFiles />

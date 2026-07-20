@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type { Technician, Tool } from '../../domain/types';
-import { rowToTechnician, rowToTool, stableLookupId, technicianToSqlValues, toolToSqlValues } from './mappers';
+import type { Movement, Technician, Tool } from '../../domain/types';
+import {
+  movementToSqlValues,
+  rowToMovement,
+  rowToTechnician,
+  rowToTool,
+  stableLookupId,
+  technicianToSqlValues,
+  toolToSqlValues,
+} from './mappers';
 
 const tool: Tool = {
   id: 'tool-1',
@@ -27,6 +35,18 @@ const technician: Technician = {
   active: true,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
+};
+
+const movement: Movement = {
+  id: 'mov-1',
+  operationId: 'op-1',
+  type: 'delivery',
+  toolId: tool.id,
+  technicianId: technician.id,
+  operatorName: 'Almacén',
+  occurredAt: '2026-07-10T08:00:00.000Z',
+  previousStatus: 'available',
+  nextStatus: 'loaned',
 };
 
 describe('SQLite mappers', () => {
@@ -81,5 +101,30 @@ describe('SQLite mappers', () => {
       updated_at: technician.updatedAt,
     });
     expect(recovered).toEqual(technician);
+  });
+
+  it('conserva operationId al escribir y leer un movimiento', () => {
+    const values = movementToSqlValues(movement, 12, 'device-1');
+    expect(values[0]).toBe(movement.id);
+    expect(values[1]).toBe(movement.operationId);
+    expect(values[2]).toBe(12);
+
+    const recovered = rowToMovement({
+      id: movement.id,
+      operation_id: movement.operationId,
+      sequence_number: 12,
+      type: movement.type,
+      tool_id: movement.toolId,
+      technician_id: movement.technicianId,
+      operator_name: movement.operatorName,
+      occurred_at: movement.occurredAt,
+      previous_status: movement.previousStatus,
+      next_status: movement.nextStatus,
+      device_id: 'device-1',
+      sync_status: 'local',
+    });
+
+    expect(recovered.operationId).toBe('op-1');
+    expect(recovered.sequenceNumber).toBe(12);
   });
 });

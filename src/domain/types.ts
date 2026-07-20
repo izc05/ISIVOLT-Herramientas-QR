@@ -57,6 +57,7 @@ export type Technician = {
   id: string;
   code: string;
   nfcUid?: string;
+  barcodeValue?: string;
   name: string;
   specialty: string;
   role?: string;

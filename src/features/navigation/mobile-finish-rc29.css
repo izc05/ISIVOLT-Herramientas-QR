@@ -1,0 +1,100 @@
+.game-brand-mark {
+  isolation: isolate;
+  overflow: visible;
+}
+
+.game-brand-mark > svg {
+  position: relative;
+  z-index: 3;
+}
+
+.game-brand-mark::before {
+  position: absolute;
+  z-index: -1;
+  inset: -7px;
+  border: 1px solid rgba(56, 189, 248, 0.58);
+  border-radius: 50%;
+  content: '';
+  animation: isivolt-radar-ring 2.2s ease-out infinite;
+  pointer-events: none;
+}
+
+.game-brand-mark::after {
+  z-index: 1;
+  inset: 2px;
+  border-radius: inherit;
+  background:
+    conic-gradient(from 205deg, transparent 0 62%, rgba(103, 232, 249, 0.76) 70%, transparent 78%),
+    radial-gradient(circle, rgba(56, 189, 248, 0.13), transparent 66%);
+  animation: isivolt-radar-sweep 2.8s linear infinite;
+  opacity: 0.9;
+}
+
+.brand-button:hover .game-brand-mark::before,
+.brand-button:focus-visible .game-brand-mark::before {
+  animation-duration: 1.35s;
+}
+
+@keyframes isivolt-radar-ring {
+  0% { opacity: 0.85; transform: scale(0.72); }
+  72%, 100% { opacity: 0; transform: scale(1.78); }
+}
+
+@keyframes isivolt-radar-sweep {
+  to { transform: rotate(360deg); }
+}
+
+.game-app-shell {
+  padding-bottom: calc(146px + env(safe-area-inset-bottom));
+  scroll-padding-bottom: calc(150px + env(safe-area-inset-bottom));
+}
+
+.game-app-shell main {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 720px) {
+  .core-app-shell,
+  .game-app-shell {
+    padding-bottom: calc(142px + env(safe-area-inset-bottom));
+  }
+
+  .core-bottom-nav,
+  .game-bottom-nav {
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 20px);
+  }
+
+  .nav-scan-button {
+    margin-bottom: 1px;
+  }
+
+  .game-topbar {
+    padding-top: max(13px, env(safe-area-inset-top));
+  }
+
+  .view-stage {
+    padding-bottom: 8px;
+  }
+}
+
+@media (max-width: 460px) {
+  .brand-button {
+    min-width: 0;
+  }
+
+  .brand-button > span:last-child {
+    min-width: 0;
+  }
+
+  .game-brand-mark {
+    flex: 0 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-brand-mark::before,
+  .game-brand-mark::after {
+    animation: none !important;
+  }
+}

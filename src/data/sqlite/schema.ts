@@ -261,4 +261,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_technicians_barcode_value
   WHERE barcode_value IS NOT NULL AND barcode_value <> '';
 `,
   },
+  {
+    version: 6,
+    name: 'movement_context_and_accessory_checks',
+    statements: `
+ALTER TABLE movements ADD COLUMN expected_return_at TEXT;
+ALTER TABLE movements ADD COLUMN work_order TEXT;
+ALTER TABLE movements ADD COLUMN work_location TEXT;
+CREATE INDEX IF NOT EXISTS idx_movements_expected_return
+  ON movements(expected_return_at)
+  WHERE expected_return_at IS NOT NULL AND expected_return_at <> '';
+CREATE INDEX IF NOT EXISTS idx_movements_work_order
+  ON movements(work_order COLLATE NOCASE)
+  WHERE work_order IS NOT NULL AND work_order <> '';
+`,
+  },
 ];

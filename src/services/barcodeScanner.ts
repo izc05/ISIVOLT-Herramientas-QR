@@ -4,9 +4,11 @@ import {
   BarcodeScanner,
   GoogleBarcodeScannerModuleInstallState,
 } from '@capacitor-mlkit/barcode-scanning';
+import { resolveTechnicianBarcode, loadTechnicianBarcodeRegistry } from './barcodeRegistry';
+import { loadAppData } from './storage';
 
 export type NativeScanResult =
-  | { status: 'success'; value: string }
+  | { status: 'success'; value: string; format?: BarcodeFormat }
   | { status: 'cancelled' }
   | { status: 'permission-denied'; message: string }
   | { status: 'unsupported'; message: string }
@@ -18,6 +20,22 @@ export type IsivoltQrPayload =
   | { type: 'tool'; code: string; raw: string }
   | { type: 'unknown'; raw: string };
 
+const IDENTIFICATION_FORMATS: BarcodeFormat[] = [
+  BarcodeFormat.QrCode,
+  BarcodeFormat.Code39,
+  BarcodeFormat.Code93,
+  BarcodeFormat.Code128,
+  BarcodeFormat.Codabar,
+  BarcodeFormat.Ean8,
+  BarcodeFormat.Ean13,
+  BarcodeFormat.Itf,
+  BarcodeFormat.UpcA,
+  BarcodeFormat.UpcE,
+  BarcodeFormat.DataMatrix,
+  BarcodeFormat.Pdf417,
+  BarcodeFormat.Aztec,
+];
+
 export const isNativeScannerAvailable = () => Capacitor.isNativePlatform();
 
 export const openScannerSettings = async (): Promise<void> => {
@@ -25,9 +43,12 @@ export const openScannerSettings = async (): Promise<void> => {
   await BarcodeScanner.openSettings();
 };
 
-export const requestManualQrValue = (reason?: string): NativeScanResult => {
+const requestManualValue = (
+  reason: string | undefined,
+  preserveRawValue: boolean,
+): NativeScanResult => {
   const value = window.prompt(
-    `${reason ? `${reason}\n\n` : ''}Introduce el código completo o el código visible.\n\nEjemplos:\nISIVOLT:TOOL:HER-015\nHER-015\nTEC-023`,
+    `${reason ? `${reason}\n\n` : ''}Introduce el código completo o el número visible.\n\nEjemplos:\nISIVOLT:TOOL:HER-015\nHER-015\nTEC-023\n52502`,
   );
 
   if (value === null) return { status: 'cancelled' };
@@ -36,20 +57,28 @@ export const requestManualQrValue = (reason?: string): NativeScanResult => {
     return { status: 'error', message: 'No se ha introducido ningún código.' };
   }
 
+  if (preserveRawValue) return { status: 'success', value: normalized };
+
   if (/^TEC-[A-Z0-9-]+$/i.test(normalized)) {
     return { status: 'success', value: `ISIVOLT:TECH:${normalized.toUpperCase()}` };
   }
 
-  if (/^[A-Z0-9-]+$/i.test(normalized)) {
+  if (/^[A-Z][A-Z0-9-]+$/i.test(normalized)) {
     return { status: 'success', value: `ISIVOLT:TOOL:${normalized.toUpperCase()}` };
   }
 
   return { status: 'success', value: normalized };
 };
 
+export const requestManualQrValue = (reason?: string): NativeScanResult =>
+  requestManualValue(reason, false);
+
+export const requestManualRawBarcodeValue = (reason?: string): NativeScanResult =>
+  requestManualValue(reason, true);
+
 export const parseIsivoltQr = (rawValue: string): IsivoltQrPayload => {
   const raw = rawValue.trim();
-  const technicianMatch = /^ISIVOLT:TECH:(TEC-[A-Z0-9-]+)$/i.exec(raw);
+  const technicianMatch = /^ISIVOLT:TECH:([A-Z0-9-]+)$/i.exec(raw);
   if (technicianMatch) {
     return { type: 'technician', code: technicianMatch[1].toUpperCase(), raw };
   }
@@ -134,15 +163,27 @@ const ensureGoogleScannerModule = async (): Promise<boolean> => {
   });
 };
 
-export const scanQrCode = async (): Promise<NativeScanResult> => {
+const resolveRegisteredBarcode = async (rawValue: string): Promise<string> => {
+  const registry = await loadTechnicianBarcodeRegistry();
+  const technician = resolveTechnicianBarcode(registry, loadAppData(), rawValue);
+  return technician ? `ISIVOLT:TECH:${technician.code}` : rawValue;
+};
+
+const scanSupportedBarcode = async (
+  resolveKnownTechnician: boolean,
+): Promise<NativeScanResult> => {
+  const manualFallback = (reason?: string) => resolveKnownTechnician
+    ? requestManualQrValue(reason)
+    : requestManualRawBarcodeValue(reason);
+
   if (!Capacitor.isNativePlatform()) {
-    return requestManualQrValue('La cámara real solo está disponible dentro de la APK.');
+    return manualFallback('La cámara real solo está disponible dentro de la APK.');
   }
 
   try {
     const { supported } = await BarcodeScanner.isSupported();
     if (!supported) {
-      return requestManualQrValue('Este dispositivo no dispone de un lector QR compatible.');
+      return manualFallback('Este dispositivo no dispone de un lector de códigos compatible.');
     }
 
     const permissionGranted = await ensureCameraPermission();
@@ -155,21 +196,25 @@ export const scanQrCode = async (): Promise<NativeScanResult> => {
 
     const moduleReady = await ensureGoogleScannerModule();
     if (!moduleReady) {
-      return requestManualQrValue('No se ha podido preparar el módulo QR de Google.');
+      return manualFallback('No se ha podido preparar el lector de códigos de Google.');
     }
 
     const { barcodes } = await BarcodeScanner.scan({
-      formats: [BarcodeFormat.QrCode],
+      formats: IDENTIFICATION_FORMATS,
       autoZoom: true,
     });
 
     const barcode = barcodes[0];
-    const value = barcode?.rawValue || barcode?.displayValue || '';
-    if (!value) return { status: 'cancelled' };
+    const rawValue = barcode?.rawValue || barcode?.displayValue || '';
+    if (!rawValue) return { status: 'cancelled' };
 
-    return { status: 'success', value };
+    const value = resolveKnownTechnician
+      ? await resolveRegisteredBarcode(rawValue)
+      : rawValue;
+
+    return { status: 'success', value, format: barcode.format };
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'No se ha podido iniciar el lector QR.';
+    const message = error instanceof Error ? error.message : 'No se ha podido iniciar el lector de códigos.';
     const normalized = message.toLowerCase();
     if (normalized.includes('cancel') || normalized.includes('canceled')) {
       return { status: 'cancelled' };
@@ -180,6 +225,12 @@ export const scanQrCode = async (): Promise<NativeScanResult> => {
         message: 'El sistema no permite usar la cámara. Abre los ajustes de la aplicación y revisa el permiso Cámara.',
       };
     }
-    return requestManualQrValue(`No se ha podido abrir el lector: ${message}`);
+    return manualFallback(`No se ha podido abrir el lector: ${message}`);
   }
 };
+
+export const scanQrCode = async (): Promise<NativeScanResult> =>
+  scanSupportedBarcode(true);
+
+export const scanRawBarcode = async (): Promise<NativeScanResult> =>
+  scanSupportedBarcode(false);

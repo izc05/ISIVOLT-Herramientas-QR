@@ -3,13 +3,14 @@ import { DATABASE_MIGRATIONS, MOVEMENT_IMMUTABILITY_TRIGGERS } from './schema';
 
 const schema = DATABASE_MIGRATIONS.map((migration) => migration.statements).join('\n');
 
-describe('SQLite schema RC24 identificación', () => {
+describe('SQLite schema RC30 identificación y operaciones', () => {
   it('mantiene las migraciones ordenadas y versionadas', () => {
-    expect(DATABASE_MIGRATIONS.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5]);
+    expect(DATABASE_MIGRATIONS.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(DATABASE_MIGRATIONS[1].name).toBe('asset_management_and_maintenance');
     expect(DATABASE_MIGRATIONS[2].name).toBe('nfc_identification');
     expect(DATABASE_MIGRATIONS[3].name).toBe('movement_operation_idempotency');
     expect(DATABASE_MIGRATIONS[4].name).toBe('technician_barcode_identification');
+    expect(DATABASE_MIGRATIONS[5].name).toBe('movement_context_and_accessory_checks');
   });
 
   it('crea las entidades principales del inventario', () => {
@@ -50,6 +51,14 @@ describe('SQLite schema RC24 identificación', () => {
   it('persiste un código de barras único por técnico', () => {
     expect(schema).toContain('ALTER TABLE technicians ADD COLUMN barcode_value TEXT');
     expect(schema).toContain('idx_technicians_barcode_value');
+  });
+
+  it('persiste OT, ubicación y fecha prevista de devolución', () => {
+    expect(schema).toContain('ALTER TABLE movements ADD COLUMN expected_return_at TEXT');
+    expect(schema).toContain('ALTER TABLE movements ADD COLUMN work_order TEXT');
+    expect(schema).toContain('ALTER TABLE movements ADD COLUMN work_location TEXT');
+    expect(schema).toContain('idx_movements_expected_return');
+    expect(schema).toContain('idx_movements_work_order');
   });
 
   it('protege el estado de préstamo mediante CHECK', () => {

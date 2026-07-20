@@ -65,15 +65,25 @@ export const saveTechnicianBarcodeRegistry = async (
 export const barcodeForTechnician = (
   registry: TechnicianBarcodeRegistry,
   technicianId: string,
-): string | undefined => Object.entries(registry)
-  .find(([, assignedTechnicianId]) => assignedTechnicianId === technicianId)?.[0];
+  data?: AppData,
+): string | undefined => {
+  const stored = data?.technicians.find((technician) => technician.id === technicianId)?.barcodeValue;
+  return normalizeBarcodeValue(stored) || Object.entries(registry)
+    .find(([, assignedTechnicianId]) => assignedTechnicianId === technicianId)?.[0];
+};
 
 export const resolveTechnicianBarcode = (
   registry: TechnicianBarcodeRegistry,
   data: AppData,
   rawValue: string,
 ): Technician | undefined => {
-  const technicianId = registry[normalizeBarcodeValue(rawValue)];
+  const barcode = normalizeBarcodeValue(rawValue);
+  const storedTechnician = data.technicians.find(
+    (technician) => normalizeBarcodeValue(technician.barcodeValue) === barcode,
+  );
+  if (storedTechnician) return storedTechnician;
+
+  const technicianId = registry[barcode];
   if (!technicianId) return undefined;
   return data.technicians.find((technician) => technician.id === technicianId);
 };
@@ -91,6 +101,16 @@ export const assignTechnicianBarcode = async (
   const technician = data.technicians.find((item) => item.id === technicianId);
   if (!technician) {
     throw new BarcodeRegistryError('technician-not-found', 'El técnico seleccionado ya no existe.');
+  }
+
+  const storedOwner = data.technicians.find(
+    (item) => item.id !== technicianId && normalizeBarcodeValue(item.barcodeValue) === barcode,
+  );
+  if (storedOwner) {
+    throw new BarcodeRegistryError(
+      'barcode-already-assigned',
+      `La tarjeta ${barcode} ya está vinculada a ${storedOwner.name}.`,
+    );
   }
 
   const current = await loadTechnicianBarcodeRegistry();

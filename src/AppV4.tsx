@@ -6,6 +6,7 @@ import {
   ArrowUpFromLine,
   Check,
   ListFilter,
+  LoaderCircle,
   QrCode,
   RotateCcw,
   ScanLine,
@@ -39,7 +40,7 @@ import {
   normalizeNfcUid,
   scanNfcTag,
 } from './services/nfcScanner';
-import { loadAppData, saveAppData } from './services/storage';
+import { loadAppData, saveAppData, waitForPendingAppDataWrites } from './services/storage';
 
 type NativeFeedback = {
   title: string;
@@ -91,6 +92,7 @@ export default function AppV4() {
   const [notes, setNotes] = useState('');
   const [scanning, setScanning] = useState(false);
   const [nfcScanning, setNfcScanning] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [scannerMessage, setScannerMessage] = useState('Selecciona el tipo de operación y comienza a identificar.');
   const [feedback, setFeedback] = useState<NativeFeedback>(null);
   const [scanAlert, setScanAlert] = useState<{ tool: Tool; title: string; detail: string } | null>(null);
@@ -104,6 +106,7 @@ export default function AppV4() {
     setNotes('');
     setScanning(false);
     setNfcScanning(false);
+    setSaving(false);
     setSelectorOpen(false);
     setToolSelectorOpen(false);
     setScanAlert(null);
@@ -251,7 +254,7 @@ export default function AppV4() {
   };
 
   const handleScan = async () => {
-    if (scanning || nfcScanning) return;
+    if (scanning || nfcScanning || saving) return;
     setScanning(true);
     setScannerMessage('Activando cámara y enfoque automático…');
 
@@ -297,7 +300,7 @@ export default function AppV4() {
   };
 
   const handleNfcScan = async () => {
-    if (scanning || nfcScanning) return;
+    if (scanning || nfcScanning || saving) return;
     setNfcScanning(true);
     setScannerMessage('Acerca la tarjeta o la pegatina NFC a la parte trasera del teléfono…');
 
@@ -346,10 +349,13 @@ export default function AppV4() {
   };
 
   const removeTool = (toolId: string) => {
+    if (saving) return;
     setTools((current) => current.filter((tool) => tool.id !== toolId));
   };
 
-  const confirmOperation = () => {
+  const confirmOperation = async () => {
+    if (saving) return;
+
     try {
       assertPermission('operations.execute');
     } catch (cause) {
@@ -418,22 +424,54 @@ export default function AppV4() {
       return;
     }
 
-    saveAppData({
-      ...current,
-      tools: updatedTools,
-      movements: [...movementBatch, ...current.movements],
-    });
+    setSaving(true);
+    setScannerMessage('Guardando la operación y verificando SQLite…');
+    let localSaveCompleted = false;
 
-    closeWorkflow();
-    setAppRevision((value) => value + 1);
-    setFeedback({
-      title: mode === 'delivery' ? 'Préstamo completado' : 'Devolución completada',
-      detail: `${movementBatch.length} movimiento${movementBatch.length === 1 ? '' : 's'} guardado${movementBatch.length === 1 ? '' : 's'} · ${formatOperationDateTime(occurredAt)}.`,
-      tone: condition === 'damaged' ? 'warning' : 'success',
-    });
+    try {
+      saveAppData({
+        ...current,
+        tools: updatedTools,
+        movements: [...movementBatch, ...current.movements],
+      });
+      localSaveCompleted = true;
+      await waitForPendingAppDataWrites();
+
+      closeWorkflow();
+      setAppRevision((value) => value + 1);
+      setFeedback({
+        title: mode === 'delivery' ? 'Préstamo completado' : 'Devolución completada',
+        detail: `${movementBatch.length} movimiento${movementBatch.length === 1 ? '' : 's'} guardado${movementBatch.length === 1 ? '' : 's'} en el dispositivo · ${formatOperationDateTime(occurredAt)}.`,
+        tone: condition === 'damaged' ? 'warning' : 'success',
+      });
+      navigator.vibrate?.([60, 35, 100]);
+    } catch (cause) {
+      const detail = cause instanceof Error ? cause.message : 'SQLite no ha confirmado la escritura.';
+
+      if (localSaveCompleted) {
+        closeWorkflow();
+        setAppRevision((value) => value + 1);
+        setFeedback({
+          title: 'Operación guardada localmente',
+          detail: `La operación queda protegida para recuperarse en el próximo arranque. ${detail}`,
+          tone: 'warning',
+        });
+      } else {
+        setScannerMessage(`No se ha podido guardar la operación: ${detail}`);
+        setFeedback({
+          title: 'Operación no guardada',
+          detail,
+          tone: 'error',
+        });
+      }
+      navigator.vibrate?.([180, 70, 180]);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const canConfirm = tools.length > 0
+  const canConfirm = !saving
+    && tools.length > 0
     && (mode === 'return' || Boolean(technician))
     && (mode !== 'return' || condition === 'ok' || notes.trim().length > 0);
 
@@ -457,9 +495,10 @@ export default function AppV4() {
               role="dialog"
               aria-modal="true"
               aria-label="Operación mediante QR o NFC"
+              aria-busy={saving}
             >
               <span className="native-console-glow" aria-hidden="true" />
-              <button className="native-scan-close" onClick={closeWorkflow} aria-label="Cerrar lector"><X size={21} /></button>
+              <button className="native-scan-close" onClick={closeWorkflow} disabled={saving} aria-label="Cerrar lector"><X size={21} /></button>
 
               <header className="native-scan-header">
                 <span className="native-scan-emblem"><ScanLine size={30} /></span>
@@ -486,8 +525,8 @@ export default function AppV4() {
               ) : (
                 <>
                   <div className="native-mode-switch">
-                    <button className={mode === 'delivery' ? 'active' : ''} onClick={() => changeMode('delivery')}><ArrowUpFromLine size={18} /> Préstamo</button>
-                    <button className={mode === 'return' ? 'active' : ''} onClick={() => changeMode('return')}><ArrowDownToLine size={18} /> Devolución</button>
+                    <button disabled={saving} className={mode === 'delivery' ? 'active' : ''} onClick={() => changeMode('delivery')}><ArrowUpFromLine size={18} /> Préstamo</button>
+                    <button disabled={saving} className={mode === 'return' ? 'active' : ''} onClick={() => changeMode('return')}><ArrowDownToLine size={18} /> Devolución</button>
                   </div>
 
                   <div className="native-progress-grid">
@@ -504,11 +543,11 @@ export default function AppV4() {
                   </div>
 
                   <div className="native-scan-methods">
-                    <motion.button className="native-camera-button" onClick={handleScan} disabled={scanning || nfcScanning} whileTap={{ scale: 0.97 }}>
+                    <motion.button className="native-camera-button" onClick={handleScan} disabled={scanning || nfcScanning || saving} whileTap={{ scale: 0.97 }}>
                       <QrCode size={28} />
                       <strong>{scanning ? 'Abriendo cámara…' : `QR ${expectedLabel}`}</strong>
                     </motion.button>
-                    <motion.button className="native-nfc-button" onClick={handleNfcScan} disabled={scanning || nfcScanning || !nativeNfc} whileTap={{ scale: 0.97 }}>
+                    <motion.button className="native-nfc-button" onClick={handleNfcScan} disabled={scanning || nfcScanning || saving || !nativeNfc} whileTap={{ scale: 0.97 }}>
                       <ScanLine size={28} />
                       <strong>{nfcScanning ? 'Leyendo NFC…' : `NFC ${expectedLabel}`}</strong>
                     </motion.button>
@@ -519,14 +558,14 @@ export default function AppV4() {
                   )}
 
                   {!technician && (
-                    <button className="native-manual-technician" type="button" onClick={() => setSelectorOpen(true)}>
+                    <button disabled={saving} className="native-manual-technician" type="button" onClick={() => setSelectorOpen(true)}>
                       <ListFilter size={19} />
                       <span><strong>Seleccionar técnico manualmente</strong><small>Buscar por nombre, código o categoría</small></span>
                     </button>
                   )}
 
                   {(mode === 'return' || Boolean(technician)) && (
-                    <button className="native-manual-tool" type="button" onClick={() => setToolSelectorOpen(true)}>
+                    <button disabled={saving} className="native-manual-tool" type="button" onClick={() => setToolSelectorOpen(true)}>
                       <ListFilter size={19} />
                       <span><strong>Buscar herramienta manualmente</strong><small>Nombre, código, categoría, ubicación, marca o NFC</small></span>
                     </button>
@@ -534,14 +573,14 @@ export default function AppV4() {
 
                   <div className="native-scanner-message">
                     {scannerMessage.includes('no ') || scannerMessage.includes('No ') || scannerMessage.includes('esperaba') || scannerMessage.includes('sin vincular')
-                      ? <AlertTriangle size={17} /> : <Zap size={17} />}
+                      ? <AlertTriangle size={17} /> : saving ? <LoaderCircle className="boot-spin" size={17} /> : <Zap size={17} />}
                     <span>{scannerMessage}</span>
                   </div>
 
                   {tools.length > 0 && (
                     <div className="native-scanned-tools">
                       {tools.map((tool) => (
-                        <button key={tool.id} onClick={() => removeTool(tool.id)}><Wrench size={15} /><span><strong>{tool.name}</strong><small>{tool.code}{tool.nfcUid ? ' · NFC' : ''}</small></span><X size={15} /></button>
+                        <button disabled={saving} key={tool.id} onClick={() => removeTool(tool.id)}><Wrench size={15} /><span><strong>{tool.name}</strong><small>{tool.code}{tool.nfcUid ? ' · NFC' : ''}</small></span><X size={15} /></button>
                       ))}
                     </div>
                   )}
@@ -553,19 +592,22 @@ export default function AppV4() {
                         ['review', 'Revisión', RotateCcw],
                         ['damaged', 'Averiada', AlertTriangle],
                       ] as const).map(([value, label, Icon]) => (
-                        <button key={value} className={condition === value ? 'active' : ''} onClick={() => setCondition(value)}><Icon size={17} /> {label}</button>
+                        <button disabled={saving} key={value} className={condition === value ? 'active' : ''} onClick={() => setCondition(value)}><Icon size={17} /> {label}</button>
                       ))}
                     </div>
                   )}
 
                   <label className="native-notes-field">
                     {mode === 'return' && condition !== 'ok' ? 'Observaciones obligatorias' : 'Observaciones'}
-                    <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Accesorios, estado o incidencia…" />
+                    <textarea disabled={saving} value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Accesorios, estado o incidencia…" />
                   </label>
 
                   <footer className="native-scan-footer">
-                    <span>{tools.length} activo{tools.length === 1 ? '' : 's'} preparado{tools.length === 1 ? '' : 's'}</span>
-                    <motion.button disabled={!canConfirm} onClick={confirmOperation} whileTap={{ scale: 0.97 }}><Check size={19} /> Confirmar {mode === 'delivery' ? 'préstamo' : 'devolución'}</motion.button>
+                    <span>{saving ? 'Guardando y verificando…' : `${tools.length} activo${tools.length === 1 ? '' : 's'} preparado${tools.length === 1 ? '' : 's'}`}</span>
+                    <motion.button disabled={!canConfirm} onClick={confirmOperation} whileTap={{ scale: 0.97 }}>
+                      {saving ? <LoaderCircle className="boot-spin" size={19} /> : <Check size={19} />}
+                      {saving ? 'Guardando…' : `Confirmar ${mode === 'delivery' ? 'préstamo' : 'devolución'}`}
+                    </motion.button>
                   </footer>
                 </>
               )}

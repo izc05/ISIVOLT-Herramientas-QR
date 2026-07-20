@@ -14,6 +14,7 @@ const STORAGE_KEY = 'isivolt-herramientas-qr:v1';
 const PENDING_NATIVE_WRITE_KEY = 'isivolt-herramientas-qr:pending-native-write:v1';
 
 let nativeWriteQueue: Promise<void> = Promise.resolve();
+let lastNativeWriteError: unknown = null;
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -202,6 +203,7 @@ export const hydrateAppDataFromNative = async (): Promise<void> => {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanLocal));
         await writeNativeAppData(cleanLocal, { replace: true });
         clearPendingNativeWrite();
+        lastNativeWriteError = null;
         await recordNativeStorageEvent(
           'recover-local',
           'Se ha conservado el estado local pendiente y se ha reconstruido SQLite para evitar pérdida de movimientos.',
@@ -212,6 +214,7 @@ export const hydrateAppDataFromNative = async (): Promise<void> => {
 
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanNative));
       clearPendingNativeWrite();
+      lastNativeWriteError = null;
       await recordNativeStorageEvent('hydrate', 'Datos recuperados desde SQLite normalizado y validados.');
       return;
     }
@@ -219,8 +222,10 @@ export const hydrateAppDataFromNative = async (): Promise<void> => {
     const initialData = loadAppData();
     await writeNativeAppData(initialData, { replace: true });
     clearPendingNativeWrite();
+    lastNativeWriteError = null;
     await recordNativeStorageEvent('initialize', 'Base de datos normalizada creada con el estado inicial.');
   } catch (error) {
+    lastNativeWriteError = error;
     recordAppError('storage.hydrate', error);
     console.error('No se ha podido hidratar SQLite. Se mantiene el almacenamiento web.', error);
   }
@@ -242,6 +247,7 @@ export const saveAppData = (
     throw error;
   }
 
+  lastNativeWriteError = null;
   if (!isNativeDatabaseEnabled()) return;
 
   const pendingWriteId = markNativeWritePending(clean);
@@ -260,11 +266,21 @@ export const saveAppData = (
       }
 
       clearPendingNativeWrite(pendingWriteId);
+      lastNativeWriteError = null;
     })
     .catch((error) => {
+      lastNativeWriteError = error;
       recordAppError('storage.sqlite-save', error);
       console.error('No se ha podido guardar el estado en SQLite.', error);
     });
+};
+
+export const waitForPendingAppDataWrites = async (): Promise<void> => {
+  await nativeWriteQueue;
+  if (!lastNativeWriteError) return;
+  throw lastNativeWriteError instanceof Error
+    ? lastNativeWriteError
+    : new Error('No se ha podido confirmar el guardado en SQLite.');
 };
 
 export const resetAppData = (): AppData => {

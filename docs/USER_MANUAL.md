@@ -1,27 +1,19 @@
-# Manual de uso — ISIVOLT Herramientas QR
+# Manual de uso — ISIVOLT Herramientas QR RC24
 
 ## 1. Primer inicio
 
-### RC24 de pruebas
-
-1. Instala **ISIVOLT RC24 Pruebas** sin desinstalar RC23.
-2. Comprueba que aparecen dos aplicaciones distintas en el teléfono.
-3. Abre únicamente RC24 para realizar el piloto.
-4. Crea el administrador local.
-5. Introduce un PIN de 4 a 8 cifras y confírmalo.
-6. Utiliza técnicos y herramientas de prueba hasta completar el checklist físico.
-
-RC24 paralela utiliza un identificador Android y una base de datos distintos. Desinstalar RC24 no elimina los datos de RC23.
-
-### Aplicación definitiva
-
-Cuando RC24 haya superado el piloto, las actualizaciones de la aplicación definitiva deberán instalarse sobre la versión anterior, sin desinstalarla y después de generar una copia comprobada.
+1. Instala la APK de pruebas **sin desinstalar RC29**.
+2. La candidata paralela aparece como **ISIVOLT RC24 Pruebas** y utiliza almacenamiento independiente.
+3. Abre la aplicación y crea el administrador local.
+4. Introduce un PIN de 4 a 8 cifras y confírmalo.
+5. Conserva el PIN en un procedimiento corporativo seguro.
+6. Desde Usuarios, crea las cuentas de Almacén y Técnico necesarias.
 
 ## 2. Roles
 
 ### Administrador
 
-Puede gestionar usuarios, herramientas, técnicos, mantenimiento, informes, restauraciones, auditoría, diagnóstico y rectificaciones.
+Puede gestionar usuarios, herramientas, técnicos, tarjetas, mantenimiento, informes, restauraciones, auditoría, diagnóstico y rectificaciones.
 
 ### Responsable de almacén
 
@@ -31,87 +23,123 @@ Puede registrar entradas y salidas, gestionar herramientas y mantenimiento, y ex
 
 Dispone de acceso de consulta y no puede modificar ni registrar movimientos.
 
-## 3. Entregar herramientas
+## 3. Identificar técnicos mediante tarjeta corporativa
 
-1. Pulsa el botón central **Escanear** u **Operación QR**.
+La aplicación admite la tarjeta del hospital como alternativa al NFC. El ejemplo analizado utiliza **CODE 39**.
+
+1. Abre el menú flotante **Herramientas**.
+2. Pulsa **Tarjetas**.
+3. Busca el técnico por nombre, código o especialidad.
+4. Pulsa **Escanear** y centra el código de barras horizontal.
+5. También puedes introducir manualmente el número impreso debajo del código.
+6. Confirma que aparece el mensaje **Tarjeta vinculada y protegida**.
+
+El código queda guardado en:
+
+- La ficha del técnico.
+- SQLite local.
+- Las copias JSON restaurables.
+- Un registro auxiliar de compatibilidad para instalaciones anteriores.
+
+Un mismo código no puede asignarse a dos técnicos.
+
+## 4. Prestar herramientas
+
+1. Pulsa el botón central **Escanear**.
 2. Selecciona **Préstamo**.
-3. Elige el orden más cómodo:
-   - **Primero técnico**: identifica al responsable y después las herramientas.
-   - **Primero herramienta**: selecciona una o varias herramientas y después identifica al responsable.
-4. Identifica mediante:
-   - Tarjeta o etiqueta NFC.
-   - Código QR.
-   - Búsqueda manual.
-5. Añade todas las herramientas que formen parte de la entrega.
+3. Elige el recorrido:
+   - **Primero técnico**: escanea tarjeta, QR, NFC o busca manualmente al técnico.
+   - **Primero herramienta**: identifica la herramienta y después el responsable.
+4. Escanea o selecciona una o varias herramientas.
+5. Revisa fotografías, códigos, reservas y bloqueos.
 6. Pulsa **Revisar préstamo**.
-7. Comprueba el técnico, los códigos y el número total de herramientas.
-8. Añade observaciones cuando sea necesario.
-9. Pulsa **Prestar**.
-10. Espera hasta que desaparezca el estado **Guardando…** y se muestre la confirmación.
+7. Comprueba el lote final.
+8. Pulsa **Prestar herramientas** una sola vez.
+9. Espera a que desaparezca **Guardando…**.
+10. Comprueba la confirmación visual verde.
 
-Una herramienta no podrá entregarse cuando:
+Una herramienta no podrá prestarse cuando:
 
 - Ya esté prestada.
 - Esté averiada o en revisión.
 - Se encuentre en reparación, calibración o fuera de servicio.
 - Esté reservada para otro técnico.
-- Esté dada de baja.
 - El técnico esté inactivo.
 
-En el modo **Primero herramienta**, una reserva puede seleccionarse antes de conocer al técnico. La app comprobará obligatoriamente el responsable antes de guardar.
+## 5. Devolver herramientas
 
-## 4. Devolver herramientas
-
-1. Pulsa **Escanear** u **Operación QR**.
+1. Pulsa **Escanear**.
 2. Selecciona **Devolución**.
-3. Elige el orden:
-   - **Primero técnico**: identifica al técnico y la aplicación cargará sus herramientas pendientes.
-   - **Primero herramienta**: identifica una herramienta concreta y la aplicación localizará al técnico que la tiene asignada.
-4. Añade o retira las herramientas necesarias.
-5. Pulsa **Revisar devolución**.
-6. Indica el estado individual de cada herramienta:
-   - **Correcta**: vuelve a estar disponible.
-   - **Revisión**: queda bloqueada pendiente de comprobación.
-   - **Averiada**: queda bloqueada y genera un movimiento de incidencia.
-7. Si alguna herramienta queda en revisión o averiada, escribe una observación obligatoria.
-8. Comprueba el resumen del lote.
-9. Pulsa **Devolver**.
-10. Espera la confirmación de guardado.
+3. Identifica primero al técnico para cargar todo lo pendiente o escanea una herramienta concreta.
+4. Revisa el responsable real de cada herramienta.
+5. En la comprobación final, marca individualmente:
+   - **Correcta**.
+   - **Revisión**.
+   - **Averiada**.
+6. Añade observaciones obligatorias si alguna herramienta no vuelve correcta.
+7. Confirma la devolución.
+8. Espera a que termine **Guardando…**.
+9. Comprueba:
+   - Confirmación roja para una devolución normal.
+   - Confirmación ámbar para una entrada con incidencia.
 
-Una devolución no puede mezclar herramientas que estén asignadas a técnicos diferentes. Las herramientas con incidencia quedarán bloqueadas hasta que se resuelva su estado o expediente de mantenimiento.
+Las herramientas con incidencia quedarán bloqueadas hasta su revisión.
 
-## 5. Identificación manual, QR y NFC
+## 6. Entrada manual
 
-Los tres métodos utilizan exactamente las mismas reglas de validación.
+Cuando la cámara no pueda utilizarse:
 
-### QR
+1. Abre el flujo de escaneo.
+2. Pulsa la búsqueda manual de técnico o herramienta.
+3. Busca por nombre, código, categoría, especialidad, ubicación, marca o NFC.
+4. Para tarjetas también puede introducirse directamente el número del código de barras.
 
-- Puede identificar técnicos y herramientas.
-- Los códigos que no pertenezcan a ISIVOLT se rechazan.
-- La cámara sigue disponible como método principal cuando el dispositivo lo permita.
+## 7. Inventario
 
-### NFC
+El inventario móvil muestra tarjetas compactas en dos columnas en teléfonos con anchura suficiente.
 
-- Acerca la tarjeta del técnico o la etiqueta de la herramienta a la parte trasera del teléfono.
-- Si un mismo UID aparece vinculado simultáneamente a un técnico y una herramienta, la operación se bloquea hasta corregirlo.
-- Si el móvil no dispone de NFC, QR y búsqueda manual continúan funcionando.
+- Pulsa **Filtrar herramientas** para abrir o cerrar la cortina.
+- Filtra por Todas, Disponibles, Prestadas o Atención.
+- Selecciona una categoría concreta.
+- Pulsa **Mostrar todo** para limpiar los filtros.
+- Cada tarjeta muestra última salida y última entrada.
+- Pulsa la imagen para hacer una fotografía o elegirla de la galería.
 
-### Búsqueda manual
+## 8. Técnicos
 
-- Técnicos: nombre, código, oficio o especialidad.
-- Herramientas: nombre, código, categoría, ubicación, marca, modelo, número de serie o NFC.
+La vista de técnicos utiliza tarjetas compactas en dos columnas y un color estable por especialidad.
 
-## 6. Protección contra errores y duplicados
+- Pulsa **Filtrar por especialidad** para desplegar la cortina.
+- Busca por nombre, código o especialidad.
+- El color de una especialidad se conserva después de reiniciar.
+- Pulsa una tarjeta para revisar las herramientas asignadas.
 
-- Una herramienta no puede aparecer dos veces en el mismo lote.
-- La doble pulsación del botón de confirmación no crea dos operaciones.
-- Cada lote recibe un `operationId` único.
-- El `operationId` queda guardado en SQLite y permite reconocer una operación ya registrada incluso después de cerrar y abrir la aplicación.
-- Durante **Guardando…** se bloquean QR, NFC, selectores, condiciones, observaciones y cierre.
-- Si se intenta cerrar una operación preparada, la app solicita confirmación.
-- Si SQLite no termina antes de cerrar la aplicación, RC24 conserva el estado local pendiente y trata de reconstruir la base de datos al abrir.
+## 9. Historial y auditoría
 
-## 7. Fotografías
+Pulsa **Historial** para abrir el centro avanzado.
+
+Filtros disponibles:
+
+- Todo.
+- Hoy.
+- Ayer.
+- Últimos 7 días.
+- Últimos 30 días.
+- Este mes.
+- Rango personalizado.
+
+Cada movimiento muestra fecha y hora completa, herramienta, técnico, operador y observaciones.
+
+Colores:
+
+- Verde: salida o préstamo.
+- Rojo: entrada o devolución.
+- Ámbar: incidencia.
+- Violeta: rectificación.
+
+Pulsa **Descargar auditoría** para generar un CSV UTF-8 compatible con Excel.
+
+## 10. Fotografías
 
 Desde Inventario o la ficha del artículo:
 
@@ -120,24 +148,32 @@ Desde Inventario o la ficha del artículo:
 - La fotografía queda guardada en el dispositivo.
 - Comprueba la imagen después de actualizar la aplicación.
 
-Las fotografías antiguas en Base64 todavía deben comprobarse especialmente al restaurar copias o actualizar desde versiones anteriores.
+## 11. Herramientas administrativas
 
-## 8. Centro de gestión
+En móvil, los accesos flotantes quedan agrupados en un único menú para no tapar contenido:
 
-El botón **Gestión** permite:
+- Gestión.
+- Tarjetas.
+- NFC.
+- Informes.
+- Etiquetas QR.
+- Archivos.
+- Mantenimiento.
+- Rectificaciones.
+- Sonido y vibración.
+- Diagnóstico.
+- Pruebas.
 
-- Crear y editar herramientas.
-- Crear y editar técnicos.
-- Configurar marca, modelo, serie y ubicación.
-- Registrar compra, coste y proveedor.
-- Definir plazo máximo de préstamo.
-- Reservar una herramienta para un técnico.
-- Programar revisión o calibración.
-- Añadir accesorios.
-- Abrir expedientes de mantenimiento.
-- Importar inventario desde Excel.
+## 12. Saludo de inicio
 
-## 9. Mantenimiento
+Pulsa el icono de perfil situado en la cabecera.
+
+1. Escribe el nombre que deseas mostrar.
+2. Pulsa **Guardar saludo**.
+3. La aplicación utilizará automáticamente Buenos días, Buenas tardes o Buenas noches.
+4. El nombre solo se guarda en el dispositivo.
+
+## 13. Mantenimiento
 
 El tablero de mantenimiento permite:
 
@@ -150,19 +186,7 @@ El tablero de mantenimiento permite:
 
 Una actuación abierta puede bloquear automáticamente la herramienta.
 
-## 10. Alertas
-
-La aplicación avisa de:
-
-- Préstamos fuera de plazo.
-- Revisiones y calibraciones próximas o vencidas.
-- Herramientas averiadas o bloqueadas.
-- Actuaciones vencidas.
-- Accesorios ausentes o dañados.
-- Herramientas sin fotografía.
-- QR incorrectos.
-
-## 11. Informes y copias
+## 14. Informes y copias
 
 ### Excel operativo
 
@@ -172,18 +196,20 @@ Incluye movimientos, préstamos, inventario, técnicos e incidencias.
 
 Incluye datos económicos, accesorios, mantenimiento y alertas.
 
+### Auditoría CSV
+
+Incluye los movimientos visibles después de aplicar búsqueda y filtros temporales.
+
 ### Copia JSON
 
-Contiene el estado restaurable documentado de la aplicación. Debe crearse:
+Contiene el estado restaurable de la aplicación, incluidos los códigos de barras asignados a los técnicos. Debe crearse:
 
 - Antes de actualizar.
 - Antes de restaurar datos.
 - Después de una carga inicial importante.
 - Con la periodicidad establecida por el responsable.
 
-Antes de considerar una copia como válida, comprueba que puede compartirse, volver a seleccionarse y restaurarse sobre datos de prueba.
-
-## 12. Restauración
+## 15. Restauración
 
 La restauración es una acción de Administrador.
 
@@ -192,9 +218,9 @@ La restauración es una acción de Administrador.
 3. Revisa fecha y versión.
 4. Confirma la restauración.
 5. Comprueba los contadores y el diagnóstico SQLite.
-6. Verifica usuarios, herramientas, técnicos, movimientos, accesorios, mantenimiento y fotografías disponibles.
+6. Entra en Tarjetas y confirma que las asociaciones se han recuperado.
 
-## 13. Rectificaciones
+## 16. Rectificaciones
 
 Los movimientos no se editan ni se eliminan.
 
@@ -209,11 +235,22 @@ Para corregir un error:
 
 La aplicación conservará el movimiento original y añadirá un ajuste nuevo enlazado.
 
-## 14. Diagnóstico
+## 17. Navegación Android
 
-Pulsa el indicador de versión para consultar:
+El botón Atrás sigue este orden:
 
-- Esquema SQLite. RC24 debe mostrar la versión 4.
+1. Cierra la ventana o el modal abierto.
+2. Si no hay ventana, vuelve a Inicio.
+3. Desde Inicio muestra **Pulsa Atrás otra vez para salir**.
+4. Una segunda pulsación dentro del intervalo cierra la aplicación.
+
+La barra inferior y el menú de herramientas respetan las zonas seguras de Android.
+
+## 18. Diagnóstico
+
+Pulsa **Herramientas > Diagnóstico** para consultar:
+
+- Esquema SQLite esperado: versión 5.
 - Número de herramientas.
 - Número de técnicos.
 - Número de movimientos.
@@ -221,29 +258,20 @@ Pulsa el indicador de versión para consultar:
 - Expedientes de mantenimiento.
 - Errores locales recientes.
 
-## 15. Puesta en servicio RC24
+## 19. Puesta en servicio
 
-Durante el piloto deben comprobarse al menos estos casos:
+El icono de Pruebas abre el checklist integrado:
 
-1. Préstamo empezando por técnico.
-2. Préstamo empezando por herramienta.
-3. Devolución completa de un técnico.
-4. Devolución de una sola herramienta.
-5. Devolución múltiple con estados diferentes.
-6. Reserva para el técnico correcto y para uno incorrecto.
-7. Doble pulsación rápida en confirmar.
-8. Cierre inmediato después de guardar y recuperación al abrir.
-9. QR, NFC y búsqueda manual.
-10. Botón Atrás, teclado, scroll y safe areas.
-11. Excel, copia y restauración con datos de prueba.
+- Ejecuta las comprobaciones automáticas.
+- Completa cada prueba manual.
+- Marca Correcta, Fallida o Pendiente.
+- Descarga el informe final.
 
-Registra cualquier fallo antes de utilizar RC24 con el inventario real.
+## 20. Recomendaciones
 
-## 16. Recomendaciones
-
-- No desinstales RC23 durante el piloto de RC24.
-- No uses todavía datos reales en RC24 paralela.
-- Crea una copia antes de cada actualización de la aplicación definitiva.
+- No desinstales RC29 durante las pruebas.
+- Utiliza la APK paralela para no mezclar bases de datos.
+- Crea una copia antes de cada actualización real.
 - No compartas el PIN.
 - Mantén al menos un administrador activo.
 - No uses una APK release firmada con una clave diferente a la versión anterior.

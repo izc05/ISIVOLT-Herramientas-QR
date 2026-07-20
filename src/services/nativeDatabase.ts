@@ -12,10 +12,12 @@ import {
 import {
   accessoryToSqlValues,
   maintenanceToSqlValues,
+  movementAccessoryCheckToSqlValues,
   movementToSqlValues,
   rowToAccessory,
   rowToMaintenance,
   rowToMovement,
+  rowToMovementAccessoryCheck,
   rowToTechnician,
   rowToTool,
   stableLookupId,
@@ -206,6 +208,22 @@ const upsertTools = async (db: SQLiteDBConnection, data: AppData): Promise<void>
   }
 };
 
+const insertMovementAccessoryChecks = async (
+  db: SQLiteDBConnection,
+  movement: Movement,
+): Promise<void> => {
+  for (const check of movement.accessoryChecks ?? []) {
+    await db.run(
+      `INSERT INTO movement_accessories (
+        movement_id, accessory_id, included, condition, notes
+      ) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(movement_id, accessory_id) DO NOTHING;`,
+      movementAccessoryCheckToSqlValues(movement.id, check),
+      false,
+    );
+  }
+};
+
 const insertNewMovements = async (db: SQLiteDBConnection, movements: Movement[]): Promise<void> => {
   const existingResult = await db.query('SELECT id FROM movements;');
   const existing = new Set((existingResult.values ?? []).map((row) => String(row.id)));
@@ -214,17 +232,20 @@ const insertNewMovements = async (db: SQLiteDBConnection, movements: Movement[])
 
   const chronological = [...movements].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt));
   for (const movement of chronological) {
-    if (existing.has(movement.id)) continue;
-    sequence += 1;
-    await db.run(
-      `INSERT INTO movements (
-        id, operation_id, sequence_number, type, tool_id, technician_id, operator_name,
-        previous_status, next_status, condition, notes, occurred_at, device_id,
-        reversed_movement_id, sync_status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-      movementToSqlValues(movement, sequence),
-      false,
-    );
+    if (!existing.has(movement.id)) {
+      sequence += 1;
+      await db.run(
+        `INSERT INTO movements (
+          id, operation_id, sequence_number, type, tool_id, technician_id, operator_name,
+          previous_status, next_status, condition, notes, expected_return_at, work_order,
+          work_location, occurred_at, device_id, reversed_movement_id, sync_status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        movementToSqlValues(movement, sequence),
+        false,
+      );
+      existing.add(movement.id);
+    }
+    await insertMovementAccessoryChecks(db, movement);
   }
 };
 
@@ -302,8 +323,8 @@ const replaceNormalizedData = async (db: SQLiteDBConnection, data: AppData): Pro
     await upsertLookups(db, data);
     await upsertTechnicians(db, data);
     await upsertTools(db, data);
-    await insertNewMovements(db, data.movements);
     await upsertAccessories(db, data.accessories);
+    await insertNewMovements(db, data.movements);
     await upsertMaintenance(db, data.maintenanceRecords);
     await db.execute(MOVEMENT_IMMUTABILITY_TRIGGERS, false);
     await db.run(
@@ -320,8 +341,8 @@ const mergeNormalizedData = async (db: SQLiteDBConnection, data: AppData): Promi
     await upsertLookups(db, data);
     await upsertTechnicians(db, data);
     await upsertTools(db, data);
-    await insertNewMovements(db, data.movements);
     await upsertAccessories(db, data.accessories);
+    await insertNewMovements(db, data.movements);
     await upsertMaintenance(db, data.maintenanceRecords);
     await db.run(
       `INSERT INTO app_settings (key, value, updated_at) VALUES ('last_snapshot_at', ?, ?)
@@ -441,12 +462,26 @@ export const readNativeAppData = async (): Promise<AppData | null> => {
      ORDER BY tools.code COLLATE NOCASE;`,
   );
   const movementRows = await db.query('SELECT * FROM movements ORDER BY sequence_number DESC;');
+  const movementAccessoryRows = await db.query(
+    'SELECT * FROM movement_accessories ORDER BY movement_id, accessory_id;',
+  );
   const accessoryRows = await db.query('SELECT * FROM accessories ORDER BY tool_id, name COLLATE NOCASE;');
   const maintenanceRows = await db.query('SELECT * FROM maintenance_records ORDER BY opened_at DESC;');
 
   const technicians = (technicianRows.values ?? []).map((row) => rowToTechnician(row));
   const tools = (toolRows.values ?? []).map((row) => rowToTool(row));
-  const movements = (movementRows.values ?? []).map((row) => rowToMovement(row));
+  const checksByMovement = new Map<string, ReturnType<typeof rowToMovementAccessoryCheck>[]>();
+  for (const row of movementAccessoryRows.values ?? []) {
+    const movementId = String(row.movement_id ?? '');
+    if (!movementId) continue;
+    const checks = checksByMovement.get(movementId) ?? [];
+    checks.push(rowToMovementAccessoryCheck(row));
+    checksByMovement.set(movementId, checks);
+  }
+  const movements = (movementRows.values ?? []).map((row) => {
+    const movement = rowToMovement(row);
+    return { ...movement, accessoryChecks: checksByMovement.get(movement.id) ?? [] };
+  });
   const accessories = (accessoryRows.values ?? []).map((row) => rowToAccessory(row));
   const maintenanceRecords = (maintenanceRows.values ?? []).map((row) => rowToMaintenance(row));
 

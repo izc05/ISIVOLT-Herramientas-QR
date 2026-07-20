@@ -24,18 +24,20 @@ const data: AppData = {
 };
 
 describe('registro de códigos de barras', () => {
-  it('normaliza espacios y mayúsculas', () => {
+  it('normaliza espacios, guiones y mayúsculas', () => {
     expect(normalizeBarcodeValue(' 52 502 ')).toBe('52502');
-    expect(normalizeBarcodeValue('ab-123')).toBe('AB-123');
+    expect(normalizeBarcodeValue('ab-123')).toBe('AB123');
+    expect(normalizeBarcodeValue('52502 42101403197-1')).toBe('52502421014031971');
   });
 
-  it('resuelve el CODE 39 de la tarjeta al técnico vinculado', () => {
-    const registry = { '52502': 'tech-1' };
-    expect(resolveTechnicianBarcode(registry, data, ' 52502 ')?.code).toBe('TEC-001');
-    expect(barcodeForTechnician(registry, 'tech-1')).toBe('52502');
+  it('resuelve la tarjeta aunque cambie el formato visual del número', () => {
+    const registry = { '421014031971': 'tech-1' };
+    expect(resolveTechnicianBarcode(registry, data, '42101403197-1')?.code).toBe('TEC-001');
+    expect(resolveTechnicianBarcode(registry, data, '42101 403197-1')?.code).toBe('TEC-001');
+    expect(barcodeForTechnician(registry, 'tech-1')).toBe('421014031971');
   });
 
   it('no confunde un código sin registrar', () => {
-    expect(resolveTechnicianBarcode({ '52502': 'tech-1' }, data, '42101403197')).toBeUndefined();
+    expect(resolveTechnicianBarcode({ '52502': 'tech-1' }, data, '42101403197-1')).toBeUndefined();
   });
 });

@@ -2,38 +2,38 @@
 
 ## Estado de la versión
 
-RC24 recupera funciones presentes en la APK RC23 y añade protección de persistencia e idempotencia. Continúa siendo una candidata de pruebas y no se marcará como `1.0.0` estable hasta completar:
+La candidata actual se identifica como `1.0.0-rc.24` y utiliza SQLite normalizado versión 5.
+
+No se marcará como `1.0.0` estable hasta completar:
 
 1. Firma release con una clave privada custodiada fuera del repositorio.
 2. Instalación y actualización sobre un móvil real conservando datos.
 3. Piloto controlado con un subconjunto del inventario.
-4. Verificación física de cámara, QR, NFC, fotografía, sonido, vibración, Excel y restauración.
-5. Revisión de incidencias del piloto.
+4. Verificación física de cámara, QR, código de barras, fotografía, sonido, vibración, Excel, CSV y restauración.
+5. Comparación pantalla por pantalla con la APK RC29 instalada.
+6. Revisión de incidencias del piloto.
 
 ## Artefactos de compilación
 
-### APK RC24 paralela
+### APK paralela de pruebas
 
 - Nombre visible: `ISIVOLT RC24 Pruebas`.
-- Application ID: `com.isivolt.herramientasqr.rc24`.
-- Version name: `1.0.0-rc.24-test`.
-- Se instala junto a RC23 sin sustituirla.
-- No comparte la base de datos ni las preferencias de RC23.
+- Identificador Android separado de la aplicación instalada.
+- Base de datos privada e independiente de RC29.
+- Uso: pruebas físicas sin sobrescribir la aplicación actual.
 - Firma: clave de depuración de Android.
-- Uso exclusivo: piloto interno de RC24.
+- Distribución: artefacto de GitHub Actions.
 
-### APK debug normal
+### APK debug principal
 
-- Uso: pruebas internas rápidas.
-- Firma: clave de depuración de Android.
-- Distribución: GitHub Actions.
-- Mantiene el identificador normal de la aplicación y no debe instalarse sobre RC23 durante la recuperación.
-- No debe utilizarse como versión oficial de producción.
+- Uso: pruebas internas del identificador de producción.
+- Puede intentar actualizar una instalación con el mismo identificador.
+- No debe instalarse sobre RC29 hasta confirmar firma, compatibilidad y copia restaurable.
 
 ### APK release firmada
 
 - Uso: distribución interna directa.
-- Firma: keystore privado de ISIVOLT.
+- Firma: clave privada de ISIVOLT.
 - Debe conservar la misma clave durante toda la vida de la aplicación para permitir actualizaciones.
 
 ### AAB release firmado
@@ -41,80 +41,107 @@ RC24 recupera funciones presentes en la APK RC23 y añade protección de persist
 - Uso: publicación en Google Play o distribución administrada compatible.
 - Firma: la misma configuración release definida para la aplicación.
 
-## Secretos requeridos en GitHub
+## Actualización y conservación de datos
 
-La automatización release espera estos secretos del repositorio:
+Antes de actualizar la aplicación real:
 
-- `ANDROID_KEYSTORE_BASE64`: keystore codificado en Base64.
-- `ANDROID_KEYSTORE_PASSWORD`: contraseña del almacén de claves.
-- `ANDROID_KEY_ALIAS`: alias de la clave.
-- `ANDROID_KEY_PASSWORD`: contraseña de la clave.
+1. Crear una copia JSON desde RC29.
+2. Verificar que el archivo puede compartirse o guardarse.
+3. Conservar RC29 instalada durante el piloto paralelo.
+4. Instalar `ISIVOLT RC24 Pruebas` como segunda aplicación.
+5. Realizar las pruebas con datos de demostración.
+6. No desinstalar RC29 hasta disponer de una migración o restauración comprobada.
+7. Cuando se autorice la actualización real, instalar sobre la anterior sin desinstalar.
+8. Abrir la aplicación y desbloquearla.
+9. Comprobar el diagnóstico SQLite.
+10. Revisar herramientas, técnicos, tarjetas, movimientos, accesorios y mantenimiento.
+11. Realizar un préstamo y una devolución de prueba.
 
-Nunca deben subirse al repositorio:
-
-- El archivo `.jks` o `.keystore`.
-- Contraseñas.
-- Archivos `key.properties` reales.
-- Copias de seguridad de la clave sin cifrar.
-
-## Versionado Android
-
-- `versionName`: se obtiene de `package.json` en la compilación normal.
-- `versionCode`: se calcula a partir de la versión semántica.
-- Fórmula base: `major * 10000 + minor * 100 + patch`.
-- Las candidatas release incorporan un incremento adicional basado en la ejecución de GitHub Actions.
-- RC24 paralela utiliza `versionCode 24001` y un identificador separado.
-- Cada artefacto destinado a distribución debe tener un `versionCode` superior al anterior.
+Desinstalar una aplicación elimina su almacenamiento privado del dispositivo. Solo debe hacerse después de confirmar que existe una copia restaurable.
 
 ## Checklist físico RC24
 
-1. Instalar RC24 junto a RC23 y comprobar que aparecen como dos aplicaciones distintas.
-2. Crear un administrador local en RC24.
-3. Importar o crear un conjunto pequeño de técnicos y herramientas de prueba.
-4. Registrar un préstamo empezando por el técnico.
-5. Registrar otro préstamo empezando por la herramienta.
-6. Probar QR, NFC y selección manual.
-7. Devolver varias herramientas asignando condiciones diferentes.
-8. Verificar que una avería exige observaciones y deja la herramienta bloqueada.
-9. Pulsar dos veces rápidamente la confirmación y comprobar que solo existe un lote.
-10. Cerrar la aplicación inmediatamente después de guardar y comprobar que el movimiento reaparece al abrir.
-11. Probar una herramienta reservada para el técnico correcto y para uno incorrecto.
-12. Exportar inventario, movimientos y auditoría disponibles.
-13. Crear una copia, borrar los datos de prueba y restaurarla.
-14. Comprobar botón Atrás, teclado, scroll y safe areas.
+### Separación respecto a RC29
 
-## Actualización y conservación de datos
+- RC29 y RC24 Pruebas aparecen como aplicaciones distintas.
+- Abrir o borrar datos en RC24 no modifica RC29.
+- El nombre y el icono permiten distinguir ambas aplicaciones.
 
-Antes de cada actualización de la aplicación definitiva:
+### Tarjeta corporativa
 
-1. Crear una copia JSON desde la aplicación.
-2. Verificar que el archivo puede compartirse o guardarse.
-3. Instalar la APK nueva sobre la anterior, sin desinstalar.
-4. Abrir la aplicación y desbloquearla.
-5. Comprobar el diagnóstico SQLite.
-6. Revisar herramientas, técnicos, movimientos, accesorios y mantenimiento.
-7. Realizar una entrega y una devolución de prueba.
+- Abrir Herramientas > Tarjetas.
+- Asociar el código de barras de una tarjeta a un técnico de prueba.
+- Confirmar que el lector devuelve el valor esperado.
+- Realizar un préstamo identificando al técnico mediante la tarjeta.
+- Cerrar y abrir la aplicación.
+- Confirmar que la tarjeta continúa asociada.
+- Exportar una copia JSON.
+- Eliminar la asociación, restaurar la copia y comprobar que vuelve a aparecer.
+- Intentar asignar el mismo código a otro técnico y verificar el bloqueo.
 
-Desinstalar la aplicación elimina el almacenamiento privado del dispositivo. Solo debe hacerse después de confirmar que existe una copia restaurable.
+### Operaciones
+
+- Préstamo empezando por técnico.
+- Préstamo empezando por herramienta.
+- Devolución cargando todas las herramientas del técnico.
+- Devolución de una herramienta concreta.
+- Devolución múltiple con estados diferentes.
+- Incidencia con observación obligatoria.
+- Herramienta reservada para el técnico correcto y para uno incorrecto.
+- Herramienta en reparación o fuera de servicio.
+- Doble pulsación rápida en Confirmar.
+- Cerrar la aplicación justo después de confirmar y verificar recuperación.
+
+### Interfaz recuperada
+
+- Inventario en dos columnas sin cortes ni solapamientos.
+- Técnicos en dos columnas y colores por especialidad.
+- Cortinas de filtros de Inventario y Técnicos.
+- Historial con fecha y hora completas.
+- Filtros Hoy, Ayer, 7 días, 30 días, mes y rango.
+- Salidas verdes, entradas rojas, incidencias ámbar y ajustes violetas.
+- Descarga CSV y apertura en Excel.
+- Saludo configurable y cambio de Buenos días/tardes/noches.
+- Radar del logo fluido.
+- Menú administrativo único sin botones flotantes superpuestos.
+- Navegación inferior separada de los gestos o botones Android.
+
+### Botón Atrás
+
+- Desde una ventana abierta: cierra la ventana.
+- Desde Inventario, Técnicos o Historial: vuelve a Inicio.
+- Desde Inicio: muestra aviso de segunda pulsación.
+- Segunda pulsación: sale de la aplicación.
+
+### Multimedia e informes
+
+- Cámara abre y escanea QR y códigos lineales.
+- Fotografía desde cámara.
+- Fotografía desde galería.
+- Impresión QR individual.
+- Impresión QR por grupo.
+- Excel operativo.
+- Excel de gestión.
+- Copia y restauración JSON.
 
 ## Criterios de aceptación de producción
 
-- La cámara abre y escanea QR reales.
-- NFC identifica técnicos y herramientas sin duplicar UIDs.
+- La cámara abre y escanea QR y CODE 39 reales.
 - La entrada manual funciona como respaldo.
 - Los movimientos muestran el operador autenticado.
 - Los movimientos originales no se pueden editar ni borrar.
 - Las rectificaciones crean un registro nuevo enlazado.
-- SQLite muestra el esquema esperado y conserva los datos tras reiniciar.
-- `operationId` se conserva después de cerrar y abrir la aplicación.
+- SQLite muestra esquema v5 y conserva los datos tras reiniciar.
+- Los códigos de barras de técnicos se incluyen en copia y restauración.
 - La actualización conserva usuarios, inventario, fotos, movimientos y mantenimiento.
-- Excel y copia JSON se generan y comparten.
-- La restauración recupera todos los apartados documentados.
+- Excel, CSV y copia JSON se generan y comparten.
+- La restauración recupera todos los apartados.
 - El bloqueo por PIN y por inactividad funciona.
 - Los roles impiden acciones no autorizadas.
 - No aparecen errores críticos en el diagnóstico.
+- Ninguna función útil de RC29 desaparece sin una decisión expresa.
 
-## Custodia de la clave
+## Custodia de la firma
 
 Se recomienda mantener al menos dos copias cifradas de la clave release:
 

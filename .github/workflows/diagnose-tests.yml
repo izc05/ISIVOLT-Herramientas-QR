@@ -15,7 +15,10 @@ jobs:
           git clone -q --depth 1 --branch "${{ github.head_ref }}" \
             https://github.com/${{ github.repository }}.git app
           cd app
-          npm ci --silent >/dev/null 2>&1
+          npm install --silent >/tmp/npm-install.log 2>&1 || {
+            tail -n 80 /tmp/npm-install.log
+            exit 1
+          }
           set +e
           npm test -- --reporter=verbose > /tmp/vitest.log 2>&1
           status=$?

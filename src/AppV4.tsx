@@ -53,6 +53,8 @@ type NativeFeedback = {
   tone: 'success' | 'warning' | 'error';
 } | null;
 
+type IdentificationMode = 'technician' | 'tool';
+
 const toolStatusLabel: Record<ToolStatus, string> = {
   available: 'Disponible',
   loaned: 'Prestada',
@@ -82,6 +84,20 @@ const buildReturnConditions = (
   tools.map((tool) => [tool.id, defaultCondition]),
 ) as Record<string, ReturnCondition>;
 
+const initialInstruction = (
+  mode: OperationMode,
+  identificationMode: IdentificationMode,
+) => {
+  if (mode === 'delivery') {
+    return identificationMode === 'technician'
+      ? 'Identifica primero al técnico responsable mediante NFC, QR o búsqueda manual.'
+      : 'Identifica primero una o varias herramientas y después al técnico responsable.';
+  }
+  return identificationMode === 'technician'
+    ? 'Identifica al técnico para cargar sus herramientas pendientes de devolución.'
+    : 'Identifica la herramienta que regresa; la aplicación localizará a su técnico responsable.';
+};
+
 export default function AppV4() {
   const nativeScanner = useMemo(() => isNativeScannerAvailable(), []);
   const nativeNfc = useMemo(() => isNfcScannerAvailable(), []);
@@ -94,6 +110,7 @@ export default function AppV4() {
   const [toolSelectorOpen, setToolSelectorOpen] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const [mode, setMode] = useState<OperationMode>('delivery');
+  const [identificationMode, setIdentificationMode] = useState<IdentificationMode>('technician');
   const [operationId, setOperationId] = useState(() => createOperationId());
   const [sessionData, setSessionData] = useState<AppData>(() => loadAppData());
   const [technician, setTechnician] = useState<Technician | null>(null);
@@ -108,10 +125,14 @@ export default function AppV4() {
   const [feedback, setFeedback] = useState<NativeFeedback>(null);
   const [scanAlert, setScanAlert] = useState<{ tool: Tool; title: string; detail: string } | null>(null);
 
-  const resetWorkflow = (nextMode: OperationMode = 'delivery') => {
+  const clearDraft = (
+    nextMode: OperationMode,
+    nextIdentificationMode: IdentificationMode,
+  ) => {
     savingRef.current = false;
     setSessionData(loadAppData());
     setMode(nextMode);
+    setIdentificationMode(nextIdentificationMode);
     setOperationId(createOperationId());
     setTechnician(null);
     setTools([]);
@@ -125,11 +146,11 @@ export default function AppV4() {
     setSelectorOpen(false);
     setToolSelectorOpen(false);
     setScanAlert(null);
-    setScannerMessage(
-      nextMode === 'delivery'
-        ? 'Identifica primero al técnico mediante su tarjeta NFC, su QR o la búsqueda manual.'
-        : 'Pasa la tarjeta del técnico para cargar todo lo pendiente o identifica una herramienta individual.',
-    );
+    setScannerMessage(initialInstruction(nextMode, nextIdentificationMode));
+  };
+
+  const resetWorkflow = (nextMode: OperationMode = 'delivery') => {
+    clearDraft(nextMode, 'technician');
   };
 
   const openWorkflow = () => {
@@ -180,7 +201,12 @@ export default function AppV4() {
 
   const changeMode = (nextMode: OperationMode) => {
     if (savingRef.current) return;
-    resetWorkflow(nextMode);
+    clearDraft(nextMode, identificationMode);
+  };
+
+  const changeIdentificationMode = (nextMode: IdentificationMode) => {
+    if (savingRef.current || nextMode === identificationMode) return;
+    clearDraft(mode, nextMode);
   };
 
   const selectTechnician = (technicianId: string) => {
@@ -196,11 +222,20 @@ export default function AppV4() {
       return false;
     }
 
+    if (
+      tools.length > 0
+      && tools.some((tool) => tool.holderTechnicianId && tool.holderTechnicianId !== foundTechnician.id)
+    ) {
+      setScannerMessage('Las herramientas seleccionadas pertenecen a otro técnico.');
+      navigator.vibrate?.([120, 60, 120]);
+      return false;
+    }
+
     setTechnician(foundTechnician);
     setSelectorOpen(false);
     setToolSelectorOpen(false);
 
-    if (mode === 'return') {
+    if (mode === 'return' && identificationMode === 'technician') {
       const pending = sessionData.tools.filter(
         (tool) => tool.status === 'loaned' && tool.holderTechnicianId === foundTechnician.id,
       );
@@ -211,8 +246,10 @@ export default function AppV4() {
           ? `${foundTechnician.name} identificado. Se han cargado ${pending.length} herramienta${pending.length === 1 ? '' : 's'} pendiente${pending.length === 1 ? '' : 's'}. Revisa la lista antes de guardar.`
           : `${foundTechnician.name} no tiene herramientas pendientes de devolución.`,
       );
+    } else if (tools.length > 0) {
+      setScannerMessage(`${foundTechnician.name} identificado. Ya puedes revisar la operación.`);
     } else {
-      setScannerMessage(`${foundTechnician.name} identificado. Escanea ahora una o varias herramientas disponibles mediante QR o NFC.`);
+      setScannerMessage(`${foundTechnician.name} identificado. Escanea o busca las herramientas de la operación.`);
     }
 
     navigator.vibrate?.([60, 35, 80]);
@@ -266,7 +303,12 @@ export default function AppV4() {
         [foundTool.id]: current[foundTool.id] ?? condition,
       }));
     }
-    setScannerMessage(`${foundTool.name} añadida. Puedes incorporar otra mediante QR o NFC, o revisar la operación.`);
+
+    if (mode === 'delivery' && !technician) {
+      setScannerMessage(`${foundTool.name} añadida. Identifica ahora al técnico responsable.`);
+    } else {
+      setScannerMessage(`${foundTool.name} añadida. Puedes incorporar otra o revisar la operación.`);
+    }
     navigator.vibrate?.([60, 35, 80]);
     return true;
   };
@@ -320,8 +362,8 @@ export default function AppV4() {
       return;
     }
 
-    if (mode === 'delivery' && !technician) {
-      setScannerMessage('Para una entrega debes identificar primero al técnico mediante QR, NFC o búsqueda manual.');
+    if (mode === 'delivery' && !technician && identificationMode === 'technician') {
+      setScannerMessage('En este modo debes identificar primero al técnico responsable.');
       navigator.vibrate?.([120, 60, 120]);
       return;
     }
@@ -370,8 +412,8 @@ export default function AppV4() {
     }
 
     if (foundTool) {
-      if (mode === 'delivery' && !technician) {
-        setScannerMessage('Se ha detectado una herramienta. Identifica primero al técnico responsable.');
+      if (mode === 'delivery' && !technician && identificationMode === 'technician') {
+        setScannerMessage('Se ha detectado una herramienta. En este modo identifica primero al técnico responsable.');
         navigator.vibrate?.([120, 60, 120]);
         return;
       }
@@ -513,9 +555,41 @@ export default function AppV4() {
     && tools.length > 0
     && (mode === 'return' || Boolean(technician));
 
-  const expectedLabel = mode === 'delivery'
+  const expectedLabel = identificationMode === 'technician'
     ? technician ? 'herramienta' : 'técnico'
-    : technician ? 'herramienta' : 'técnico o herramienta';
+    : tools.length === 0
+      ? 'herramienta'
+      : technician
+        ? 'herramienta'
+        : 'técnico';
+
+  const technicianProgress = (
+    <article
+      key="technician"
+      className={technician ? 'completed' : identificationMode === 'technician' || tools.length > 0 ? 'current' : ''}
+    >
+      <span><UserRound size={20} /></span>
+      <div>
+        <small>{identificationMode === 'technician' ? 'Paso 1' : 'Paso 2'}</small>
+        <strong>{technician?.name ?? (identificationMode === 'technician' ? 'Identificar técnico' : 'Asignar técnico')}</strong>
+      </div>
+      {technician && <Check size={19} />}
+    </article>
+  );
+
+  const toolProgress = (
+    <article
+      key="tools"
+      className={tools.length > 0 ? 'completed' : identificationMode === 'tool' || technician ? 'current' : ''}
+    >
+      <span><Wrench size={20} /></span>
+      <div>
+        <small>{identificationMode === 'tool' ? 'Paso 1' : 'Paso 2'}</small>
+        <strong>{tools.length ? `${tools.length} herramienta${tools.length === 1 ? '' : 's'}` : 'Identificar herramientas'}</strong>
+      </div>
+      {tools.length > 0 && <Check size={19} />}
+    </article>
+  );
 
   return (
     <>
@@ -581,17 +655,17 @@ export default function AppV4() {
                     <button disabled={saving} className={mode === 'return' ? 'active' : ''} onClick={() => changeMode('return')}><ArrowDownToLine size={18} /> Devolución</button>
                   </div>
 
+                  <div className="native-identification-switch" aria-label="Orden de identificación">
+                    <button disabled={saving} className={identificationMode === 'technician' ? 'active' : ''} onClick={() => changeIdentificationMode('technician')}>
+                      <UserRound size={18} /> Primero técnico
+                    </button>
+                    <button disabled={saving} className={identificationMode === 'tool' ? 'active' : ''} onClick={() => changeIdentificationMode('tool')}>
+                      <Wrench size={18} /> Primero herramienta
+                    </button>
+                  </div>
+
                   <div className="native-progress-grid">
-                    <article className={technician ? 'completed' : 'current'}>
-                      <span><UserRound size={20} /></span>
-                      <div><small>{mode === 'delivery' ? 'Paso 1' : 'Técnico'}</small><strong>{technician?.name ?? (mode === 'delivery' ? 'Identificar técnico' : 'Opcional: cargar todo')}</strong></div>
-                      {technician && <Check size={19} />}
-                    </article>
-                    <article className={tools.length > 0 ? 'completed' : mode === 'return' || technician ? 'current' : ''}>
-                      <span><Wrench size={20} /></span>
-                      <div><small>{mode === 'delivery' ? 'Paso 2' : 'Herramientas'}</small><strong>{tools.length ? `${tools.length} herramienta${tools.length === 1 ? '' : 's'}` : 'Identificar herramientas'}</strong></div>
-                      {tools.length > 0 && <Check size={19} />}
-                    </article>
+                    {identificationMode === 'technician' ? <>{technicianProgress}{toolProgress}</> : <>{toolProgress}{technicianProgress}</>}
                   </div>
 
                   <div className="native-scan-methods">
@@ -616,7 +690,7 @@ export default function AppV4() {
                     </button>
                   )}
 
-                  {(mode === 'return' || Boolean(technician)) && (
+                  {(mode === 'return' || Boolean(technician) || identificationMode === 'tool') && (
                     <button disabled={saving} className="native-manual-tool" type="button" onClick={() => setToolSelectorOpen(true)}>
                       <ListFilter size={19} />
                       <span><strong>Buscar herramienta manualmente</strong><small>Nombre, código, categoría, ubicación, marca o NFC</small></span>

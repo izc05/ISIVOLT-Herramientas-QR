@@ -22,6 +22,7 @@ import './features/management/maintenance-board.css';
 import './features/operations/operation-flow.css';
 import './features/operations/operation-review.css';
 import './features/technicians/technician-create.css';
+import './features/technicians/technician-barcode.css';
 import './features/nfc/nfc-management.css';
 import './security/security.css';
 import './security/rectification.css';

@@ -141,8 +141,8 @@ const upsertTechnicians = async (db: SQLiteDBConnection, data: AppData): Promise
     await db.run(
       `INSERT INTO technicians (
         id, code, name, specialty, role, phone, extension, previous_phone, email,
-        nfc_uid, active, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        nfc_uid, active, created_at, updated_at, barcode_value
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         code = excluded.code,
         name = excluded.name,
@@ -154,7 +154,8 @@ const upsertTechnicians = async (db: SQLiteDBConnection, data: AppData): Promise
         email = excluded.email,
         nfc_uid = excluded.nfc_uid,
         active = excluded.active,
-        updated_at = excluded.updated_at;`,
+        updated_at = excluded.updated_at,
+        barcode_value = excluded.barcode_value;`,
       technicianToSqlValues(technician),
       false,
     );

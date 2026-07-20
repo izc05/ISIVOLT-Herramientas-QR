@@ -4,6 +4,7 @@ import AppV6 from './AppV6';
 import { APP_VERSION } from './config/app';
 import ManagementCenter from './features/management/ManagementCenter';
 import ManagementFiles from './features/management/ManagementFiles';
+import TechnicianBarcodeCenter from './features/technicians/TechnicianBarcodeCenter';
 import TechnicianQuickCreate from './features/technicians/TechnicianQuickCreate';
 import type { IntegrityIssue } from './services/dataIntegrity';
 import {
@@ -64,6 +65,7 @@ export default function AppStable() {
       <ManagementCenter onSaved={refreshApplication} />
       <ManagementFiles />
       <TechnicianQuickCreate onSaved={refreshApplication} />
+      <TechnicianBarcodeCenter />
 
       <button
         className="stability-badge"

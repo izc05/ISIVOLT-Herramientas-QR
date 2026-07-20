@@ -1,6 +1,8 @@
 import type {
+  AccessoryCondition,
   AppData,
   Movement,
+  MovementAccessoryCheck,
   OperationMode,
   ReturnCondition,
   Tool,
@@ -16,6 +18,8 @@ export type MovementRuleErrorCode =
   | 'technician-inactive'
   | 'condition-required'
   | 'incident-notes-required'
+  | 'accessory-check-required'
+  | 'accessory-not-ready'
   | 'tool-not-found'
   | 'tool-inactive'
   | 'tool-not-available'
@@ -34,6 +38,8 @@ export class MovementRuleError extends Error {
   }
 }
 
+export type AccessoryChecksByTool = Record<string, Record<string, AccessoryCondition>>;
+
 export type MovementCommand = {
   operationId?: string;
   mode: OperationMode;
@@ -41,6 +47,10 @@ export type MovementCommand = {
   technicianId?: string;
   condition?: ReturnCondition;
   returnConditions?: Record<string, ReturnCondition>;
+  accessoryChecks?: AccessoryChecksByTool;
+  expectedReturnAt?: string;
+  workOrder?: string;
+  workLocation?: string;
   notes?: string;
   operatorName: string;
   occurredAt?: string;
@@ -60,6 +70,8 @@ const randomId = (prefix: string) => {
 
 export const createMovementId = () => randomId('mov');
 export const createOperationId = () => randomId('op');
+
+const optionalText = (value?: string) => value?.trim() || undefined;
 
 const getReturnCondition = (
   command: MovementCommand,
@@ -144,6 +156,51 @@ const validateReturnTool = (tool: Tool, technicianId?: string) => {
   }
 };
 
+const buildAccessoryChecks = (
+  data: AppData,
+  command: MovementCommand,
+  tool: Tool,
+): MovementAccessoryCheck[] => {
+  const accessories = (data.accessories ?? []).filter(
+    (accessory) => accessory.toolId === tool.id && accessory.active,
+  );
+
+  const checks = accessories.map((accessory) => ({
+    accessoryId: accessory.id,
+    condition: command.accessoryChecks?.[tool.id]?.[accessory.id] ?? 'not_checked',
+  }));
+
+  const uncheckedRequired = accessories.find((accessory) => (
+    accessory.required
+    && checks.find((check) => check.accessoryId === accessory.id)?.condition === 'not_checked'
+  ));
+
+  if (uncheckedRequired) {
+    throw new MovementRuleError(
+      'accessory-check-required',
+      `Comprueba el accesorio obligatorio «${uncheckedRequired.name}» de ${tool.name}.`,
+    );
+  }
+
+  const unavailable = accessories.find((accessory) => {
+    const condition = checks.find((check) => check.accessoryId === accessory.id)?.condition;
+    return accessory.required && (condition === 'missing' || condition === 'damaged');
+  });
+
+  if (command.mode === 'delivery' && unavailable) {
+    throw new MovementRuleError(
+      'accessory-not-ready',
+      `${tool.name} no puede entregarse: el accesorio obligatorio «${unavailable.name}» figura como ${unavailable.condition === 'damaged' ? 'dañado' : 'ausente'}.`,
+    );
+  }
+
+  return checks;
+};
+
+const hasAccessoryIncident = (checks: MovementAccessoryCheck[]) => checks.some(
+  (check) => check.condition === 'missing' || check.condition === 'damaged',
+);
+
 export const applyMovementCommand = (
   source: AppData,
   command: MovementCommand,
@@ -171,7 +228,10 @@ export const applyMovementCommand = (
   }
 
   const occurredAt = command.occurredAt ?? new Date().toISOString();
-  const notes = command.notes?.trim() || undefined;
+  const notes = optionalText(command.notes);
+  const expectedReturnAt = command.mode === 'delivery' ? optionalText(command.expectedReturnAt) : undefined;
+  const workOrder = optionalText(command.workOrder);
+  const workLocation = optionalText(command.workLocation);
 
   if (command.mode === 'delivery') {
     validateDeliveryTechnician(source, command.technicianId);
@@ -184,17 +244,6 @@ export const applyMovementCommand = (
     throw new MovementRuleError(
       'condition-required',
       'Asigna una condición a cada herramienta antes de devolver.',
-    );
-  }
-
-  if (
-    command.mode === 'return'
-    && selectedIds.some((toolId) => getReturnCondition(command, toolId) !== 'ok')
-    && !notes
-  ) {
-    throw new MovementRuleError(
-      'incident-notes-required',
-      'Describe la incidencia antes de devolver una herramienta para revisión o como averiada.',
     );
   }
 
@@ -217,11 +266,31 @@ export const applyMovementCommand = (
     return tool;
   });
 
+  const accessoryChecksByTool = new Map(
+    selectedTools.map((tool) => [tool.id, buildAccessoryChecks(source, command, tool)]),
+  );
+
+  if (
+    command.mode === 'return'
+    && selectedIds.some((toolId) => (
+      getReturnCondition(command, toolId) !== 'ok'
+      || hasAccessoryIncident(accessoryChecksByTool.get(toolId) ?? [])
+    ))
+    && !notes
+  ) {
+    throw new MovementRuleError(
+      'incident-notes-required',
+      'Describe la incidencia antes de devolver una herramienta o accesorio con problemas.',
+    );
+  }
+
   const selectedSet = new Set(selectedIds);
   const movements: Movement[] = [];
 
   const tools = source.tools.map((tool) => {
     if (!selectedSet.has(tool.id)) return tool;
+
+    const accessoryChecks = accessoryChecksByTool.get(tool.id) ?? [];
 
     if (command.mode === 'delivery') {
       movements.push({
@@ -235,6 +304,10 @@ export const applyMovementCommand = (
         previousStatus: tool.status,
         nextStatus: 'loaned',
         notes,
+        expectedReturnAt,
+        workOrder,
+        workLocation,
+        accessoryChecks,
       });
 
       return {
@@ -256,30 +329,35 @@ export const applyMovementCommand = (
       );
     }
 
-    const nextStatus: ToolStatus = condition === 'ok'
+    const accessoryIncident = hasAccessoryIncident(accessoryChecks);
+    const effectiveCondition: ReturnCondition = condition === 'ok' && accessoryIncident ? 'review' : condition;
+    const nextStatus: ToolStatus = effectiveCondition === 'ok'
       ? 'available'
-      : condition === 'review'
+      : effectiveCondition === 'review'
         ? 'review'
         : 'damaged';
 
     movements.push({
       id: idFactory(),
       operationId: command.operationId,
-      type: condition === 'ok' ? 'return' : 'incident',
+      type: effectiveCondition === 'ok' ? 'return' : 'incident',
       toolId: tool.id,
       technicianId: tool.holderTechnicianId,
       operatorName: command.operatorName,
       occurredAt,
       previousStatus: tool.status,
       nextStatus,
-      condition,
+      condition: effectiveCondition,
       notes,
+      workOrder,
+      workLocation,
+      accessoryChecks,
     });
 
     return {
       ...tool,
       status: nextStatus,
-      serviceStatus: condition === 'ok' ? tool.serviceStatus : 'out_of_service' as const,
+      serviceStatus: effectiveCondition === 'ok' ? tool.serviceStatus : 'out_of_service' as const,
       holderTechnicianId: undefined,
       loanedAt: undefined,
       updatedAt: occurredAt,

@@ -3,10 +3,14 @@ import {
   AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
+  CalendarClock,
   CalendarDays,
   Check,
+  ClipboardList,
   Download,
   History,
+  MapPin,
+  PackageCheck,
   RotateCcw,
   Search,
   UserRound,
@@ -83,6 +87,19 @@ const formatFullDateTime = (iso: string) => new Intl.DateTimeFormat('es-ES', {
   hour12: false,
 }).format(new Date(iso));
 
+const accessoryConditionLabel = {
+  ok: 'Correcto',
+  missing: 'Falta',
+  damaged: 'Dañado',
+  not_checked: 'Sin revisar',
+} as const;
+
+const accessorySummary = (data: AppData, movement: Movement) => (movement.accessoryChecks ?? [])
+  .map((check) => {
+    const accessory = (data.accessories ?? []).find((item) => item.id === check.accessoryId);
+    return `${accessory?.name ?? check.accessoryId}: ${accessoryConditionLabel[check.condition]}`;
+  });
+
 const csvCell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
 
 const exportAuditCsv = (data: AppData, movements: Movement[]) => {
@@ -97,6 +114,10 @@ const exportAuditCsv = (data: AppData, movements: Movement[]) => {
     'Estado anterior',
     'Estado nuevo',
     'Condición',
+    'OT',
+    'Ubicación de trabajo',
+    'Devolución prevista',
+    'Accesorios comprobados',
     'Observaciones',
     'ID operación',
     'ID movimiento',
@@ -116,6 +137,10 @@ const exportAuditCsv = (data: AppData, movements: Movement[]) => {
       movement.previousStatus,
       movement.nextStatus,
       movement.condition ?? '',
+      movement.workOrder ?? '',
+      movement.workLocation ?? '',
+      movement.expectedReturnAt ? formatFullDateTime(movement.expectedReturnAt) : '',
+      accessorySummary(data, movement).join(' | '),
       movement.notes ?? '',
       movement.operationId ?? '',
       movement.id,
@@ -186,6 +211,9 @@ export default function MovementHistoryCenter() {
           technician?.code ?? '',
           movement.operatorName,
           movement.notes ?? '',
+          movement.workOrder ?? '',
+          movement.workLocation ?? '',
+          accessorySummary(data, movement).join(' '),
           movementPresentation[movement.type].label,
           movement.operationId ?? '',
         ].some((value) => value.toLocaleLowerCase('es-ES').includes(needle));
@@ -209,17 +237,34 @@ export default function MovementHistoryCenter() {
 
   return (
     <div className="advanced-history-backdrop" onClick={() => setOpen(false)}>
-      <section className="advanced-history-center" role="dialog" aria-modal="true" aria-label="Historial avanzado" onClick={(event) => event.stopPropagation()}>
+      <section
+        className="advanced-history-center"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Historial avanzado"
+        onClick={(event) => event.stopPropagation()}
+      >
         <header>
           <div>
             <span><History size={25} /></span>
-            <div><small>Auditoría local</small><h2>Historial de movimientos</h2><p>Fecha y hora completas, filtros y descarga.</p></div>
+            <div>
+              <small>Auditoría local</small>
+              <h2>Historial de movimientos</h2>
+              <p>Fecha, OT, ubicación, accesorios y descarga.</p>
+            </div>
           </div>
           <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={21} /></button>
         </header>
 
         <div className="advanced-history-toolbar">
-          <label><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Herramienta, técnico, código, nota u operación…" /></label>
+          <label>
+            <Search size={18} />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Herramienta, técnico, OT, ubicación o accesorio…"
+            />
+          </label>
           <button type="button" onClick={exportFiltered} disabled={filtered.length === 0}>
             {exported ? <Check size={18} /> : <Download size={18} />}
             {exported ? 'Descargada' : 'Descargar auditoría'}
@@ -236,7 +281,14 @@ export default function MovementHistoryCenter() {
             ['month', 'Este mes'],
             ['range', 'Rango'],
           ] as Array<[TimePreset, string]>).map(([value, label]) => (
-            <button type="button" key={value} className={preset === value ? 'active' : ''} onClick={() => setPreset(value)}>{label}</button>
+            <button
+              type="button"
+              key={value}
+              className={preset === value ? 'active' : ''}
+              onClick={() => setPreset(value)}
+            >
+              {label}
+            </button>
           ))}
         </div>
 
@@ -260,6 +312,7 @@ export default function MovementHistoryCenter() {
             const technician = data.technicians.find((item) => item.id === movement.technicianId);
             const presentation = movementPresentation[movement.type];
             const Icon = presentation.Icon;
+            const accessories = accessorySummary(data, movement);
             return (
               <article key={movement.id} className={`history-${presentation.tone}`}>
                 <span className="advanced-history-icon"><Icon size={19} /></span>
@@ -267,6 +320,15 @@ export default function MovementHistoryCenter() {
                   <div><strong>{tool?.name ?? 'Herramienta eliminada'}</strong><em>{presentation.label}</em></div>
                   <small><Wrench size={13} /> {tool?.code ?? movement.toolId}</small>
                   <small><UserRound size={13} /> {technician?.name ?? 'Almacén / sin técnico'}{technician?.code ? ` · ${technician.code}` : ''}</small>
+                  {movement.workOrder && <small><ClipboardList size={13} /> {movement.workOrder}</small>}
+                  {movement.workLocation && <small><MapPin size={13} /> {movement.workLocation}</small>}
+                  {movement.expectedReturnAt && <small><CalendarClock size={13} /> Prevista: {formatFullDateTime(movement.expectedReturnAt)}</small>}
+                  {accessories.length > 0 && (
+                    <div className="advanced-history-accessories">
+                      <PackageCheck size={14} />
+                      <span>{accessories.join(' · ')}</span>
+                    </div>
+                  )}
                   {movement.notes && <p>{movement.notes}</p>}
                 </div>
                 <div className="advanced-history-meta">
@@ -279,11 +341,18 @@ export default function MovementHistoryCenter() {
           })}
 
           {filtered.length === 0 && (
-            <div className="advanced-history-empty"><History size={34} /><strong>No hay movimientos en este filtro</strong><span>Cambia la fecha o la búsqueda.</span></div>
+            <div className="advanced-history-empty">
+              <History size={34} />
+              <strong>No hay movimientos en este filtro</strong>
+              <span>Cambia la fecha o la búsqueda.</span>
+            </div>
           )}
         </div>
 
-        <footer><span>{filtered.length} registro{filtered.length === 1 ? '' : 's'} visible{filtered.length === 1 ? '' : 's'}</span><button type="button" onClick={() => setOpen(false)}>Cerrar historial</button></footer>
+        <footer>
+          <span>{filtered.length} registro{filtered.length === 1 ? '' : 's'} visible{filtered.length === 1 ? '' : 's'}</span>
+          <button type="button" onClick={() => setOpen(false)}>Cerrar historial</button>
+        </footer>
       </section>
     </div>
   );

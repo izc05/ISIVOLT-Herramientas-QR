@@ -14,7 +14,8 @@ Esta matriz evita seguir construyendo sobre una versión incompleta. Cada funci�
 | Búsqueda de técnicos por nombre, código y especialidad | Recuperada | Comparar velocidad con RC29 |
 | Condición individual en devoluciones múltiples | Recuperada | Probar Correcta/Revisión/Averiada |
 | Bloqueo de doble pulsación | Recuperada | Pulsación rápida repetida |
-| Código de barras de tarjeta corporativa | Recuperada en código y SQLite v5 | Probar físicamente CODE 39 `52502` |
+| Código de barras de tarjeta corporativa | Recuperada en código y SQLite v5 | Probar físicamente los códigos horizontal y vertical de la tarjeta real |
+| Normalización de espacios y guiones del número impreso | Recuperada y probada | Comparar lectura de cámara con introducción manual |
 | Tarjeta incluida en copia y restauración | Recuperada | Exportar JSON, restaurar y volver a leer |
 | NFC | Se conserva como vía opcional | No bloquear el flujo si móvil o tarjeta no responden |
 | Mensajes diferenciados para salida, entrada e incidencia | Recuperada | Confirmar verde, rojo y ámbar en móvil |
@@ -56,20 +57,22 @@ Esta matriz evita seguir construyendo sobre una versión incompleta. Cada funci�
 
 ## Validación de esta tanda
 
-- Pruebas de dominio: correctas.
-- Migraciones SQLite reales v1-v5: correctas.
-- TypeScript y Vite: correctos.
-- APK paralela Android: generada correctamente.
+- Pruebas de dominio: pendientes de la nueva ejecución automática.
+- Migraciones SQLite reales v1-v5: correctas en la tanda anterior.
+- TypeScript y Vite: correctos en la tanda anterior.
+- APK paralela Android: generada correctamente en la tanda anterior.
 - Application ID de pruebas separado de RC29.
-- SHA-256 de APK: `84977559bc0d4d06103c668de1080dc413b162816d649dd7a63c1d4bd4c0b9db`.
+- La fotografía real muestra dos códigos; la aplicación no presupone cuál contiene el identificador útil y guarda el valor leído por la cámara.
 
 ## Orden de trabajo restante
 
-1. Instalar la APK paralela nueva sin sustituir RC29.
-2. Asociar una tarjeta real a un técnico y probar préstamo/devolución.
-3. Probar Historial, CSV, Atrás, safe areas y menú administrativo.
-4. Verificar impresión QR individual y por grupo.
-5. Comparar cabecera, inventario y todos los detalles visuales con RC29 instalada.
-6. Corregir diferencias y repetir el checklist antes de fusionar.
+1. Generar la nueva APK paralela con la normalización de la tarjeta real.
+2. Instalarla sin sustituir RC29.
+3. Asociar primero el código horizontal a un técnico y probar un préstamo.
+4. Si no lo reconoce, repetir la asociación con el código vertical.
+5. Probar Historial, CSV, Atrás, safe areas y menú administrativo.
+6. Verificar impresión QR individual y por grupo.
+7. Comparar cabecera, inventario y todos los detalles visuales con RC29 instalada.
+8. Corregir diferencias y repetir el checklist antes de fusionar.
 
 La rama no debe fusionarse con `main` hasta completar la comparación física y confirmar que la nueva candidata no elimina ninguna función útil de RC29.

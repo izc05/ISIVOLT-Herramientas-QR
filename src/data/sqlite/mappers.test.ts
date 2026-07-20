@@ -30,6 +30,7 @@ const technician: Technician = {
   id: 'tech-1',
   code: 'TEC-001',
   nfcUid: 'AABBCCDDEE01',
+  barcodeValue: '52502',
   name: 'Técnico Uno',
   specialty: 'Electricidad',
   active: true,
@@ -84,16 +85,18 @@ describe('SQLite mappers', () => {
     expect(recovered).toMatchObject(tool);
   });
 
-  it('convierte y recupera técnicos con UID NFC', () => {
+  it('convierte y recupera técnicos con NFC y código de barras', () => {
     const values = technicianToSqlValues(technician);
     expect(values[0]).toBe('tech-1');
     expect(values[9]).toBe(technician.nfcUid);
     expect(values[10]).toBe(1);
+    expect(values[13]).toBe('52502');
 
     const recovered = rowToTechnician({
       id: technician.id,
       code: technician.code,
       nfc_uid: technician.nfcUid,
+      barcode_value: technician.barcodeValue,
       name: technician.name,
       specialty: technician.specialty,
       active: 1,

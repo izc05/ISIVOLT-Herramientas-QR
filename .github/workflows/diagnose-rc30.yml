@@ -1,0 +1,33 @@
+name: Diagnosticar RC30
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Instalar dependencias
+        run: npm install --silent
+
+      - name: Mostrar fallo de pruebas
+        shell: bash
+        run: |
+          set +e
+          npm test -- --reporter=verbose > /tmp/tests.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            grep -E -A 12 -B 5 "FAIL|AssertionError|expected|Error:|Test Files|Tests" /tmp/tests.log | tail -n 120 || true
+          else
+            tail -n 20 /tmp/tests.log
+          fi
+          exit "$status"

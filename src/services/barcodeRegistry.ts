@@ -18,10 +18,15 @@ export class BarcodeRegistryError extends Error {
   }
 }
 
+/**
+ * Normaliza el contenido real de una tarjeta para que la lectura por cámara y
+ * la introducción manual coincidan aunque el número impreso incluya espacios,
+ * guiones, puntos u otros separadores visuales.
+ */
 export const normalizeBarcodeValue = (value?: string | null) => (value ?? '')
   .trim()
-  .replace(/\s+/g, '')
-  .toUpperCase();
+  .toUpperCase()
+  .replace(/[^A-Z0-9]/g, '');
 
 const parseRegistry = (raw: string | null): TechnicianBarcodeRegistry => {
   if (!raw) return {};

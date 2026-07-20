@@ -275,4 +275,88 @@ describe('applyMovementCommand', () => {
       operatorName: 'Almacén',
     })).toThrowError(/bloqueada/i);
   });
+
+  it('conserva OT, ubicación, vencimiento y accesorios en el préstamo', () => {
+    const data = baseData();
+    data.accessories = [{
+      id: 'acc-1',
+      toolId: 'tool-1',
+      name: 'Maletín',
+      required: true,
+      active: true,
+      condition: 'not_checked',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }];
+
+    const result = applyMovementCommand(data, {
+      operationId: 'op-context',
+      mode: 'delivery',
+      toolIds: ['tool-1'],
+      technicianId: 'tech-1',
+      accessoryChecks: { 'tool-1': { 'acc-1': 'ok' } },
+      expectedReturnAt: '2026-07-12T14:00:00.000Z',
+      workOrder: 'OT 104582',
+      workLocation: 'Quirófano 2',
+      operatorName: 'Almacén',
+      occurredAt: '2026-07-10T12:00:00.000Z',
+    });
+
+    expect(result.movements[0]).toMatchObject({
+      operationId: 'op-context',
+      expectedReturnAt: '2026-07-12T14:00:00.000Z',
+      workOrder: 'OT 104582',
+      workLocation: 'Quirófano 2',
+      accessoryChecks: [{ accessoryId: 'acc-1', condition: 'ok' }],
+    });
+  });
+
+  it('exige comprobar los accesorios obligatorios antes de prestar', () => {
+    const data = baseData();
+    data.accessories = [{
+      id: 'acc-1',
+      toolId: 'tool-1',
+      name: 'Cargador',
+      required: true,
+      active: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }];
+
+    expect(() => applyMovementCommand(data, {
+      mode: 'delivery',
+      toolIds: ['tool-1'],
+      technicianId: 'tech-1',
+      operatorName: 'Almacén',
+    })).toThrowError(/Comprueba el accesorio/i);
+  });
+
+  it('convierte en incidencia una devolución con accesorio ausente', () => {
+    const data = baseData();
+    data.accessories = [{
+      id: 'acc-2',
+      toolId: 'tool-2',
+      name: 'Batería',
+      required: true,
+      active: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }];
+
+    const result = applyMovementCommand(data, {
+      mode: 'return',
+      toolIds: ['tool-2'],
+      condition: 'ok',
+      accessoryChecks: { 'tool-2': { 'acc-2': 'missing' } },
+      notes: 'La batería no se entrega.',
+      operatorName: 'Almacén',
+    });
+
+    expect(result.movements[0]).toMatchObject({
+      type: 'incident',
+      condition: 'review',
+      accessoryChecks: [{ accessoryId: 'acc-2', condition: 'missing' }],
+    });
+    expect(result.data.tools.find((item) => item.id === 'tool-2')?.status).toBe('review');
+  });
 });

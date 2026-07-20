@@ -1,0 +1,24 @@
+name: Diagnosticar pruebas RC24
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  vitest-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ejecutar y mostrar solo el resultado de Vitest
+        shell: bash
+        run: |
+          set -o pipefail
+          git clone -q --depth 1 --branch "${{ github.head_ref }}" \
+            https://github.com/${{ github.repository }}.git app
+          cd app
+          npm ci --silent >/dev/null 2>&1
+          set +e
+          npm test -- --reporter=verbose > /tmp/vitest.log 2>&1
+          status=$?
+          set -e
+          tail -n 140 /tmp/vitest.log
+          exit "$status"

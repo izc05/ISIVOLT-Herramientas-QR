@@ -71,6 +71,52 @@
   color: #f8fafc;
 }
 
+.operation-context-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 16px;
+  background: rgba(8, 47, 73, 0.2);
+}
+
+.operation-context-grid label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.operation-context-grid label > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #bae6fd;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.operation-context-grid input {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 11px;
+  outline: none;
+  background: rgba(2, 6, 23, 0.66);
+  color: #f8fafc;
+  font: inherit;
+}
+
+.operation-context-grid input:focus {
+  border-color: rgba(34, 211, 238, 0.6);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
+}
+
+.operation-context-wide {
+  grid-column: 1 / -1;
+}
+
 .operation-review-tools {
   display: grid;
   gap: 10px;
@@ -186,6 +232,114 @@
   font-weight: 800;
 }
 
+.operation-accessory-checklist {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.operation-accessory-checklist > header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #dbeafe;
+}
+
+.operation-accessory-checklist > header small {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.18);
+  color: #bfdbfe;
+  font-weight: 800;
+}
+
+.operation-accessory-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.8fr) minmax(0, 1.7fr);
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.42);
+}
+
+.operation-accessory-row > span strong,
+.operation-accessory-row > span small {
+  display: block;
+}
+
+.operation-accessory-row > span strong {
+  color: #f8fafc;
+  font-size: 0.82rem;
+}
+
+.operation-accessory-row > span small {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
+.operation-accessory-row > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.operation-accessory-row button {
+  min-height: 34px;
+  padding: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #94a3b8;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.operation-accessory-row button.active {
+  border-color: rgba(34, 211, 238, 0.46);
+  background: rgba(8, 145, 178, 0.2);
+  color: #ecfeff;
+}
+
+.operation-accessory-row.accessory-missing,
+.operation-accessory-row.accessory-damaged {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(127, 29, 29, 0.16);
+}
+
+.operation-accessory-row.accessory-missing button.active,
+.operation-accessory-row.accessory-damaged button.active {
+  border-color: rgba(248, 113, 113, 0.56);
+  background: rgba(185, 28, 28, 0.26);
+  color: #fee2e2;
+}
+
+.operation-review-blocker {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid rgba(251, 191, 36, 0.36);
+  border-radius: 13px;
+  background: rgba(120, 53, 15, 0.22);
+  color: #fde68a;
+}
+
+.operation-review-blocker span,
+.operation-review-blocker strong,
+.operation-review-blocker small {
+  display: block;
+}
+
+.operation-review-blocker small {
+  margin-top: 2px;
+  color: #fcd34d;
+}
+
 .operation-review-notes {
   display: grid;
   gap: 7px;
@@ -215,7 +369,7 @@
 
 .operation-review-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, auto)) 1fr;
+  grid-template-columns: repeat(3, minmax(0, auto)) 1fr;
   gap: 14px;
   border-color: rgba(148, 163, 184, 0.16);
   background: rgba(2, 6, 23, 0.46);
@@ -255,6 +409,20 @@
   gap: 7px;
 }
 
+@media (max-width: 620px) {
+  .operation-context-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .operation-context-wide {
+    grid-column: auto;
+  }
+
+  .operation-accessory-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 420px) {
   .operation-review-header {
     grid-template-columns: 1fr;
@@ -266,6 +434,10 @@
 
   .operation-review-conditions {
     grid-template-columns: 1fr;
+  }
+
+  .operation-accessory-row > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .operation-review-summary {

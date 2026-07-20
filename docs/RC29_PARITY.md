@@ -25,8 +25,8 @@ Esta matriz evita seguir construyendo sobre una versión incompleta. Cada funci�
 |---|---|---|
 | Técnicos en dos columnas, tamaño similar a herramientas | Recuperada | Revisar teléfonos estrechos y nombres largos |
 | Colores por categoría/especialidad de técnico | Recuperada | Confirmar consistencia tras reiniciar |
-| Tarjetas compactas de herramientas | Parcial | Comparar altura y densidad con RC29 |
-| Filtros plegables tipo cortina | Recuperados en Técnicos | Extender el mismo patrón al Inventario si mejora el uso |
+| Herramientas en dos columnas y tarjetas compactas | Recuperada | Confirmar lectura en el móvil real |
+| Filtros plegables tipo cortina | Recuperados en Técnicos e Inventario | Revisar apertura con teclado y scroll |
 | Selección manual rápida | Recuperada parcialmente | Reducir pasos restantes |
 | Fotografías de herramienta | Recuperada | Probar cámara y galería |
 | Impresión QR individual y por grupo | Existente, pendiente de verificación | Probar diálogo e impresora Android |
@@ -54,14 +54,22 @@ Esta matriz evita seguir construyendo sobre una versión incompleta. Cada funci�
 | Saludo configurable (`Buenos días, Isi`) | Recuperado | Confirmar persistencia y cambio de franja horaria |
 | Cabecera y buscador compactos | Pendiente de comparación física | Recuperar proporciones finales RC29 |
 
+## Validación de esta tanda
+
+- Pruebas de dominio: correctas.
+- Migraciones SQLite reales v1-v5: correctas.
+- TypeScript y Vite: correctos.
+- APK paralela Android: generada correctamente.
+- Application ID de pruebas separado de RC29.
+- SHA-256 de APK: `84977559bc0d4d06103c668de1080dc413b162816d649dd7a63c1d4bd4c0b9db`.
+
 ## Orden de trabajo restante
 
-1. Esperar validación completa de TypeScript, SQLite v5 y Android.
-2. Generar APK paralela nueva sin sustituir RC29.
-3. Asociar una tarjeta real a un técnico y probar préstamo/devolución.
-4. Probar Historial, CSV, Atrás, safe areas y menú administrativo.
-5. Verificar impresión QR individual y por grupo.
-6. Comparar cabecera, inventario y todos los detalles visuales con RC29 instalada.
-7. Corregir diferencias y repetir el checklist antes de fusionar.
+1. Instalar la APK paralela nueva sin sustituir RC29.
+2. Asociar una tarjeta real a un técnico y probar préstamo/devolución.
+3. Probar Historial, CSV, Atrás, safe areas y menú administrativo.
+4. Verificar impresión QR individual y por grupo.
+5. Comparar cabecera, inventario y todos los detalles visuales con RC29 instalada.
+6. Corregir diferencias y repetir el checklist antes de fusionar.
 
 La rama no debe fusionarse con `main` hasta completar la comparación física y confirmar que la nueva candidata no elimina ninguna función útil de RC29.

@@ -74,6 +74,7 @@ export const movementToSqlValues = (
   fallbackDeviceId?: string,
 ) => [
   movement.id,
+  movement.operationId ?? null,
   movement.sequenceNumber ?? sequenceNumber,
   movement.type,
   movement.toolId,
@@ -176,6 +177,7 @@ export const rowToTool = (row: Record<string, unknown>): Tool => ({
 
 export const rowToMovement = (row: Record<string, unknown>): Movement => ({
   id: stringValue(row.id),
+  operationId: optionalString(row.operation_id),
   sequenceNumber: optionalNumber(row.sequence_number),
   type: stringValue(row.type) as Movement['type'],
   toolId: stringValue(row.tool_id),

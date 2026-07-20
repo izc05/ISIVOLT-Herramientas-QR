@@ -21,6 +21,7 @@ import './features/management/management.css';
 import './features/management/management-files.css';
 import './features/management/maintenance-board.css';
 import './features/navigation/native-back.css';
+import './features/navigation/mobile-finish-rc29.css';
 import './features/operations/operation-flow.css';
 import './features/operations/operation-review.css';
 import './features/operations/operation-result-rc29.css';

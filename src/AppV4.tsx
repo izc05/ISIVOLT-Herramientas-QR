@@ -20,8 +20,10 @@ import {
   applyMovementCommand,
   createOperationId,
   MovementRuleError,
+  type AccessoryChecksByTool,
 } from './domain/movementEngine';
 import type {
+  AccessoryCondition,
   AppData,
   OperationMode,
   ReturnCondition,
@@ -68,7 +70,8 @@ const findTechnician = (data: AppData, code: string) =>
 
 const findTool = (data: AppData, code: string, raw: string) =>
   data.tools.find(
-    (tool) => tool.code.toUpperCase() === code.toUpperCase() || tool.qrCode.toUpperCase() === raw.toUpperCase(),
+    (tool) => tool.code.toUpperCase() === code.toUpperCase()
+      || tool.qrCode.toUpperCase() === raw.toUpperCase(),
   );
 
 const findTechnicianByNfc = (data: AppData, uid: string) =>
@@ -84,18 +87,50 @@ const buildReturnConditions = (
   tools.map((tool) => [tool.id, defaultCondition]),
 ) as Record<string, ReturnCondition>;
 
+const buildAccessoryChecks = (
+  data: AppData,
+  tools: Tool[],
+  current: AccessoryChecksByTool = {},
+): AccessoryChecksByTool => Object.fromEntries(
+  tools.map((tool) => [
+    tool.id,
+    Object.fromEntries(
+      (data.accessories ?? [])
+        .filter((accessory) => accessory.active && accessory.toolId === tool.id)
+        .map((accessory) => [
+          accessory.id,
+          current[tool.id]?.[accessory.id] ?? 'not_checked',
+        ]),
+    ),
+  ]),
+) as AccessoryChecksByTool;
+
+const toLocalInputValue = (date: Date) => {
+  const adjusted = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return adjusted.toISOString().slice(0, 16);
+};
+
+const suggestedReturnDate = (tools: Tool[]) => {
+  const loanDays = tools
+    .map((tool) => tool.maxLoanDays)
+    .filter((value): value is number => typeof value === 'number' && value > 0);
+  if (loanDays.length === 0) return '';
+  const days = Math.min(...loanDays);
+  return toLocalInputValue(new Date(Date.now() + days * 86_400_000));
+};
+
 const initialInstruction = (
   mode: OperationMode,
   identificationMode: IdentificationMode,
 ) => {
   if (mode === 'delivery') {
     return identificationMode === 'technician'
-      ? 'Identifica primero al técnico responsable mediante NFC, QR o búsqueda manual.'
+      ? 'Identifica primero al técnico mediante tarjeta, QR, NFC o búsqueda manual.'
       : 'Identifica primero una o varias herramientas y después al técnico responsable.';
   }
   return identificationMode === 'technician'
     ? 'Identifica al técnico para cargar sus herramientas pendientes de devolución.'
-    : 'Identifica la herramienta que regresa; la aplicación localizará a su técnico responsable.';
+    : 'Identifica la herramienta que regresa; la aplicación localizará a su responsable.';
 };
 
 export default function AppV4() {
@@ -104,6 +139,7 @@ export default function AppV4() {
   const reduceMotion = useReducedMotion();
   const compactMotion = reduceMotion || window.matchMedia('(max-width: 820px)').matches;
   const savingRef = useRef(false);
+
   const [appRevision, setAppRevision] = useState(0);
   const [workflowOpen, setWorkflowOpen] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
@@ -117,13 +153,23 @@ export default function AppV4() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [condition, setCondition] = useState<ReturnCondition>('ok');
   const [returnConditions, setReturnConditions] = useState<Record<string, ReturnCondition>>({});
+  const [accessoryChecks, setAccessoryChecks] = useState<AccessoryChecksByTool>({});
+  const [expectedReturnAt, setExpectedReturnAt] = useState('');
+  const [workOrder, setWorkOrder] = useState('');
+  const [workLocation, setWorkLocation] = useState('');
   const [notes, setNotes] = useState('');
   const [scanning, setScanning] = useState(false);
   const [nfcScanning, setNfcScanning] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [scannerMessage, setScannerMessage] = useState('Selecciona el tipo de operación y comienza a identificar.');
+  const [scannerMessage, setScannerMessage] = useState(
+    'Selecciona el tipo de operación y comienza a identificar.',
+  );
   const [feedback, setFeedback] = useState<NativeFeedback>(null);
-  const [scanAlert, setScanAlert] = useState<{ tool: Tool; title: string; detail: string } | null>(null);
+  const [scanAlert, setScanAlert] = useState<{
+    tool: Tool;
+    title: string;
+    detail: string;
+  } | null>(null);
 
   const clearDraft = (
     nextMode: OperationMode,
@@ -138,6 +184,10 @@ export default function AppV4() {
     setTools([]);
     setCondition('ok');
     setReturnConditions({});
+    setAccessoryChecks({});
+    setExpectedReturnAt('');
+    setWorkOrder('');
+    setWorkLocation('');
     setNotes('');
     setScanning(false);
     setNfcScanning(false);
@@ -170,7 +220,15 @@ export default function AppV4() {
 
   const requestCloseWorkflow = () => {
     if (savingRef.current) return;
-    const hasDraft = Boolean(technician || tools.length > 0 || notes.trim() || reviewing);
+    const hasDraft = Boolean(
+      technician
+      || tools.length > 0
+      || notes.trim()
+      || workOrder.trim()
+      || workLocation.trim()
+      || expectedReturnAt
+      || reviewing,
+    );
     if (hasDraft && !window.confirm('Hay una operación sin guardar. ¿Quieres cancelarla?')) return;
     closeWorkflow();
   };
@@ -182,7 +240,6 @@ export default function AppV4() {
       const target = event.target as HTMLElement | null;
       const scannerButton = target?.closest('.nav-scan-button, .scan-main-button');
       if (!scannerButton) return;
-
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
@@ -195,8 +252,8 @@ export default function AppV4() {
 
   useEffect(() => {
     if (!feedback) return undefined;
-    const timeout = window.setTimeout(() => setFeedback(null), 4200);
-    return () => window.clearTimeout(timeout);
+    const timeoutId = window.setTimeout(() => setFeedback(null), 4_200);
+    return () => window.clearTimeout(timeoutId);
   }, [feedback]);
 
   const changeMode = (nextMode: OperationMode) => {
@@ -241,15 +298,16 @@ export default function AppV4() {
       );
       setTools(pending);
       setReturnConditions(buildReturnConditions(pending, condition));
+      setAccessoryChecks((current) => buildAccessoryChecks(sessionData, pending, current));
       setScannerMessage(
         pending.length > 0
-          ? `${foundTechnician.name} identificado. Se han cargado ${pending.length} herramienta${pending.length === 1 ? '' : 's'} pendiente${pending.length === 1 ? '' : 's'}. Revisa la lista antes de guardar.`
+          ? `${foundTechnician.name} identificado. Se han cargado ${pending.length} herramienta${pending.length === 1 ? '' : 's'} pendiente${pending.length === 1 ? '' : 's'}.`
           : `${foundTechnician.name} no tiene herramientas pendientes de devolución.`,
       );
     } else if (tools.length > 0) {
       setScannerMessage(`${foundTechnician.name} identificado. Ya puedes revisar la operación.`);
     } else {
-      setScannerMessage(`${foundTechnician.name} identificado. Escanea o busca las herramientas de la operación.`);
+      setScannerMessage(`${foundTechnician.name} identificado. Escanea o busca las herramientas.`);
     }
 
     navigator.vibrate?.([60, 35, 80]);
@@ -281,7 +339,9 @@ export default function AppV4() {
 
     if (mode === 'return' && technician && foundTool.holderTechnicianId !== technician.id) {
       const holder = sessionData.technicians.find((item) => item.id === foundTool.holderTechnicianId);
-      setScannerMessage(`${foundTool.name} está prestada a ${holder?.name ?? 'otro técnico'} y no puede incluirse en esta devolución.`);
+      setScannerMessage(
+        `${foundTool.name} está prestada a ${holder?.name ?? 'otro técnico'} y no puede incluirse en esta devolución.`,
+      );
       navigator.vibrate?.([120, 60, 120]);
       return false;
     }
@@ -296,7 +356,9 @@ export default function AppV4() {
       if (holder) setTechnician(holder);
     }
 
-    setTools((current) => [...current, foundTool]);
+    const nextTools = [...tools, foundTool];
+    setTools(nextTools);
+    setAccessoryChecks((current) => buildAccessoryChecks(sessionData, nextTools, current));
     if (mode === 'return') {
       setReturnConditions((current) => ({
         ...current,
@@ -340,10 +402,9 @@ export default function AppV4() {
     setScanning(false);
 
     if (result.status === 'cancelled') {
-      setScannerMessage('Lectura cancelada. Puedes intentarlo de nuevo, usar NFC o seleccionar manualmente.');
+      setScannerMessage('Lectura cancelada. Puedes usar cámara, NFC o selección manual.');
       return;
     }
-
     if (result.status !== 'success') {
       setScannerMessage(result.message);
       return;
@@ -351,14 +412,13 @@ export default function AppV4() {
 
     const payload = parseIsivoltQr(result.value);
     if (payload.type === 'unknown') {
-      setScannerMessage('El código leído no pertenece a ISIVOLT Herramientas QR.');
+      setScannerMessage('El código leído no está vinculado a ningún técnico o herramienta.');
       navigator.vibrate?.([120, 60, 120]);
       return;
     }
 
     if (payload.type === 'technician') {
-      const foundTechnician = findTechnician(sessionData, payload.code);
-      processTechnician(foundTechnician);
+      processTechnician(findTechnician(sessionData, payload.code));
       return;
     }
 
@@ -373,7 +433,6 @@ export default function AppV4() {
       setScannerMessage(`No existe ninguna herramienta registrada con el código ${payload.code}.`);
       return;
     }
-
     addToolToOperation(foundTool);
   };
 
@@ -386,10 +445,9 @@ export default function AppV4() {
     setNfcScanning(false);
 
     if (result.status === 'cancelled') {
-      setScannerMessage('Lectura NFC cancelada o agotó el tiempo. Puedes volver a intentarlo.');
+      setScannerMessage('Lectura NFC cancelada o agotó el tiempo.');
       return;
     }
-
     if (result.status !== 'success') {
       setScannerMessage(result.message);
       navigator.vibrate?.([120, 60, 120]);
@@ -401,19 +459,17 @@ export default function AppV4() {
     const foundTool = findToolByNfc(sessionData, uid);
 
     if (foundTechnician && foundTool) {
-      setScannerMessage('Este UID NFC está duplicado entre un técnico y una herramienta. Corrige la vinculación en Administración > NFC.');
+      setScannerMessage('Este UID NFC está duplicado. Corrige la vinculación en Administración > NFC.');
       navigator.vibrate?.([180, 70, 180]);
       return;
     }
-
     if (foundTechnician) {
       processTechnician(foundTechnician);
       return;
     }
-
     if (foundTool) {
       if (mode === 'delivery' && !technician && identificationMode === 'technician') {
-        setScannerMessage('Se ha detectado una herramienta. En este modo identifica primero al técnico responsable.');
+        setScannerMessage('Se ha detectado una herramienta. Identifica primero al técnico.');
         navigator.vibrate?.([120, 60, 120]);
         return;
       }
@@ -434,6 +490,11 @@ export default function AppV4() {
       void removed;
       return remaining;
     });
+    setAccessoryChecks((current) => {
+      const { [toolId]: removed, ...remaining } = current;
+      void removed;
+      return remaining;
+    });
   };
 
   const applyConditionToAll = (nextCondition: ReturnCondition) => {
@@ -447,6 +508,21 @@ export default function AppV4() {
     setReturnConditions((current) => ({ ...current, [toolId]: nextCondition }));
   };
 
+  const updateAccessoryCondition = (
+    toolId: string,
+    accessoryId: string,
+    nextCondition: AccessoryCondition,
+  ) => {
+    if (savingRef.current) return;
+    setAccessoryChecks((current) => ({
+      ...current,
+      [toolId]: {
+        ...(current[toolId] ?? {}),
+        [accessoryId]: nextCondition,
+      },
+    }));
+  };
+
   const openReview = () => {
     if (savingRef.current) return;
     if (tools.length === 0) {
@@ -457,12 +533,16 @@ export default function AppV4() {
       setScannerMessage('Selecciona el técnico responsable antes de revisar el préstamo.');
       return;
     }
+
     if (mode === 'return') {
       setReturnConditions((current) => ({
         ...buildReturnConditions(tools, condition),
         ...current,
       }));
+    } else if (!expectedReturnAt) {
+      setExpectedReturnAt(suggestedReturnDate(tools));
     }
+    setAccessoryChecks((current) => buildAccessoryChecks(sessionData, tools, current));
     setSelectorOpen(false);
     setToolSelectorOpen(false);
     setReviewing(true);
@@ -474,7 +554,9 @@ export default function AppV4() {
     try {
       assertPermission('operations.execute');
     } catch (cause) {
-      setScannerMessage(cause instanceof Error ? cause.message : 'No tienes permiso para registrar movimientos.');
+      setScannerMessage(
+        cause instanceof Error ? cause.message : 'No tienes permiso para registrar movimientos.',
+      );
       return;
     }
 
@@ -487,6 +569,12 @@ export default function AppV4() {
         technicianId: technician?.id,
         condition,
         returnConditions,
+        accessoryChecks,
+        expectedReturnAt: expectedReturnAt
+          ? new Date(expectedReturnAt).toISOString()
+          : undefined,
+        workOrder,
+        workLocation,
         notes,
         operatorName: getCurrentOperatorName(),
       });
@@ -521,28 +609,23 @@ export default function AppV4() {
       const hasIncident = result.movements.some((movement) => movement.type === 'incident');
       setFeedback({
         title: mode === 'delivery' ? 'Préstamo completado' : 'Devolución completada',
-        detail: `${result.movements.length} movimiento${result.movements.length === 1 ? '' : 's'} guardado${result.movements.length === 1 ? '' : 's'} en el dispositivo · ${formatOperationDateTime(result.movements[0]?.occurredAt)}.`,
+        detail: `${result.movements.length} movimiento${result.movements.length === 1 ? '' : 's'} guardado${result.movements.length === 1 ? '' : 's'} · ${formatOperationDateTime(result.movements[0]?.occurredAt)}.`,
         tone: hasIncident ? 'warning' : 'success',
       });
       navigator.vibrate?.([60, 35, 100]);
     } catch (cause) {
       const detail = cause instanceof Error ? cause.message : 'SQLite no ha confirmado la escritura.';
-
       if (localSaveCompleted) {
         closeWorkflow();
         setAppRevision((value) => value + 1);
         setFeedback({
           title: 'Operación guardada localmente',
-          detail: `La operación queda protegida para recuperarse en el próximo arranque. ${detail}`,
+          detail: `Queda protegida para recuperarse en el próximo arranque. ${detail}`,
           tone: 'warning',
         });
       } else {
         setScannerMessage(`No se ha podido guardar la operación: ${detail}`);
-        setFeedback({
-          title: 'Operación no guardada',
-          detail,
-          tone: 'error',
-        });
+        setFeedback({ title: 'Operación no guardada', detail, tone: 'error' });
       }
       navigator.vibrate?.([180, 70, 180]);
     } finally {
@@ -597,7 +680,12 @@ export default function AppV4() {
 
       <AnimatePresence>
         {workflowOpen && (
-          <motion.div className="native-scan-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            className="native-scan-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
             <motion.section
               className="native-scan-console"
               initial={compactMotion ? { opacity: 0, y: 18 } : { opacity: 0, y: 50, scale: 0.94 }}
@@ -606,15 +694,26 @@ export default function AppV4() {
               transition={{ duration: compactMotion ? 0.18 : 0.24 }}
               role="dialog"
               aria-modal="true"
-              aria-label="Operación mediante QR o NFC"
+              aria-label="Operación mediante tarjeta, QR o NFC"
               aria-busy={saving}
             >
               <span className="native-console-glow" aria-hidden="true" />
-              <button className="native-scan-close" onClick={requestCloseWorkflow} disabled={saving} aria-label="Cerrar lector"><X size={21} /></button>
+              <button
+                className="native-scan-close"
+                onClick={requestCloseWorkflow}
+                disabled={saving}
+                aria-label="Cerrar lector"
+              >
+                <X size={21} />
+              </button>
 
               <header className="native-scan-header">
                 <span className="native-scan-emblem"><ScanLine size={30} /></span>
-                <div><span><Zap size={14} /> Lectores activos</span><h2>Operación QR + NFC</h2><p>Identificación dual y guardado local trazable.</p></div>
+                <div>
+                  <span><Zap size={14} /> Identificación activa</span>
+                  <h2>Préstamo y devolución</h2>
+                  <p>Tarjeta, QR, NFC opcional y guardado local trazable.</p>
+                </div>
               </header>
 
               {reviewing ? (
@@ -623,10 +722,19 @@ export default function AppV4() {
                   operationId={operationId}
                   technician={technician}
                   tools={tools}
+                  accessories={sessionData.accessories ?? []}
                   returnConditions={returnConditions}
+                  accessoryChecks={accessoryChecks}
+                  expectedReturnAt={expectedReturnAt}
+                  workOrder={workOrder}
+                  workLocation={workLocation}
                   notes={notes}
                   saving={saving}
                   onConditionChange={updateToolCondition}
+                  onAccessoryConditionChange={updateAccessoryCondition}
+                  onExpectedReturnAtChange={setExpectedReturnAt}
+                  onWorkOrderChange={setWorkOrder}
+                  onWorkLocationChange={setWorkLocation}
                   onNotesChange={setNotes}
                   onBack={() => setReviewing(false)}
                   onConfirm={() => { void confirmOperation(); }}
@@ -651,85 +759,165 @@ export default function AppV4() {
               ) : (
                 <>
                   <div className="native-mode-switch">
-                    <button disabled={saving} className={mode === 'delivery' ? 'active' : ''} onClick={() => changeMode('delivery')}><ArrowUpFromLine size={18} /> Préstamo</button>
-                    <button disabled={saving} className={mode === 'return' ? 'active' : ''} onClick={() => changeMode('return')}><ArrowDownToLine size={18} /> Devolución</button>
+                    <button
+                      disabled={saving}
+                      className={mode === 'delivery' ? 'active' : ''}
+                      onClick={() => changeMode('delivery')}
+                    >
+                      <ArrowUpFromLine size={18} /> Préstamo
+                    </button>
+                    <button
+                      disabled={saving}
+                      className={mode === 'return' ? 'active' : ''}
+                      onClick={() => changeMode('return')}
+                    >
+                      <ArrowDownToLine size={18} /> Devolución
+                    </button>
                   </div>
 
                   <div className="native-identification-switch" aria-label="Orden de identificación">
-                    <button disabled={saving} className={identificationMode === 'technician' ? 'active' : ''} onClick={() => changeIdentificationMode('technician')}>
+                    <button
+                      disabled={saving}
+                      className={identificationMode === 'technician' ? 'active' : ''}
+                      onClick={() => changeIdentificationMode('technician')}
+                    >
                       <UserRound size={18} /> Primero técnico
                     </button>
-                    <button disabled={saving} className={identificationMode === 'tool' ? 'active' : ''} onClick={() => changeIdentificationMode('tool')}>
+                    <button
+                      disabled={saving}
+                      className={identificationMode === 'tool' ? 'active' : ''}
+                      onClick={() => changeIdentificationMode('tool')}
+                    >
                       <Wrench size={18} /> Primero herramienta
                     </button>
                   </div>
 
                   <div className="native-progress-grid">
-                    {identificationMode === 'technician' ? <>{technicianProgress}{toolProgress}</> : <>{toolProgress}{technicianProgress}</>}
+                    {identificationMode === 'technician'
+                      ? <>{technicianProgress}{toolProgress}</>
+                      : <>{toolProgress}{technicianProgress}</>}
                   </div>
 
                   <div className="native-scan-methods">
-                    <motion.button className="native-camera-button" onClick={handleScan} disabled={scanning || nfcScanning || saving} whileTap={{ scale: 0.97 }}>
+                    <motion.button
+                      className="native-camera-button"
+                      onClick={handleScan}
+                      disabled={scanning || nfcScanning || saving}
+                      whileTap={{ scale: 0.97 }}
+                    >
                       <QrCode size={28} />
-                      <strong>{scanning ? 'Abriendo cámara…' : `QR ${expectedLabel}`}</strong>
+                      <strong>{scanning ? 'Abriendo cámara…' : `Cámara ${expectedLabel}`}</strong>
                     </motion.button>
-                    <motion.button className="native-nfc-button" onClick={handleNfcScan} disabled={scanning || nfcScanning || saving || !nativeNfc} whileTap={{ scale: 0.97 }}>
+                    <motion.button
+                      className="native-nfc-button"
+                      onClick={handleNfcScan}
+                      disabled={scanning || nfcScanning || saving || !nativeNfc}
+                      whileTap={{ scale: 0.97 }}
+                    >
                       <ScanLine size={28} />
                       <strong>{nfcScanning ? 'Leyendo NFC…' : `NFC ${expectedLabel}`}</strong>
                     </motion.button>
                   </div>
 
                   {!nativeNfc && (
-                    <div className="native-scanner-message"><AlertTriangle size={17} /><span>Este dispositivo no ofrece lectura NFC nativa. El QR y la selección manual siguen disponibles.</span></div>
+                    <div className="native-scanner-message">
+                      <AlertTriangle size={17} />
+                      <span>El NFC no está disponible. La tarjeta de código de barras, QR y búsqueda manual siguen funcionando.</span>
+                    </div>
                   )}
 
                   {!technician && (
-                    <button disabled={saving} className="native-manual-technician" type="button" onClick={() => setSelectorOpen(true)}>
+                    <button
+                      disabled={saving}
+                      className="native-manual-technician"
+                      type="button"
+                      onClick={() => setSelectorOpen(true)}
+                    >
                       <ListFilter size={19} />
-                      <span><strong>Seleccionar técnico manualmente</strong><small>Buscar por nombre, código o categoría</small></span>
+                      <span>
+                        <strong>Seleccionar técnico manualmente</strong>
+                        <small>Nombre, código, tarjeta o especialidad</small>
+                      </span>
                     </button>
                   )}
 
                   {(mode === 'return' || Boolean(technician) || identificationMode === 'tool') && (
-                    <button disabled={saving} className="native-manual-tool" type="button" onClick={() => setToolSelectorOpen(true)}>
+                    <button
+                      disabled={saving}
+                      className="native-manual-tool"
+                      type="button"
+                      onClick={() => setToolSelectorOpen(true)}
+                    >
                       <ListFilter size={19} />
-                      <span><strong>Buscar herramienta manualmente</strong><small>Nombre, código, categoría, ubicación, marca o NFC</small></span>
+                      <span>
+                        <strong>Buscar herramienta manualmente</strong>
+                        <small>Nombre, código, categoría, ubicación, marca o NFC</small>
+                      </span>
                     </button>
                   )}
 
                   <div className="native-scanner-message">
-                    {scannerMessage.includes('no ') || scannerMessage.includes('No ') || scannerMessage.includes('esperaba') || scannerMessage.includes('sin vincular')
-                      ? <AlertTriangle size={17} /> : saving ? <LoaderCircle className="boot-spin" size={17} /> : <Zap size={17} />}
+                    {scannerMessage.includes('no ')
+                      || scannerMessage.includes('No ')
+                      || scannerMessage.includes('sin vincular')
+                      ? <AlertTriangle size={17} />
+                      : saving
+                        ? <LoaderCircle className="boot-spin" size={17} />
+                        : <Zap size={17} />}
                     <span>{scannerMessage}</span>
                   </div>
 
                   {tools.length > 0 && (
                     <div className="native-scanned-tools">
                       {tools.map((tool) => (
-                        <button disabled={saving} key={tool.id} onClick={() => removeTool(tool.id)}><Wrench size={15} /><span><strong>{tool.name}</strong><small>{tool.code}{tool.nfcUid ? ' · NFC' : ''}</small></span><X size={15} /></button>
+                        <button disabled={saving} key={tool.id} onClick={() => removeTool(tool.id)}>
+                          <Wrench size={15} />
+                          <span>
+                            <strong>{tool.name}</strong>
+                            <small>{tool.code}{tool.nfcUid ? ' · NFC' : ''}</small>
+                          </span>
+                          <X size={15} />
+                        </button>
                       ))}
                     </div>
                   )}
 
                   {mode === 'return' && tools.length > 0 && (
-                    <div className="native-condition-grid" aria-label="Aplicar estado inicial a todas las herramientas">
+                    <div className="native-condition-grid" aria-label="Aplicar estado inicial a todas">
                       {([
                         ['ok', 'Correctas', Check],
                         ['review', 'Revisión', RotateCcw],
                         ['damaged', 'Averiadas', AlertTriangle],
                       ] as const).map(([value, label, Icon]) => (
-                        <button disabled={saving} key={value} className={condition === value ? 'active' : ''} onClick={() => applyConditionToAll(value)}><Icon size={17} /> {label}</button>
+                        <button
+                          disabled={saving}
+                          key={value}
+                          className={condition === value ? 'active' : ''}
+                          onClick={() => applyConditionToAll(value)}
+                        >
+                          <Icon size={17} /> {label}
+                        </button>
                       ))}
                     </div>
                   )}
 
                   <label className="native-notes-field">
-                    {mode === 'return' && Object.values(returnConditions).some((value) => value !== 'ok') ? 'Observaciones obligatorias' : 'Observaciones'}
-                    <textarea disabled={saving} value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Accesorios, estado o incidencia…" />
+                    Observaciones iniciales
+                    <textarea
+                      disabled={saving}
+                      value={notes}
+                      onChange={(event) => setNotes(event.target.value)}
+                      rows={2}
+                      placeholder="Información del préstamo o incidencia…"
+                    />
                   </label>
 
                   <footer className="native-scan-footer">
-                    <span>{saving ? 'Guardando y verificando…' : `${tools.length} activo${tools.length === 1 ? '' : 's'} preparado${tools.length === 1 ? '' : 's'}`}</span>
+                    <span>
+                      {saving
+                        ? 'Guardando y verificando…'
+                        : `${tools.length} activo${tools.length === 1 ? '' : 's'} preparado${tools.length === 1 ? '' : 's'}`}
+                    </span>
                     <motion.button disabled={!canReview} onClick={openReview} whileTap={{ scale: 0.97 }}>
                       <Check size={19} />
                       Revisar {mode === 'delivery' ? 'préstamo' : 'devolución'}
@@ -742,22 +930,45 @@ export default function AppV4() {
         )}
 
         {scanAlert && (
-          <motion.div className="native-tool-alert-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setScanAlert(null)}>
-            <motion.section className="native-tool-alert" initial={{ opacity: 0, y: 30, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 18, scale: 0.97 }} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Aviso de herramienta bloqueada">
+          <motion.div
+            className="native-tool-alert-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setScanAlert(null)}
+          >
+            <motion.section
+              className="native-tool-alert"
+              initial={{ opacity: 0, y: 30, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.97 }}
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Aviso de herramienta bloqueada"
+            >
               <span className="native-tool-alert-icon"><AlertTriangle size={34} /></span>
               <small>Préstamo bloqueado</small>
               <h2>{scanAlert.title}</h2>
               <strong>{scanAlert.tool.code} · {scanAlert.tool.name}</strong>
               <p>{scanAlert.detail}</p>
               {scanAlert.tool.notes && <blockquote>{scanAlert.tool.notes}</blockquote>}
-              <button type="button" onClick={() => setScanAlert(null)}><X size={18} /> Entendido</button>
+              <button type="button" onClick={() => setScanAlert(null)}>
+                <X size={18} /> Entendido
+              </button>
             </motion.section>
           </motion.div>
         )}
 
         {feedback && (
-          <motion.div className={`native-feedback native-feedback-${feedback.tone}`} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}>
-            {feedback.tone === 'success' ? <Check size={21} /> : <AlertTriangle size={21} />}<span><strong>{feedback.title}</strong><small>{feedback.detail}</small></span>
+          <motion.div
+            className={`native-feedback native-feedback-${feedback.tone}`}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+          >
+            {feedback.tone === 'success' ? <Check size={21} /> : <AlertTriangle size={21} />}
+            <span><strong>{feedback.title}</strong><small>{feedback.detail}</small></span>
           </motion.div>
         )}
       </AnimatePresence>

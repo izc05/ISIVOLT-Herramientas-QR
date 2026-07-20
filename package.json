@@ -1,7 +1,7 @@
 {
   "name": "isivolt-herramientas-qr",
   "private": true,
-  "version": "1.0.0-rc.24",
+  "version": "1.0.0-rc.30",
   "type": "module",
   "scripts": {
     "dev": "vite",

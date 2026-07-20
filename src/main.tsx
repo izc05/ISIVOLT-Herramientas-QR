@@ -22,6 +22,7 @@ import './features/management/management-files.css';
 import './features/management/maintenance-board.css';
 import './features/operations/operation-flow.css';
 import './features/operations/operation-review.css';
+import './features/operations/operation-result-rc29.css';
 import './features/personalization/greeting-settings.css';
 import './features/technicians/technician-create.css';
 import './features/technicians/technician-barcode.css';

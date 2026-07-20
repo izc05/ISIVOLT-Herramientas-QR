@@ -1,6 +1,6 @@
 # ISIVOLT Herramientas QR
 
-Aplicación Android offline para registrar, controlar y auditar la entrega y devolución de herramientas mediante códigos QR.
+Aplicación Android offline para registrar, controlar y auditar la entrega y devolución de herramientas mediante códigos QR y NFC.
 
 ## Objetivo
 
@@ -12,14 +12,21 @@ Aplicación Android offline para registrar, controlar y auditar la entrega y dev
 - Trabajar inicialmente sin conexión desde un móvil de almacén.
 - Preparar una futura sincronización entre dispositivos.
 
-## Estado actual — 0.8.0
+## Estado actual — RC24 de recuperación
 
-La aplicación incluye:
+La rama RC24 recupera en código fuente mantenible funciones presentes en la APK RC23 y refuerza la seguridad del guardado local:
 
-- Directorio de 76 técnicos y 12 secciones.
-- Inventario con fotografía, QR y ficha móvil.
+- Directorio de técnicos y especialidades.
+- Inventario con fotografía, QR, NFC y ficha móvil.
 - Entregas y devoluciones individuales o múltiples.
-- Cámara QR mediante Google ML Kit y entrada manual de respaldo.
+- Cámara QR mediante Google ML Kit, NFC nativo y selección manual.
+- Inicio de operación por técnico o por herramienta.
+- Pantalla final de revisión antes de guardar.
+- Condición individual en devoluciones: correcta, revisión o averiada.
+- Observaciones obligatorias cuando existe una incidencia.
+- `operationId` por lote para impedir dobles confirmaciones.
+- Persistencia de `operationId` mediante migración SQLite v4.
+- Cola secuencial de escrituras y recuperación tras cierre inesperado.
 - SQLite relacional con migraciones, transacciones, claves únicas y auditoría.
 - Movimientos protegidos contra modificación y borrado.
 - Identificador estable del dispositivo.
@@ -39,8 +46,9 @@ La aplicación incluye:
 - Diagnóstico de SQLite y registro local de errores.
 - Pruebas de dominio y validación del SQL sobre SQLite real.
 - Generación automática de APK debug.
+- APK RC24 paralela para pruebas sin sobrescribir RC23.
 
-> La versión 0.8 continúa siendo una versión de pruebas internas. Antes del uso oficial se completarán usuarios, roles, auditoría avanzada, firma release y un piloto controlado.
+> RC24 continúa siendo una candidata de pruebas. No debe sustituir RC23 hasta completar el checklist físico en un móvil real y verificar una actualización conservando datos.
 
 ## Tecnología
 
@@ -78,12 +86,10 @@ npm run android:open
 
 ## APK automática
 
-GitHub Actions ejecuta pruebas, compila la web, sincroniza Capacitor y genera una APK con la versión obtenida de `package.json`.
+GitHub Actions ejecuta pruebas, compila la web, sincroniza Capacitor y genera APK Android.
 
-1. Abre **Actions**.
-2. Entra en **Generar APK Android**.
-3. Descarga `ISIVOLT-Herramientas-QR-vX.Y.Z-debug`.
-4. Descomprime el ZIP e instala `app-debug.apk`.
+- **Generar APK Android** produce la candidata con el identificador normal de la aplicación.
+- **Generar APK RC24 paralela** produce `ISIVOLT RC24 Pruebas` con el identificador `com.isivolt.herramientasqr.rc24`, instalable junto a RC23 sin compartir sus datos.
 
 La APK debug es solo para pruebas internas. La versión 1.0 tendrá firma privada y actualización controlada.
 
@@ -95,4 +101,4 @@ La APK debug es solo para pruebas internas. La versión 1.0 tendrá firma privad
 - [Issue #16](https://github.com/izc05/ISIVOLT-Herramientas-QR/issues/16): usuarios, roles y auditoría 0.9.
 - [Issue #17](https://github.com/izc05/ISIVOLT-Herramientas-QR/issues/17): firma, pruebas y puesta en servicio 1.0.
 
-Consulta `docs/ROADMAP.md` para el desglose técnico.
+Consulta `docs/ROADMAP.md` y `docs/RC23_RECOVERY_NOTES.md` para el desglose técnico.

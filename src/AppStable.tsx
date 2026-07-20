@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, Bug, Database, ShieldCheck, Trash2, X } from 'lucide-react';
 import AppV6 from './AppV6';
 import { APP_VERSION } from './config/app';
+import MovementHistoryCenter from './features/history/MovementHistoryCenter';
 import ManagementCenter from './features/management/ManagementCenter';
 import ManagementFiles from './features/management/ManagementFiles';
 import TechnicianBarcodeCenter from './features/technicians/TechnicianBarcodeCenter';
@@ -62,6 +63,7 @@ export default function AppStable() {
   return (
     <>
       <AppV6 key={appRevision} />
+      <MovementHistoryCenter />
       <ManagementCenter onSaved={refreshApplication} />
       <ManagementFiles />
       <TechnicianQuickCreate onSaved={refreshApplication} />

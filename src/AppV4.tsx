@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   AlertTriangle,
@@ -16,9 +16,13 @@ import {
   Zap,
 } from 'lucide-react';
 import AppV3 from './AppV3';
+import {
+  applyMovementCommand,
+  createOperationId,
+  MovementRuleError,
+} from './domain/movementEngine';
 import type {
   AppData,
-  Movement,
   OperationMode,
   ReturnCondition,
   Technician,
@@ -27,6 +31,7 @@ import type {
 } from './domain/types';
 import { formatOperationDateTime, getDeliveryAlert } from './features/inventory/inventoryOperations';
 import ToolSelectorPanel from './features/inventory/ToolSelectorPanel';
+import OperationReviewPanel from './features/operations/OperationReviewPanel';
 import TechnicianSelectorPanel from './features/technicians/TechnicianSelectorPanel';
 import { assertPermission } from './security/permissions';
 import { getCurrentOperatorName } from './security/session';
@@ -47,11 +52,6 @@ type NativeFeedback = {
   detail: string;
   tone: 'success' | 'warning' | 'error';
 } | null;
-
-const newId = (prefix: string) => {
-  const randomPart = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  return `${prefix}-${randomPart}`;
-};
 
 const toolStatusLabel: Record<ToolStatus, string> = {
   available: 'Disponible',
@@ -75,20 +75,31 @@ const findTechnicianByNfc = (data: AppData, uid: string) =>
 const findToolByNfc = (data: AppData, uid: string) =>
   data.tools.find((item) => normalizeNfcUid(item.nfcUid) === uid);
 
+const buildReturnConditions = (
+  tools: Tool[],
+  defaultCondition: ReturnCondition,
+): Record<string, ReturnCondition> => Object.fromEntries(
+  tools.map((tool) => [tool.id, defaultCondition]),
+) as Record<string, ReturnCondition>;
+
 export default function AppV4() {
   const nativeScanner = useMemo(() => isNativeScannerAvailable(), []);
   const nativeNfc = useMemo(() => isNfcScannerAvailable(), []);
   const reduceMotion = useReducedMotion();
   const compactMotion = reduceMotion || window.matchMedia('(max-width: 820px)').matches;
+  const savingRef = useRef(false);
   const [appRevision, setAppRevision] = useState(0);
   const [workflowOpen, setWorkflowOpen] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [toolSelectorOpen, setToolSelectorOpen] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [mode, setMode] = useState<OperationMode>('delivery');
+  const [operationId, setOperationId] = useState(() => createOperationId());
   const [sessionData, setSessionData] = useState<AppData>(() => loadAppData());
   const [technician, setTechnician] = useState<Technician | null>(null);
   const [tools, setTools] = useState<Tool[]>([]);
   const [condition, setCondition] = useState<ReturnCondition>('ok');
+  const [returnConditions, setReturnConditions] = useState<Record<string, ReturnCondition>>({});
   const [notes, setNotes] = useState('');
   const [scanning, setScanning] = useState(false);
   const [nfcScanning, setNfcScanning] = useState(false);
@@ -98,15 +109,19 @@ export default function AppV4() {
   const [scanAlert, setScanAlert] = useState<{ tool: Tool; title: string; detail: string } | null>(null);
 
   const resetWorkflow = (nextMode: OperationMode = 'delivery') => {
+    savingRef.current = false;
     setSessionData(loadAppData());
     setMode(nextMode);
+    setOperationId(createOperationId());
     setTechnician(null);
     setTools([]);
     setCondition('ok');
+    setReturnConditions({});
     setNotes('');
     setScanning(false);
     setNfcScanning(false);
     setSaving(false);
+    setReviewing(false);
     setSelectorOpen(false);
     setToolSelectorOpen(false);
     setScanAlert(null);
@@ -125,10 +140,18 @@ export default function AppV4() {
   const closeWorkflow = () => {
     setSelectorOpen(false);
     setToolSelectorOpen(false);
+    setReviewing(false);
     setScanAlert(null);
     setScanning(false);
     setNfcScanning(false);
     setWorkflowOpen(false);
+  };
+
+  const requestCloseWorkflow = () => {
+    if (savingRef.current) return;
+    const hasDraft = Boolean(technician || tools.length > 0 || notes.trim() || reviewing);
+    if (hasDraft && !window.confirm('Hay una operación sin guardar. ¿Quieres cancelarla?')) return;
+    closeWorkflow();
   };
 
   useEffect(() => {
@@ -151,13 +174,17 @@ export default function AppV4() {
 
   useEffect(() => {
     if (!feedback) return undefined;
-    const timeout = window.setTimeout(() => setFeedback(null), 3200);
+    const timeout = window.setTimeout(() => setFeedback(null), 4200);
     return () => window.clearTimeout(timeout);
   }, [feedback]);
 
-  const changeMode = (nextMode: OperationMode) => resetWorkflow(nextMode);
+  const changeMode = (nextMode: OperationMode) => {
+    if (savingRef.current) return;
+    resetWorkflow(nextMode);
+  };
 
   const selectTechnician = (technicianId: string) => {
+    if (savingRef.current) return false;
     const foundTechnician = sessionData.technicians.find((item) => item.id === technicianId);
     if (!foundTechnician || !foundTechnician.active) {
       setScannerMessage('El técnico no existe o está marcado como inactivo.');
@@ -178,9 +205,10 @@ export default function AppV4() {
         (tool) => tool.status === 'loaned' && tool.holderTechnicianId === foundTechnician.id,
       );
       setTools(pending);
+      setReturnConditions(buildReturnConditions(pending, condition));
       setScannerMessage(
         pending.length > 0
-          ? `${foundTechnician.name} identificado. Se han cargado ${pending.length} herramienta${pending.length === 1 ? '' : 's'} pendiente${pending.length === 1 ? '' : 's'}. Revisa la lista y confirma.`
+          ? `${foundTechnician.name} identificado. Se han cargado ${pending.length} herramienta${pending.length === 1 ? '' : 's'} pendiente${pending.length === 1 ? '' : 's'}. Revisa la lista antes de guardar.`
           : `${foundTechnician.name} no tiene herramientas pendientes de devolución.`,
       );
     } else {
@@ -192,6 +220,8 @@ export default function AppV4() {
   };
 
   const addToolToOperation = (foundTool: Tool) => {
+    if (savingRef.current) return false;
+
     if (mode === 'delivery') {
       const deliveryAlert = getDeliveryAlert(foundTool, technician?.id);
       if (deliveryAlert) {
@@ -230,7 +260,13 @@ export default function AppV4() {
     }
 
     setTools((current) => [...current, foundTool]);
-    setScannerMessage(`${foundTool.name} añadida. Puedes incorporar otra mediante QR o NFC, o confirmar la operación.`);
+    if (mode === 'return') {
+      setReturnConditions((current) => ({
+        ...current,
+        [foundTool.id]: current[foundTool.id] ?? condition,
+      }));
+    }
+    setScannerMessage(`${foundTool.name} añadida. Puedes incorporar otra mediante QR o NFC, o revisar la operación.`);
     navigator.vibrate?.([60, 35, 80]);
     return true;
   };
@@ -254,7 +290,7 @@ export default function AppV4() {
   };
 
   const handleScan = async () => {
-    if (scanning || nfcScanning || saving) return;
+    if (scanning || nfcScanning || savingRef.current) return;
     setScanning(true);
     setScannerMessage('Activando cámara y enfoque automático…');
 
@@ -300,7 +336,7 @@ export default function AppV4() {
   };
 
   const handleNfcScan = async () => {
-    if (scanning || nfcScanning || saving) return;
+    if (scanning || nfcScanning || savingRef.current) return;
     setNfcScanning(true);
     setScannerMessage('Acerca la tarjeta o la pegatina NFC a la parte trasera del teléfono…');
 
@@ -349,12 +385,49 @@ export default function AppV4() {
   };
 
   const removeTool = (toolId: string) => {
-    if (saving) return;
+    if (savingRef.current) return;
     setTools((current) => current.filter((tool) => tool.id !== toolId));
+    setReturnConditions((current) => {
+      const { [toolId]: removed, ...remaining } = current;
+      void removed;
+      return remaining;
+    });
+  };
+
+  const applyConditionToAll = (nextCondition: ReturnCondition) => {
+    if (savingRef.current) return;
+    setCondition(nextCondition);
+    setReturnConditions(buildReturnConditions(tools, nextCondition));
+  };
+
+  const updateToolCondition = (toolId: string, nextCondition: ReturnCondition) => {
+    if (savingRef.current) return;
+    setReturnConditions((current) => ({ ...current, [toolId]: nextCondition }));
+  };
+
+  const openReview = () => {
+    if (savingRef.current) return;
+    if (tools.length === 0) {
+      setScannerMessage('Selecciona al menos una herramienta antes de revisar.');
+      return;
+    }
+    if (mode === 'delivery' && !technician) {
+      setScannerMessage('Selecciona el técnico responsable antes de revisar el préstamo.');
+      return;
+    }
+    if (mode === 'return') {
+      setReturnConditions((current) => ({
+        ...buildReturnConditions(tools, condition),
+        ...current,
+      }));
+    }
+    setSelectorOpen(false);
+    setToolSelectorOpen(false);
+    setReviewing(true);
   };
 
   const confirmOperation = async () => {
-    if (saving) return;
+    if (savingRef.current) return;
 
     try {
       assertPermission('operations.execute');
@@ -363,86 +436,51 @@ export default function AppV4() {
       return;
     }
 
-    const current = loadAppData();
-    const selectedIds = new Set(tools.map((tool) => tool.id));
-    const occurredAt = new Date().toISOString();
-    const movementBatch: Movement[] = [];
-    const operatorName = getCurrentOperatorName();
-
-    const updatedTools = current.tools.map((tool) => {
-      if (!selectedIds.has(tool.id)) return tool;
-
-      if (mode === 'delivery') {
-        if (!technician || tool.status !== 'available') return tool;
-        movementBatch.push({
-          id: newId('mov'),
-          type: 'delivery',
-          toolId: tool.id,
-          technicianId: technician.id,
-          operatorName,
-          occurredAt,
-          previousStatus: tool.status,
-          nextStatus: 'loaned',
-          notes: notes.trim() || undefined,
-        });
-        return {
-          ...tool,
-          status: 'loaned' as ToolStatus,
-          holderTechnicianId: technician.id,
-          loanedAt: occurredAt,
-          updatedAt: occurredAt,
-        };
-      }
-
-      if (tool.status !== 'loaned') return tool;
-      if (technician && tool.holderTechnicianId !== technician.id) return tool;
-      const nextStatus: ToolStatus = condition === 'ok' ? 'available' : condition === 'review' ? 'review' : 'damaged';
-      movementBatch.push({
-        id: newId('mov'),
-        type: condition === 'ok' ? 'return' : 'incident',
-        toolId: tool.id,
-        technicianId: tool.holderTechnicianId,
-        operatorName,
-        occurredAt,
-        previousStatus: tool.status,
-        nextStatus,
+    let result;
+    try {
+      result = applyMovementCommand(loadAppData(), {
+        operationId,
+        mode,
+        toolIds: tools.map((tool) => tool.id),
+        technicianId: technician?.id,
         condition,
-        notes: notes.trim() || undefined,
+        returnConditions,
+        notes,
+        operatorName: getCurrentOperatorName(),
       });
-      return {
-        ...tool,
-        status: nextStatus,
-        holderTechnicianId: undefined,
-        loanedAt: undefined,
-        updatedAt: occurredAt,
-        notes: notes.trim() || tool.notes,
-      };
-    });
-
-    if (movementBatch.length === 0) {
-      setScannerMessage('No se ha podido confirmar: el estado de las herramientas ha cambiado.');
+    } catch (cause) {
+      const detail = cause instanceof Error ? cause.message : 'No se ha podido preparar la operación.';
+      setScannerMessage(detail);
+      setFeedback({
+        title: cause instanceof MovementRuleError && cause.code === 'operation-already-applied'
+          ? 'Operación ya registrada'
+          : 'Revisa la operación',
+        detail,
+        tone: cause instanceof MovementRuleError && cause.code === 'operation-already-applied'
+          ? 'warning'
+          : 'error',
+      });
+      navigator.vibrate?.([180, 70, 180]);
       return;
     }
 
+    savingRef.current = true;
     setSaving(true);
     setScannerMessage('Guardando la operación y verificando SQLite…');
     let localSaveCompleted = false;
 
     try {
-      saveAppData({
-        ...current,
-        tools: updatedTools,
-        movements: [...movementBatch, ...current.movements],
-      });
+      saveAppData(result.data);
       localSaveCompleted = true;
       await waitForPendingAppDataWrites();
 
       closeWorkflow();
       setAppRevision((value) => value + 1);
+      const hasIncident = result.movements.some((movement) => movement.type === 'incident');
       setFeedback({
         title: mode === 'delivery' ? 'Préstamo completado' : 'Devolución completada',
-        detail: `${movementBatch.length} movimiento${movementBatch.length === 1 ? '' : 's'} guardado${movementBatch.length === 1 ? '' : 's'} en el dispositivo · ${formatOperationDateTime(occurredAt)}.`,
-        tone: condition === 'damaged' ? 'warning' : 'success',
+        detail: `${result.movements.length} movimiento${result.movements.length === 1 ? '' : 's'} guardado${result.movements.length === 1 ? '' : 's'} en el dispositivo · ${formatOperationDateTime(result.movements[0]?.occurredAt)}.`,
+        tone: hasIncident ? 'warning' : 'success',
       });
       navigator.vibrate?.([60, 35, 100]);
     } catch (cause) {
@@ -466,14 +504,14 @@ export default function AppV4() {
       }
       navigator.vibrate?.([180, 70, 180]);
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
 
-  const canConfirm = !saving
+  const canReview = !saving
     && tools.length > 0
-    && (mode === 'return' || Boolean(technician))
-    && (mode !== 'return' || condition === 'ok' || notes.trim().length > 0);
+    && (mode === 'return' || Boolean(technician));
 
   const expectedLabel = mode === 'delivery'
     ? technician ? 'herramienta' : 'técnico'
@@ -498,14 +536,28 @@ export default function AppV4() {
               aria-busy={saving}
             >
               <span className="native-console-glow" aria-hidden="true" />
-              <button className="native-scan-close" onClick={closeWorkflow} disabled={saving} aria-label="Cerrar lector"><X size={21} /></button>
+              <button className="native-scan-close" onClick={requestCloseWorkflow} disabled={saving} aria-label="Cerrar lector"><X size={21} /></button>
 
               <header className="native-scan-header">
                 <span className="native-scan-emblem"><ScanLine size={30} /></span>
                 <div><span><Zap size={14} /> Lectores activos</span><h2>Operación QR + NFC</h2><p>Identificación dual y guardado local trazable.</p></div>
               </header>
 
-              {selectorOpen ? (
+              {reviewing ? (
+                <OperationReviewPanel
+                  mode={mode}
+                  operationId={operationId}
+                  technician={technician}
+                  tools={tools}
+                  returnConditions={returnConditions}
+                  notes={notes}
+                  saving={saving}
+                  onConditionChange={updateToolCondition}
+                  onNotesChange={setNotes}
+                  onBack={() => setReviewing(false)}
+                  onConfirm={() => { void confirmOperation(); }}
+                />
+              ) : selectorOpen ? (
                 <TechnicianSelectorPanel
                   technicians={sessionData.technicians}
                   tools={sessionData.tools}
@@ -586,27 +638,27 @@ export default function AppV4() {
                   )}
 
                   {mode === 'return' && tools.length > 0 && (
-                    <div className="native-condition-grid">
+                    <div className="native-condition-grid" aria-label="Aplicar estado inicial a todas las herramientas">
                       {([
-                        ['ok', 'Correcta', Check],
+                        ['ok', 'Correctas', Check],
                         ['review', 'Revisión', RotateCcw],
-                        ['damaged', 'Averiada', AlertTriangle],
+                        ['damaged', 'Averiadas', AlertTriangle],
                       ] as const).map(([value, label, Icon]) => (
-                        <button disabled={saving} key={value} className={condition === value ? 'active' : ''} onClick={() => setCondition(value)}><Icon size={17} /> {label}</button>
+                        <button disabled={saving} key={value} className={condition === value ? 'active' : ''} onClick={() => applyConditionToAll(value)}><Icon size={17} /> {label}</button>
                       ))}
                     </div>
                   )}
 
                   <label className="native-notes-field">
-                    {mode === 'return' && condition !== 'ok' ? 'Observaciones obligatorias' : 'Observaciones'}
+                    {mode === 'return' && Object.values(returnConditions).some((value) => value !== 'ok') ? 'Observaciones obligatorias' : 'Observaciones'}
                     <textarea disabled={saving} value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Accesorios, estado o incidencia…" />
                   </label>
 
                   <footer className="native-scan-footer">
                     <span>{saving ? 'Guardando y verificando…' : `${tools.length} activo${tools.length === 1 ? '' : 's'} preparado${tools.length === 1 ? '' : 's'}`}</span>
-                    <motion.button disabled={!canConfirm} onClick={confirmOperation} whileTap={{ scale: 0.97 }}>
-                      {saving ? <LoaderCircle className="boot-spin" size={19} /> : <Check size={19} />}
-                      {saving ? 'Guardando…' : `Confirmar ${mode === 'delivery' ? 'préstamo' : 'devolución'}`}
+                    <motion.button disabled={!canReview} onClick={openReview} whileTap={{ scale: 0.97 }}>
+                      <Check size={19} />
+                      Revisar {mode === 'delivery' ? 'préstamo' : 'devolución'}
                     </motion.button>
                   </footer>
                 </>

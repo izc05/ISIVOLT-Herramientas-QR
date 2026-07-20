@@ -241,4 +241,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_tools_nfc_uid
   WHERE nfc_uid IS NOT NULL AND nfc_uid <> '';
 `,
   },
+  {
+    version: 4,
+    name: 'movement_operation_idempotency',
+    statements: `
+ALTER TABLE movements ADD COLUMN operation_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_movements_operation_id
+  ON movements(operation_id)
+  WHERE operation_id IS NOT NULL AND operation_id <> '';
+`,
+  },
 ];

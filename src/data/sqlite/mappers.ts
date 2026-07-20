@@ -1,6 +1,7 @@
 import type {
   MaintenanceRecord,
   Movement,
+  MovementAccessoryCheck,
   Technician,
   Tool,
   ToolAccessory,
@@ -85,11 +86,25 @@ export const movementToSqlValues = (
   movement.nextStatus,
   movement.condition ?? null,
   movement.notes ?? null,
+  movement.expectedReturnAt ?? null,
+  movement.workOrder ?? null,
+  movement.workLocation ?? null,
   movement.occurredAt,
   movement.deviceId ?? fallbackDeviceId ?? null,
   movement.reversedMovementId ?? null,
   movement.syncStatus ?? 'local',
   movement.occurredAt,
+];
+
+export const movementAccessoryCheckToSqlValues = (
+  movementId: string,
+  check: MovementAccessoryCheck,
+) => [
+  movementId,
+  check.accessoryId,
+  check.condition === 'ok' || check.condition === 'damaged' ? 1 : 0,
+  check.condition,
+  check.notes ?? null,
 ];
 
 export const accessoryToSqlValues = (accessory: ToolAccessory) => [
@@ -191,8 +206,19 @@ export const rowToMovement = (row: Record<string, unknown>): Movement => ({
   nextStatus: stringValue(row.next_status) as Movement['nextStatus'],
   condition: optionalString(row.condition) as Movement['condition'],
   notes: optionalString(row.notes),
+  expectedReturnAt: optionalString(row.expected_return_at),
+  workOrder: optionalString(row.work_order),
+  workLocation: optionalString(row.work_location),
   reversedMovementId: optionalString(row.reversed_movement_id),
   syncStatus: optionalString(row.sync_status) as Movement['syncStatus'],
+});
+
+export const rowToMovementAccessoryCheck = (
+  row: Record<string, unknown>,
+): MovementAccessoryCheck => ({
+  accessoryId: stringValue(row.accessory_id),
+  condition: stringValue(row.condition, 'not_checked') as MovementAccessoryCheck['condition'],
+  notes: optionalString(row.notes),
 });
 
 export const rowToAccessory = (row: Record<string, unknown>): ToolAccessory => ({

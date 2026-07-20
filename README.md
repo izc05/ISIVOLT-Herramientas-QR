@@ -1,104 +1,85 @@
 # ISIVOLT Herramientas QR
 
-Aplicación Android offline para registrar, controlar y auditar la entrega y devolución de herramientas mediante códigos QR y NFC.
+Aplicación Android y web para el control local de préstamos, devoluciones, técnicos, inventario, mantenimiento y trazabilidad de herramientas.
 
-## Objetivo
+## Candidata actual
 
-- Conocer quién tiene cada herramienta.
-- Registrar entregas, devoluciones, incidencias y cambios de estado.
-- Mantener un historial completo y auditable.
-- Gestionar accesorios, revisiones, calibraciones y reparaciones.
-- Exportar inventario, movimientos y gestión a Excel.
-- Trabajar inicialmente sin conexión desde un móvil de almacén.
-- Preparar una futura sincronización entre dispositivos.
+- Aplicación: `1.0.0-rc.24`.
+- SQLite normalizado: versión 5.
+- Rama de trabajo: `agent/rc24-storage-safety`.
+- PR de recuperación: #42, mantenida en borrador hasta completar las pruebas físicas.
 
-## Estado actual — RC24 de recuperación
+## Operaciones recuperadas
 
-La rama RC24 recupera en código fuente mantenible funciones presentes en la APK RC23 y refuerza la seguridad del guardado local:
+- Préstamo y devolución mediante QR, código de barras, NFC o búsqueda manual.
+- Recorrido **Primero técnico** o **Primero herramienta**.
+- Revisión final del lote antes de guardar.
+- Condición individual por herramienta en devoluciones múltiples.
+- Observación obligatoria para revisión o avería.
+- Bloqueo de doble pulsación y estado visible `Guardando…`.
+- `operationId` persistido para impedir duplicados incluso después de reiniciar.
+- Recuperación de escrituras pendientes y reconstrucción de SQLite desde el estado local.
 
-- Directorio de técnicos y especialidades.
-- Inventario con fotografía, QR, NFC y ficha móvil.
-- Entregas y devoluciones individuales o múltiples.
-- Cámara QR mediante Google ML Kit, NFC nativo y selección manual.
-- Inicio de operación por técnico o por herramienta.
-- Pantalla final de revisión antes de guardar.
-- Condición individual en devoluciones: correcta, revisión o averiada.
-- Observaciones obligatorias cuando existe una incidencia.
-- `operationId` por lote para impedir dobles confirmaciones.
-- Persistencia de `operationId` mediante migración SQLite v4.
-- Cola secuencial de escrituras y recuperación tras cierre inesperado.
-- SQLite relacional con migraciones, transacciones, claves únicas y auditoría.
-- Movimientos protegidos contra modificación y borrado.
-- Identificador estable del dispositivo.
-- Centro móvil de gestión administrativa.
-- Edición completa de herramientas y técnicos.
-- Compra, proveedor, coste, número de serie y ubicación.
-- Reservas por técnico.
-- Reparación, repuestos, calibración, fuera de servicio y extravío.
-- Accesorios con estado y archivado lógico.
-- Expedientes de mantenimiento.
-- Alertas offline por retrasos, vencimientos, averías, fotografía o QR.
-- Importación y actualización desde Excel.
-- Informe Excel de gestión y plantilla de importación.
-- Copias de seguridad JSON restaurables.
-- Sonidos, vibración y animaciones configurables.
-- Impresión y compartición de QR.
-- Diagnóstico de SQLite y registro local de errores.
-- Pruebas de dominio y validación del SQL sobre SQLite real.
-- Generación automática de APK debug.
-- APK RC24 paralela para pruebas sin sobrescribir RC23.
+## Tarjetas corporativas
 
-> RC24 continúa siendo una candidata de pruebas. No debe sustituir RC23 hasta completar el checklist físico en un móvil real y verificar una actualización conservando datos.
+La aplicación admite códigos lineales, incluido CODE 39, como alternativa cuando el NFC no funciona.
 
-## Tecnología
+- Asociación desde **Herramientas > Tarjetas**.
+- Lectura por cámara o entrada manual.
+- Un código solo puede pertenecer a un técnico.
+- El valor se guarda en la ficha, SQLite v5 y copia JSON.
+- Las tarjetas registradas identifican automáticamente al técnico durante préstamo o devolución.
 
-- React 19 y TypeScript.
-- Vite y Vitest.
-- Motion for React.
-- Capacitor 8.
-- Google ML Kit Barcode Scanning.
-- Capacitor Community SQLite.
-- Capacitor Camera, Filesystem, Share, Preferences y Haptics.
-- XLSX.
+## Interfaz recuperada frente a RC29
 
-## Ejecutar en desarrollo
+- Inventario y técnicos en dos columnas en móvil.
+- Tarjetas compactas.
+- Colores estables por especialidad.
+- Cortinas plegables de filtros.
+- Historial avanzado con fecha y hora completas.
+- Filtros Hoy, Ayer, 7 días, 30 días, mes y rango.
+- Auditoría CSV compatible con Excel.
+- Salida verde, entrada roja, incidencia ámbar y rectificación violeta.
+- Saludo configurable.
+- Radar luminoso en el logotipo.
+- Botón Atrás: cerrar modal, volver a Inicio y doble pulsación para salir.
+- Safe areas Android.
+- Herramientas administrativas agrupadas en un único menú móvil.
+
+## Desarrollo
 
 ```bash
 npm install
-npm run dev
-```
-
-## Pruebas y compilación
-
-```bash
 npm test
-npm run build
 python3 scripts/validate_sqlite_schema.py
+npm run build
 ```
 
-## Preparar Android localmente
+## Android
 
 ```bash
-npm run android:add
-npm run android:sync
-npm run android:open
+npm run android:prepare
+cd android
+./gradlew assembleDebug
 ```
 
-## APK automática
+La automatización de GitHub genera una APK paralela denominada **ISIVOLT RC24 Pruebas**, con application ID distinto, para instalarla junto a la versión existente sin compartir su base de datos.
 
-GitHub Actions ejecuta pruebas, compila la web, sincroniza Capacitor y genera APK Android.
+## Documentación
 
-- **Generar APK Android** produce la candidata con el identificador normal de la aplicación.
-- **Generar APK RC24 paralela** produce `ISIVOLT RC24 Pruebas` con el identificador `com.isivolt.herramientasqr.rc24`, instalable junto a RC23 sin compartir sus datos.
+- `docs/USER_MANUAL.md`: manual de uso.
+- `docs/RC29_PARITY.md`: matriz de recuperación respecto a la APK instalada.
+- `docs/PRODUCTION.md`: preparación y checklist de producción.
+- `docs/RECOVERY.md`: persistencia y recuperación de datos.
+- `docs/ROADMAP.md`: planificación restante.
 
-La APK debug es solo para pruebas internas. La versión 1.0 tendrá firma privada y actualización controlada.
+## Estado de validación
 
-## Plan de producción
+La última tanda funcional ha superado:
 
-- [Issue #18](https://github.com/izc05/ISIVOLT-Herramientas-QR/issues/18): estabilización 0.6.2.
-- [Issue #14](https://github.com/izc05/ISIVOLT-Herramientas-QR/issues/14): SQLite profesional y motor transaccional 0.7.
-- [Issue #15](https://github.com/izc05/ISIVOLT-Herramientas-QR/issues/15): gestión completa, accesorios y mantenimiento 0.8.
-- [Issue #16](https://github.com/izc05/ISIVOLT-Herramientas-QR/issues/16): usuarios, roles y auditoría 0.9.
-- [Issue #17](https://github.com/izc05/ISIVOLT-Herramientas-QR/issues/17): firma, pruebas y puesta en servicio 1.0.
+- Pruebas de dominio.
+- Migraciones SQLite reales v1-v5.
+- TypeScript y Vite.
+- Compilación de APK Android paralela.
 
-Consulta `docs/ROADMAP.md` y `docs/RC23_RECOVERY_NOTES.md` para el desglose técnico.
+La fusión con `main` queda bloqueada hasta completar las pruebas físicas de cámara, tarjeta corporativa, Atrás, safe areas, impresión QR, restauración y comparación pantalla por pantalla con RC29.

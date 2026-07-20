@@ -66,6 +66,7 @@ export const technicianToSqlValues = (technician: Technician) => [
   technician.active ? 1 : 0,
   technician.createdAt,
   technician.updatedAt,
+  technician.barcodeValue ?? null,
 ];
 
 export const movementToSqlValues = (
@@ -131,6 +132,7 @@ export const rowToTechnician = (row: Record<string, unknown>): Technician => ({
   id: stringValue(row.id),
   code: stringValue(row.code),
   nfcUid: optionalString(row.nfc_uid),
+  barcodeValue: optionalString(row.barcode_value),
   name: stringValue(row.name),
   specialty: stringValue(row.specialty),
   role: optionalString(row.role),

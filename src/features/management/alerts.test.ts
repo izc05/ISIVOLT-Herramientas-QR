@@ -81,4 +81,43 @@ describe('buildManagementAlerts', () => {
     const lastCritical = alerts.map((alert) => alert.severity).lastIndexOf('critical');
     expect(firstInfo).toBeGreaterThan(lastCritical);
   });
+
+  it('prioriza la fecha prevista específica sobre el límite genérico', () => {
+    const source = data();
+    source.movements.push({
+      id: 'mov-delivery',
+      type: 'delivery',
+      toolId: 'tool-1',
+      technicianId: 'tech-1',
+      operatorName: 'Almacén',
+      occurredAt: '2026-07-10T08:00:00.000Z',
+      expectedReturnAt: '2026-07-10T10:00:00.000Z',
+      previousStatus: 'available',
+      nextStatus: 'loaned',
+    });
+
+    const alerts = buildManagementAlerts(source, new Date('2026-07-10T12:00:00.000Z'));
+    const overdue = alerts.find((alert) => alert.id === 'overdue-tool-1');
+    expect(overdue?.title).toContain('devolución vencida');
+    expect(overdue?.detail).toContain('horas de retraso');
+    expect(overdue?.dueAt).toBe('2026-07-10T10:00:00.000Z');
+  });
+
+  it('avisa cuando la devolución prevista está próxima', () => {
+    const source = data();
+    source.movements.push({
+      id: 'mov-delivery',
+      type: 'delivery',
+      toolId: 'tool-1',
+      technicianId: 'tech-1',
+      operatorName: 'Almacén',
+      occurredAt: '2026-07-10T08:00:00.000Z',
+      expectedReturnAt: '2026-07-10T18:00:00.000Z',
+      previousStatus: 'available',
+      nextStatus: 'loaned',
+    });
+
+    const alerts = buildManagementAlerts(source, new Date('2026-07-10T12:00:00.000Z'));
+    expect(alerts.some((alert) => alert.id === 'overdue-soon-tool-1' && alert.severity === 'warning')).toBe(true);
+  });
 });

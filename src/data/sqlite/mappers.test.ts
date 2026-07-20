@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Movement, Technician, Tool } from '../../domain/types';
 import {
+  movementAccessoryCheckToSqlValues,
   movementToSqlValues,
   rowToMovement,
+  rowToMovementAccessoryCheck,
   rowToTechnician,
   rowToTool,
   stableLookupId,
@@ -48,6 +50,9 @@ const movement: Movement = {
   occurredAt: '2026-07-10T08:00:00.000Z',
   previousStatus: 'available',
   nextStatus: 'loaned',
+  expectedReturnAt: '2026-07-12T14:00:00.000Z',
+  workOrder: 'OT 104582',
+  workLocation: 'Quirófano 2',
 };
 
 describe('SQLite mappers', () => {
@@ -106,11 +111,14 @@ describe('SQLite mappers', () => {
     expect(recovered).toEqual(technician);
   });
 
-  it('conserva operationId al escribir y leer un movimiento', () => {
+  it('conserva operationId y contexto al escribir y leer un movimiento', () => {
     const values = movementToSqlValues(movement, 12, 'device-1');
     expect(values[0]).toBe(movement.id);
     expect(values[1]).toBe(movement.operationId);
     expect(values[2]).toBe(12);
+    expect(values[11]).toBe(movement.expectedReturnAt);
+    expect(values[12]).toBe(movement.workOrder);
+    expect(values[13]).toBe(movement.workLocation);
 
     const recovered = rowToMovement({
       id: movement.id,
@@ -123,11 +131,35 @@ describe('SQLite mappers', () => {
       occurred_at: movement.occurredAt,
       previous_status: movement.previousStatus,
       next_status: movement.nextStatus,
+      expected_return_at: movement.expectedReturnAt,
+      work_order: movement.workOrder,
+      work_location: movement.workLocation,
       device_id: 'device-1',
       sync_status: 'local',
     });
 
-    expect(recovered.operationId).toBe('op-1');
-    expect(recovered.sequenceNumber).toBe(12);
+    expect(recovered).toMatchObject({
+      operationId: 'op-1',
+      sequenceNumber: 12,
+      expectedReturnAt: movement.expectedReturnAt,
+      workOrder: 'OT 104582',
+      workLocation: 'Quirófano 2',
+    });
+  });
+
+  it('convierte y recupera la comprobación de un accesorio', () => {
+    const check = { accessoryId: 'acc-1', condition: 'missing' as const, notes: 'No entregado' };
+    expect(movementAccessoryCheckToSqlValues('mov-1', check)).toEqual([
+      'mov-1',
+      'acc-1',
+      0,
+      'missing',
+      'No entregado',
+    ]);
+    expect(rowToMovementAccessoryCheck({
+      accessory_id: 'acc-1',
+      condition: 'missing',
+      notes: 'No entregado',
+    })).toEqual(check);
   });
 });

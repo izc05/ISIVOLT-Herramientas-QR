@@ -9,6 +9,27 @@
 - Datos protegidos mediante validaciones, transacciones y copias.
 - Arquitectura preparada para sincronización futura.
 
+## RC24 — Recuperación y seguridad operativa
+
+Seguimiento: PR #42.
+
+- [x] Recuperar un motor único de movimientos para QR, NFC y selección manual.
+- [x] Añadir `operationId` compartido por lote.
+- [x] Impedir confirmaciones dobles y operaciones repetidas.
+- [x] Persistir `operationId` mediante migración SQLite v4.
+- [x] Cola secuencial de escrituras SQLite.
+- [x] Recuperar el estado local si la aplicación se cierra durante un guardado.
+- [x] Esperar la confirmación persistente antes de mostrar la operación como completada.
+- [x] Revisión final del lote antes de guardar.
+- [x] Estado individual por herramienta en devoluciones múltiples.
+- [x] Identificación empezando por técnico o por herramienta.
+- [x] Confirmación al cancelar una operación preparada.
+- [x] APK paralela con identificador independiente para probar junto a RC23.
+- [ ] Prueba física completa en Android.
+- [ ] Verificar cierre inmediato tras guardar y recuperación al abrir.
+- [ ] Verificar actualización conservando datos.
+- [ ] Confirmar equivalencia visual y funcional con todos los módulos de RC23.
+
 ## 0.6 — Prototipo funcional
 
 - [x] React, TypeScript, Vite y Motion.
@@ -38,7 +59,7 @@ Seguimiento: issue #18.
 - [x] Validación estructural reforzada de copias.
 - [x] Motor de reglas y servicio único de movimientos creados.
 - [x] Pruebas unitarias iniciales del dominio.
-- [ ] Conectar todas las pantallas manuales y QR al servicio único.
+- [x] Conectar las operaciones QR, NFC y manuales al motor único en RC24.
 - [ ] Checklist físico de cámara, fotos, Excel y restauración.
 
 ## 0.7 — Núcleo de datos profesional
@@ -58,6 +79,7 @@ Seguimiento: issue #14.
 - [x] Copia y restauración compatibles con migraciones y reemplazo transaccional.
 - [x] Diagnóstico de salud de SQLite.
 - [x] Validación de migraciones sobre SQLite real en CI.
+- [x] Identificador de lote persistente en SQLite v4.
 - [ ] Migrar las fotografías antiguas Base64 y hacerlas portables en las copias.
 - [ ] Implementar rectificaciones desde la interfaz sin modificar el movimiento original.
 
@@ -86,27 +108,39 @@ Seguimiento: issue #15.
 
 Seguimiento: issue #16.
 
-- [ ] Usuarios locales.
-- [ ] Roles Administrador, Almacén y Técnico.
-- [ ] PIN y opción biométrica.
-- [ ] Operador real en cada movimiento.
-- [ ] Área de administración protegida.
-- [ ] Rectificaciones sin modificar el movimiento original.
-- [ ] Registro de auditoría visible.
-- [ ] Bloqueo por inactividad.
+- [x] Usuarios locales.
+- [x] Roles Administrador, Almacén y Técnico.
+- [x] PIN local.
+- [x] Operador real en cada movimiento.
+- [x] Área de administración protegida.
+- [x] Rectificaciones sin modificar el movimiento original.
+- [x] Registro de auditoría visible.
+- [x] Bloqueo por inactividad.
+- [ ] Opción biométrica.
+- [ ] Exportación completa y unificada de auditoría.
 
 ## 1.0 — Producción
 
 Seguimiento: issue #17.
 
-- [ ] Pruebas unitarias, integración y flujos completos.
+- [x] Pruebas unitarias, integración y flujos principales automatizados.
 - [ ] Pruebas físicas en varios teléfonos Android.
-- [ ] APK release firmada.
+- [ ] APK release firmada con clave privada.
 - [ ] AAB opcional.
-- [ ] Icono y splash definitivos.
-- [ ] VersionCode y versionName automáticos.
-- [ ] Actualizaciones conservando datos.
-- [ ] Manual de usuario y administrador.
+- [x] Icono y splash definidos.
+- [x] VersionCode y versionName automáticos.
+- [ ] Actualizaciones conservando datos verificadas físicamente.
+- [x] Manual de usuario y administrador inicial.
 - [ ] Piloto con inventario reducido.
-- [ ] Plan de copias y recuperación.
+- [ ] Plan de copias y recuperación completo.
 - [ ] Versión estable 1.0.
+
+## Siguiente fase funcional
+
+- Fecha prevista de devolución.
+- OT y ubicación de destino.
+- Checklist de accesorios por salida y entrada.
+- Transferencia directa entre técnicos.
+- Inventario físico por escaneo.
+- Kits de herramientas.
+- Estadísticas de uso, retrasos, incidencias y costes.

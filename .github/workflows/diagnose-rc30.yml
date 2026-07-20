@@ -19,15 +19,25 @@ jobs:
       - name: Instalar dependencias
         run: npm install --silent
 
-      - name: Mostrar fallo de pruebas
+      - name: Ejecutar pruebas y conservar salida
+        id: tests
         shell: bash
         run: |
           set +e
-          npm test -- --reporter=verbose > /tmp/tests.log 2>&1
+          npm test -- --reporter=verbose > tests-rc30.log 2>&1
           status=$?
-          if [ "$status" -ne 0 ]; then
-            grep -E -A 12 -B 5 "FAIL|AssertionError|expected|Error:|Test Files|Tests" /tmp/tests.log | tail -n 120 || true
-          else
-            tail -n 20 /tmp/tests.log
-          fi
-          exit "$status"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Subir diagnóstico
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostico-pruebas-rc30
+          path: tests-rc30.log
+          retention-days: 2
+
+      - name: Marcar resultado
+        if: steps.tests.outputs.status != '0'
+        run: |
+          tail -n 60 tests-rc30.log
+          exit 1

@@ -16,6 +16,7 @@ import {
   assignTechnicianBarcode,
   barcodeForTechnician,
   loadTechnicianBarcodeRegistry,
+  normalizeBarcodeValue,
   removeTechnicianBarcode,
   type TechnicianBarcodeRegistry,
 } from '../../services/barcodeRegistry';
@@ -23,7 +24,11 @@ import {
   requestManualRawBarcodeValue,
   scanRawBarcode,
 } from '../../services/barcodeScanner';
-import { loadAppData } from '../../services/storage';
+import {
+  loadAppData,
+  saveAppData,
+  waitForPendingAppDataWrites,
+} from '../../services/storage';
 
 type Feedback = {
   tone: 'success' | 'warning' | 'error';
@@ -39,6 +44,7 @@ const matchesTechnician = (technician: Technician, query: string) => {
     technician.code,
     technician.specialty,
     technician.role ?? '',
+    technician.barcodeValue ?? '',
   ].some((value) => value.toLocaleLowerCase('es-ES').includes(needle));
 };
 
@@ -62,12 +68,15 @@ export default function TechnicianBarcodeCenter() {
   );
 
   const assignedCount = useMemo(
-    () => data.technicians.filter((technician) => barcodeForTechnician(registry, technician.id)).length,
-    [data.technicians, registry],
+    () => data.technicians.filter(
+      (technician) => barcodeForTechnician(registry, technician.id, data),
+    ).length,
+    [data, registry],
   );
 
   const loadRegistry = async () => {
-    setData(loadAppData());
+    const current = loadAppData();
+    setData(current);
     setRegistry(await loadTechnicianBarcodeRegistry());
   };
 
@@ -96,13 +105,24 @@ export default function TechnicianBarcodeCenter() {
     setBusyTechnicianId(technician.id);
     setFeedback(null);
     try {
-      const next = await assignTechnicianBarcode(data, technician.id, rawValue);
-      const code = barcodeForTechnician(next, technician.id) ?? rawValue;
-      setRegistry(next);
+      const barcode = normalizeBarcodeValue(rawValue);
+      const nextRegistry = await assignTechnicianBarcode(data, technician.id, barcode);
+      const timestamp = new Date().toISOString();
+      const nextData: AppData = {
+        ...data,
+        technicians: data.technicians.map((item) => item.id === technician.id
+          ? { ...item, barcodeValue: barcode, updatedAt: timestamp }
+          : item),
+      };
+
+      saveAppData(nextData);
+      await waitForPendingAppDataWrites();
+      setData(nextData);
+      setRegistry(nextRegistry);
       setFeedback({
         tone: 'success',
-        title: 'Tarjeta vinculada',
-        detail: `${technician.name} podrá identificarse con el código ${code}.`,
+        title: 'Tarjeta vinculada y protegida',
+        detail: `${technician.name} podrá identificarse con el código ${barcode}. Se incluye en SQLite y en las copias JSON.`,
       });
       navigator.vibrate?.([60, 35, 90]);
     } catch (cause) {
@@ -152,8 +172,18 @@ export default function TechnicianBarcodeCenter() {
     if (busyTechnicianId) return;
     setBusyTechnicianId(technician.id);
     try {
-      const next = await removeTechnicianBarcode(technician.id);
-      setRegistry(next);
+      const nextRegistry = await removeTechnicianBarcode(technician.id);
+      const timestamp = new Date().toISOString();
+      const nextData: AppData = {
+        ...data,
+        technicians: data.technicians.map((item) => item.id === technician.id
+          ? { ...item, barcodeValue: undefined, updatedAt: timestamp }
+          : item),
+      };
+      saveAppData(nextData);
+      await waitForPendingAppDataWrites();
+      setData(nextData);
+      setRegistry(nextRegistry);
       setFeedback({
         tone: 'success',
         title: 'Tarjeta desvinculada',
@@ -209,7 +239,7 @@ export default function TechnicianBarcodeCenter() {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar técnico, código o especialidad…"
+                placeholder="Buscar técnico, código, tarjeta o especialidad…"
               />
             </label>
 
@@ -227,7 +257,7 @@ export default function TechnicianBarcodeCenter() {
 
             <div className="technician-barcode-list">
               {filteredTechnicians.map((technician) => {
-                const barcode = barcodeForTechnician(registry, technician.id);
+                const barcode = barcodeForTechnician(registry, technician.id, data);
                 const busy = busyTechnicianId === technician.id;
                 return (
                   <article key={technician.id} className={!technician.active ? 'inactive' : ''}>
@@ -257,7 +287,7 @@ export default function TechnicianBarcodeCenter() {
               {filteredTechnicians.length === 0 && (
                 <div className="technician-barcode-empty">
                   <UserRound size={30} />
-                  <strong>No hay técnicos con ese filtro</strong>
+                  <strong>No hay técnicos en este filtro</strong>
                 </div>
               )}
             </div>

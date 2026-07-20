@@ -3,11 +3,12 @@ import { DATABASE_MIGRATIONS, MOVEMENT_IMMUTABILITY_TRIGGERS } from './schema';
 
 const schema = DATABASE_MIGRATIONS.map((migration) => migration.statements).join('\n');
 
-describe('SQLite schema 0.9 NFC', () => {
+describe('SQLite schema RC24 NFC', () => {
   it('mantiene las migraciones ordenadas y versionadas', () => {
-    expect(DATABASE_MIGRATIONS.map((migration) => migration.version)).toEqual([1, 2, 3]);
+    expect(DATABASE_MIGRATIONS.map((migration) => migration.version)).toEqual([1, 2, 3, 4]);
     expect(DATABASE_MIGRATIONS[1].name).toBe('asset_management_and_maintenance');
     expect(DATABASE_MIGRATIONS[2].name).toBe('nfc_identification');
+    expect(DATABASE_MIGRATIONS[3].name).toBe('movement_operation_idempotency');
   });
 
   it('crea las entidades principales del inventario', () => {
@@ -38,6 +39,11 @@ describe('SQLite schema 0.9 NFC', () => {
     expect(schema).toContain('ALTER TABLE tools ADD COLUMN nfc_uid TEXT');
     expect(schema).toContain('idx_technicians_nfc_uid');
     expect(schema).toContain('idx_tools_nfc_uid');
+  });
+
+  it('persiste el identificador de operación para impedir duplicados tras reiniciar', () => {
+    expect(schema).toContain('ALTER TABLE movements ADD COLUMN operation_id TEXT');
+    expect(schema).toContain('idx_movements_operation_id');
   });
 
   it('protege el estado de préstamo mediante CHECK', () => {

@@ -217,10 +217,10 @@ const insertNewMovements = async (db: SQLiteDBConnection, movements: Movement[])
     sequence += 1;
     await db.run(
       `INSERT INTO movements (
-        id, sequence_number, type, tool_id, technician_id, operator_name,
+        id, operation_id, sequence_number, type, tool_id, technician_id, operator_name,
         previous_status, next_status, condition, notes, occurred_at, device_id,
         reversed_movement_id, sync_status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
       movementToSqlValues(movement, sequence),
       false,
     );

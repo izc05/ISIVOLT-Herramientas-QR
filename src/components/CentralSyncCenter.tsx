@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Session } from '@supabase/supabase-js';
 import {
   AlertTriangle,
   CheckCircle2,
   Cloud,
   Database,
   Eye,
+  HardDrive,
   KeyRound,
   LoaderCircle,
   LogOut,
@@ -22,22 +22,19 @@ import { getCentralSyncConfig } from '../services/centralSync/config';
 import { resolveSyncConflict } from '../services/centralSync/conflictResolution';
 import { requestCentralSync } from '../services/centralSync/engine';
 import { readSyncConflicts, readSyncOutbox } from '../services/centralSync/outbox';
-import type { SyncConflict, SyncQueueItem } from '../services/centralSync/types';
+import type {
+  PocketBaseIdentity,
+  SyncConflict,
+  SyncQueueItem,
+} from '../services/centralSync/types';
 
 type SyncTab = 'account' | 'queue' | 'conflicts';
 
-type WorkspaceMembership = {
-  role: 'admin' | 'warehouse' | 'technician' | 'viewer';
-  display_name?: string | null;
-  technician_id?: string | null;
-  active: boolean;
-};
-
-const remoteRoleLabel: Record<WorkspaceMembership['role'], string> = {
+const remoteRoleLabel: Record<PocketBaseIdentity['role'], string> = {
   admin: 'Administrador',
   warehouse: 'Responsable de almacén',
   technician: 'Técnico',
-  viewer: 'Coordinador / consulta',
+  coordinator: 'Coordinador / consulta',
 };
 
 const entityLabel: Record<SyncQueueItem['entity'], string> = {
@@ -59,10 +56,10 @@ const formatDateTime = (value?: string) => {
 };
 
 const configReason = (reason?: string) => {
-  if (reason === 'missing-url') return 'Falta VITE_SUPABASE_URL.';
-  if (reason === 'missing-key') return 'Falta VITE_SUPABASE_PUBLISHABLE_KEY.';
+  if (reason === 'missing-url') return 'Falta VITE_POCKETBASE_URL.';
+  if (reason === 'insecure-url') return 'La URL del mini PC debe utilizar HTTPS. Solo localhost admite HTTP durante desarrollo.';
   if (reason === 'missing-workspace') return 'Falta VITE_ISIVOLT_WORKSPACE_ID.';
-  return 'La sincronización central no está configurada.';
+  return 'La sincronización con el mini PC no está configurada.';
 };
 
 const itemTitle = (item: SyncQueueItem) => {
@@ -88,9 +85,8 @@ export default function CentralSyncCenter() {
   const client = useMemo(() => getCentralSyncClient(), []);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<SyncTab>('account');
-  const [session, setSession] = useState<Session | null>(null);
-  const [membership, setMembership] = useState<WorkspaceMembership | null>(null);
-  const [membershipChecked, setMembershipChecked] = useState(false);
+  const [identity, setIdentity] = useState<PocketBaseIdentity | null>(null);
+  const [identityChecked, setIdentityChecked] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -104,29 +100,26 @@ export default function CentralSyncCenter() {
     setConflicts(readSyncConflicts());
   }, []);
 
-  const loadMembership = useCallback(async (nextSession: Session | null) => {
-    setMembership(null);
-    setMembershipChecked(false);
-    if (!client || !config.enabled || !config.workspaceId || !nextSession) {
-      setMembershipChecked(true);
+  const loadIdentity = useCallback(async () => {
+    setIdentity(null);
+    setIdentityChecked(false);
+    if (!client || !config.enabled || !client.authStore.isValid) {
+      setIdentityChecked(true);
       return;
     }
 
-    const { data, error: membershipError } = await client
-      .from('workspace_members')
-      .select('role,display_name,technician_id,active')
-      .eq('workspace_id', config.workspaceId)
-      .eq('user_id', nextSession.user.id)
-      .maybeSingle();
-
-    if (membershipError) {
-      setError(membershipError.message);
-      setMembershipChecked(true);
-      return;
+    try {
+      const nextIdentity = await client.send<PocketBaseIdentity>('/api/isivolt/me', { method: 'GET' });
+      if (config.workspaceId && nextIdentity.workspace !== config.workspaceId) {
+        client.authStore.clear();
+        throw new Error('La cuenta pertenece a otro espacio de trabajo.');
+      }
+      setIdentity(nextIdentity);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'No se ha podido validar la cuenta del mini PC.');
+    } finally {
+      setIdentityChecked(true);
     }
-
-    setMembership((data as WorkspaceMembership | null) ?? null);
-    setMembershipChecked(true);
   }, [client, config.enabled, config.workspaceId]);
 
   useEffect(() => {
@@ -151,31 +144,8 @@ export default function CentralSyncCenter() {
   }, [refreshLocalState]);
 
   useEffect(() => {
-    if (!client) {
-      setMembershipChecked(true);
-      return undefined;
-    }
-
-    let active = true;
-    void client.auth.getSession().then(({ data, error: sessionError }) => {
-      if (!active) return;
-      if (sessionError) setError(sessionError.message);
-      const nextSession = data.session;
-      setSession(nextSession);
-      void loadMembership(nextSession);
-    });
-
-    const { data: subscription } = client.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setError('');
-      void loadMembership(nextSession);
-    });
-
-    return () => {
-      active = false;
-      subscription.subscription.unsubscribe();
-    };
-  }, [client, loadMembership]);
+    void loadIdentity();
+  }, [loadIdentity]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -196,39 +166,27 @@ export default function CentralSyncCenter() {
     setError('');
     setNotice('');
     try {
-      const { data, error: authError } = await client.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (authError) throw authError;
+      await client.collection('users').authWithPassword(email.trim(), password);
       setPassword('');
-      setSession(data.session);
-      await loadMembership(data.session);
+      await loadIdentity();
       requestCentralSync();
-      setNotice('Sesión remota iniciada. Comprobando cambios pendientes…');
+      setNotice('Sesión iniciada en el mini PC. Comprobando cambios pendientes…');
     } catch (cause) {
+      client.authStore.clear();
+      setIdentity(null);
       setError(cause instanceof Error ? cause.message : 'No se ha podido iniciar sesión.');
     } finally {
       setBusy(false);
     }
   };
 
-  const signOut = async () => {
+  const signOut = () => {
     if (!client) return;
-    setBusy(true);
+    client.authStore.clear();
+    setIdentity(null);
+    setIdentityChecked(true);
     setError('');
-    try {
-      const { error: authError } = await client.auth.signOut();
-      if (authError) throw authError;
-      setSession(null);
-      setMembership(null);
-      setMembershipChecked(true);
-      setNotice('Sesión remota cerrada. La aplicación continúa en modo local.');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'No se ha podido cerrar la sesión.');
-    } finally {
-      setBusy(false);
-    }
+    setNotice('Sesión del mini PC cerrada. La aplicación continúa en modo local.');
   };
 
   const resolveConflict = (conflict: SyncConflict, decision: 'keep-local' | 'accept-server') => {
@@ -250,7 +208,7 @@ export default function CentralSyncCenter() {
     <div className="central-sync-center-backdrop" onClick={() => setOpen(false)}>
       <section className="central-sync-center" role="dialog" aria-modal="true" aria-label="Centro de sincronización" onClick={(event) => event.stopPropagation()}>
         <header className="central-sync-center-header">
-          <div><span><Cloud size={24} /></span><div><small>ISIVOLT Multiusuario</small><h2>Centro de sincronización</h2><p>Cuenta remota, cola offline y conflictos.</p></div></div>
+          <div><span><Cloud size={24} /></span><div><small>ISIVOLT Multiusuario</small><h2>Centro de sincronización</h2><p>Mini PC, cola offline y conflictos.</p></div></div>
           <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={21} /></button>
         </header>
 
@@ -266,45 +224,45 @@ export default function CentralSyncCenter() {
               {!config.enabled ? (
                 <div className="central-sync-setup-card">
                   <span><Database size={30} /></span>
-                  <h3>Servidor central sin configurar</h3>
+                  <h3>Mini PC sin configurar</h3>
                   <p>{configReason(config.reason)}</p>
-                  <code>VITE_SUPABASE_URL</code>
-                  <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>
+                  <code>VITE_POCKETBASE_URL</code>
                   <code>VITE_ISIVOLT_WORKSPACE_ID</code>
-                  <small>La aplicación continúa funcionando de forma local. Nunca introduzcas una clave secreta o service_role en el frontend.</small>
+                  <small>La aplicación continúa funcionando localmente. El navegador nunca necesita una clave de administrador de PocketBase.</small>
                 </div>
-              ) : !session ? (
+              ) : !client?.authStore.isValid ? (
                 <div className="central-sync-login-card">
                   <span className="central-sync-login-icon"><KeyRound size={29} /></span>
-                  <h3>Acceso al espacio central</h3>
-                  <p>Utiliza la cuenta creada por el administrador del espacio de trabajo.</p>
+                  <h3>Acceso al servidor del almacén</h3>
+                  <p>Utiliza la cuenta creada por el administrador en el mini PC.</p>
                   <label><span>Correo</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="nombre@organizacion.es" /></label>
                   <label><span>Contraseña</span><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') void signIn(); }} /></label>
                   <button type="button" onClick={() => { void signIn(); }} disabled={busy || !email.trim() || !password}>
                     {busy ? <LoaderCircle className="central-sync-spin" size={18} /> : <KeyRound size={18} />}
-                    {busy ? 'Comprobando…' : 'Iniciar sesión remota'}
+                    {busy ? 'Comprobando…' : 'Iniciar sesión'}
                   </button>
                 </div>
               ) : (
                 <div className="central-sync-session-card">
-                  <div className="central-sync-session-user"><span><UserRound size={24} /></span><div><small>Cuenta autenticada</small><strong>{session.user.email ?? session.user.id}</strong></div></div>
-                  {!membershipChecked ? (
-                    <p className="central-sync-membership-loading"><LoaderCircle className="central-sync-spin" size={17} /> Comprobando membresía…</p>
-                  ) : membership?.active ? (
+                  <div className="central-sync-session-user"><span><UserRound size={24} /></span><div><small>Cuenta autenticada</small><strong>{identity?.name ?? client.authStore.record?.email ?? client.authStore.record?.id}</strong></div></div>
+                  {!identityChecked ? (
+                    <p className="central-sync-membership-loading"><LoaderCircle className="central-sync-spin" size={17} /> Comprobando permisos…</p>
+                  ) : identity ? (
                     <div className="central-sync-membership-ok">
                       <ShieldCheck size={22} />
-                      <div><small>Acceso autorizado</small><strong>{remoteRoleLabel[membership.role]}</strong><span>{membership.display_name || 'Miembro del espacio'}{membership.technician_id ? ` · ${membership.technician_id}` : ''}</span></div>
+                      <div><small>Acceso autorizado</small><strong>{remoteRoleLabel[identity.role]}</strong><span>{identity.workspace}{identity.technicianId ? ` · ${identity.technicianId}` : ''}</span></div>
                     </div>
                   ) : (
-                    <div className="central-sync-membership-error"><AlertTriangle size={22} /><div><strong>Sin acceso al espacio configurado</strong><span>La cuenta existe, pero no tiene una membresía activa en este workspace.</span></div></div>
+                    <div className="central-sync-membership-error"><AlertTriangle size={22} /><div><strong>Cuenta no validada</strong><span>Revisa que siga activa y pertenezca al espacio configurado.</span></div></div>
                   )}
                   <div className="central-sync-server-facts">
-                    <span><Server size={17} /><small>Servidor</small><strong>Configurado por HTTPS</strong></span>
-                    <span><Database size={17} /><small>Workspace</small><strong>{config.workspaceId?.slice(0, 8)}…</strong></span>
+                    <span><Server size={17} /><small>Servidor</small><strong>PocketBase local</strong></span>
+                    <span><HardDrive size={17} /><small>Base central</small><strong>SQLite en mini PC</strong></span>
+                    <span><Database size={17} /><small>Workspace</small><strong>{config.workspaceId}</strong></span>
                   </div>
                   <div className="central-sync-session-actions">
-                    <button type="button" onClick={requestCentralSync} disabled={!membership?.active}><RefreshCw size={17} /> Sincronizar ahora</button>
-                    <button type="button" className="secondary" onClick={() => { void signOut(); }} disabled={busy}><LogOut size={17} /> Cerrar sesión remota</button>
+                    <button type="button" onClick={requestCentralSync} disabled={!identity}><RefreshCw size={17} /> Sincronizar ahora</button>
+                    <button type="button" className="secondary" onClick={signOut} disabled={busy}><LogOut size={17} /> Cerrar sesión</button>
                   </div>
                 </div>
               )}
@@ -315,7 +273,7 @@ export default function CentralSyncCenter() {
             <section className="central-sync-list-section">
               <div className="central-sync-section-heading"><div><UploadCloud size={20} /><span><small>Trabajo offline protegido</small><strong>Cambios pendientes</strong></span></div><button type="button" onClick={requestCentralSync} disabled={queue.length === 0}><RefreshCw size={16} /> Reintentar</button></div>
               {queue.length === 0 ? (
-                <div className="central-sync-empty"><CheckCircle2 size={34} /><strong>Cola vacía</strong><span>No hay cambios locales esperando al servidor.</span></div>
+                <div className="central-sync-empty"><CheckCircle2 size={34} /><strong>Cola vacía</strong><span>No hay cambios locales esperando al mini PC.</span></div>
               ) : (
                 <div className="central-sync-queue-list">
                   {queue.map((item) => (
@@ -334,13 +292,13 @@ export default function CentralSyncCenter() {
             <section className="central-sync-list-section">
               <div className="central-sync-section-heading"><div><AlertTriangle size={20} /><span><small>Decisión necesaria</small><strong>Conflictos detectados</strong></span></div></div>
               {conflicts.length === 0 ? (
-                <div className="central-sync-empty"><ShieldCheck size={34} /><strong>Sin conflictos</strong><span>Los cambios locales y remotos son compatibles.</span></div>
+                <div className="central-sync-empty"><ShieldCheck size={34} /><strong>Sin conflictos</strong><span>Los cambios locales y centrales son compatibles.</span></div>
               ) : (
                 <div className="central-sync-conflict-list">
                   {conflicts.map((conflict) => (
                     <article key={conflict.id}>
                       <header><span><AlertTriangle size={19} /></span><div><strong>{conflictTitle(conflict)}</strong><small>Servidor: {conflict.remoteAction ?? 'update'} · {formatDateTime(conflict.remoteOccurredAt ?? conflict.detectedAt)}</small></div></header>
-                      <p>Existe un cambio local pendiente y otro cambio posterior en el servidor para la misma entidad.</p>
+                      <p>Existe un cambio local pendiente y otro cambio posterior en el mini PC para la misma entidad.</p>
                       {conflict.entity === 'movements' ? (
                         <div className="central-sync-movement-warning"><Eye size={17} /> Los movimientos no se sobrescriben. Conserva el local y registra una rectificación si fuera necesaria.</div>
                       ) : null}

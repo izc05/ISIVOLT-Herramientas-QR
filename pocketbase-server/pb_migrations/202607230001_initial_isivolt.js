@@ -1,7 +1,7 @@
 migrate((app) => {
   const users = new Collection({
     type: "auth",
-    name: "users",
+    name: "isivolt_users",
     listRule: "id = @request.auth.id || @request.auth.role = 'admin' || @request.auth.role = 'warehouse'",
     viewRule: "id = @request.auth.id || @request.auth.role = 'admin' || @request.auth.role = 'warehouse'",
     createRule: null,
@@ -18,8 +18,8 @@ migrate((app) => {
     passwordAuth: { enabled: true, identityFields: ["email"] },
     otp: { enabled: false },
     indexes: [
-      "CREATE INDEX idx_users_workspace_role ON users (workspace, role)",
-      "CREATE UNIQUE INDEX idx_users_workspace_technician ON users (workspace, technician_id) WHERE technician_id != '' AND active = 1"
+      "CREATE INDEX idx_isivolt_users_workspace_role ON isivolt_users (workspace, role)",
+      "CREATE UNIQUE INDEX idx_isivolt_users_workspace_technician ON isivolt_users (workspace, technician_id) WHERE technician_id != '' AND active = 1"
     ]
   });
   app.save(users);
@@ -156,7 +156,7 @@ migrate((app) => {
     "isivolt_sync_events",
     "isivolt_movements",
     "isivolt_entities",
-    "users"
+    "isivolt_users"
   ].forEach((name) => {
     try {
       app.delete(app.findCollectionByNameOrId(name));

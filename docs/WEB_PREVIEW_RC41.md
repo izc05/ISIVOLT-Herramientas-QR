@@ -10,3 +10,5 @@ La rama `agent/rc31-web-preview` contiene la integración consolidada RC38–RC4
 - funcionamiento local en GitHub Pages mientras el mini PC no está configurado.
 
 GitHub Pages es una vista previa. La implantación multiusuario definitiva se servirá desde el mini PC mediante una única dirección HTTPS.
+
+El workflow `Desplegar ISIVOLT web` publica directamente cada commit validado de esta rama.

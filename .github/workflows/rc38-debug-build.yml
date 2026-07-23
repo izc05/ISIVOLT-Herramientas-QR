@@ -13,15 +13,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
       - name: Compilar y publicar diagnóstico
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_BRANCH: ${{ github.head_ref }}
         run: |
-          set -o pipefail
-          git clone --quiet --depth 1 --branch "$HEAD_BRANCH" "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
-          cd repo
           npm ci --silent
           set +e
           npm run build > build.log 2>&1

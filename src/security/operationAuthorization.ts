@@ -20,6 +20,8 @@ export class OperationAuthorizationError extends Error {
   }
 }
 
+export const isTrustedRemoteChange = () => trustedRemoteDepth > 0;
+
 export const runTrustedRemoteChange = <T,>(change: () => T): T => {
   trustedRemoteDepth += 1;
   try {
@@ -56,7 +58,7 @@ export const assertAuthorizedDataChange = (
   next: AppData,
   user: SecurityUser | null,
 ): void => {
-  if (trustedRemoteDepth > 0 || !user?.active || !previous) return;
+  if (isTrustedRemoteChange() || !user?.active || !previous) return;
 
   const previousMovementIds = new Set(previous.movements.map((movement) => movement.id));
   const newMovements = next.movements.filter((movement) => !previousMovementIds.has(movement.id));

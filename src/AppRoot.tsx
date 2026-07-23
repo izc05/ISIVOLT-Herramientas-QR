@@ -4,12 +4,15 @@ import { Database, Globe2, LoaderCircle, RefreshCcw, ShieldCheck } from 'lucide-
 import AppStable from './AppStable';
 import BootErrorBoundary from './BootErrorBoundary';
 import MobileToolsMenu from './components/MobileToolsMenu';
+import SyncStatusIndicator from './components/SyncStatusIndicator';
 import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
 import NfcManagementCenter from './features/nfc/NfcManagementCenter';
 import CommissioningCenter from './production/CommissioningCenter';
 import RectificationCenter from './security/RectificationCenter';
 import SecurityController from './security/SecurityController';
+import { startCentralSyncCapture } from './services/centralSync/capture';
+import { startAutomaticCentralSync } from './services/centralSync/engine';
 import { recordAppError } from './services/errorLog';
 import { hydrateAppDataFromNative } from './services/storage';
 import { installModalStateObserver } from './ui/modalState';
@@ -29,6 +32,16 @@ export default function AppRoot() {
   const [bootMessage, setBootMessage] = useState('Preparando la base de datos local…');
 
   useEffect(() => installModalStateObserver(), []);
+
+  useEffect(() => {
+    if (!isWebMode) return undefined;
+    const stopCapture = startCentralSyncCapture();
+    const stopAutomaticSync = startAutomaticCentralSync();
+    return () => {
+      stopAutomaticSync();
+      stopCapture();
+    };
+  }, [isWebMode]);
 
   useEffect(() => {
     if (isWebMode || bootState !== 'loading') return;
@@ -80,13 +93,16 @@ export default function AppRoot() {
       ) : (
         <>
           {isWebMode && (
-            <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
-              <Globe2 size={18} />
-              <div>
-                <strong>Modo web RC30</strong>
-                <span>Los datos se guardan en este navegador · sincronización central pendiente</span>
-              </div>
-            </aside>
+            <>
+              <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
+                <Globe2 size={18} />
+                <div>
+                  <strong>Modo web RC30</strong>
+                  <span>Caché local activa · consulta el estado central de sincronización</span>
+                </div>
+              </aside>
+              <SyncStatusIndicator />
+            </>
           )}
           {bootState === 'degraded' && (
             <aside className="boot-degraded-banner">

@@ -36,7 +36,7 @@ if [[ ! "${ADMIN_EMAIL}" =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]]; 
 fi
 
 if [[ -z "${ADMIN_PASSWORD}" ]]; then
-  ADMIN_PASSWORD="$(openssl rand -base64 36 | tr -dc 'A-Za-z0-9._~!@#%^+=-' | head -c 28)"
+  ADMIN_PASSWORD="$(openssl rand -hex 16)"
   GENERATED_PASSWORD=true
 else
   GENERATED_PASSWORD=false
@@ -47,6 +47,10 @@ if [[ ! "${ADMIN_PASSWORD}" =~ ^[A-Za-z0-9._~!@#%^+=-]{12,128}$ ]]; then
 fi
 if [[ ! "${WORKSPACE}" =~ ^[A-Za-z0-9._-]{2,64}$ ]]; then
   echo "El workspace debe tener entre 2 y 64 caracteres alfanuméricos, punto, guion o guion bajo." >&2
+  exit 1
+fi
+if [[ "${ADMIN_NAME}" == *$'\n'* || "${ADMIN_NAME}" == *'"'* || "${ADMIN_NAME}" == *'\'* ]]; then
+  echo "El nombre del administrador contiene caracteres no permitidos." >&2
   exit 1
 fi
 
@@ -72,7 +76,7 @@ curl --fail --location --silent --show-error "${DOWNLOAD_URL}" --output "${TMP_D
 unzip -q "${TMP_DIR}/pocketbase.zip" pocketbase -d "${TMP_DIR}"
 install -m 0755 -o root -g root "${TMP_DIR}/pocketbase" "${INSTALL_DIR}/pocketbase"
 
-rsync_source() {
+sync_source() {
   local source="$1"
   local target="$2"
   find "${target}" -mindepth 1 -maxdepth 1 -type f -delete
@@ -81,14 +85,14 @@ rsync_source() {
   chmod -R u=rwX,g=rX,o= "${target}"
 }
 
-rsync_source "${SOURCE_DIR}/pb_hooks" "${INSTALL_DIR}/pb_hooks"
-rsync_source "${SOURCE_DIR}/pb_migrations" "${INSTALL_DIR}/pb_migrations"
+sync_source "${SOURCE_DIR}/pb_hooks" "${INSTALL_DIR}/pb_hooks"
+sync_source "${SOURCE_DIR}/pb_migrations" "${INSTALL_DIR}/pb_migrations"
 
 cat > "${ENV_FILE}" <<EOF
-ISIVOLT_BOOTSTRAP_ADMIN_EMAIL=${ADMIN_EMAIL}
-ISIVOLT_BOOTSTRAP_ADMIN_PASSWORD=${ADMIN_PASSWORD}
-ISIVOLT_BOOTSTRAP_ADMIN_NAME=${ADMIN_NAME}
-ISIVOLT_BOOTSTRAP_WORKSPACE=${WORKSPACE}
+ISIVOLT_BOOTSTRAP_ADMIN_EMAIL="${ADMIN_EMAIL}"
+ISIVOLT_BOOTSTRAP_ADMIN_PASSWORD="${ADMIN_PASSWORD}"
+ISIVOLT_BOOTSTRAP_ADMIN_NAME="${ADMIN_NAME}"
+ISIVOLT_BOOTSTRAP_WORKSPACE="${WORKSPACE}"
 ISIVOLT_REQUIRE_STATION=false
 EOF
 chmod 0600 "${ENV_FILE}"

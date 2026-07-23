@@ -12,7 +12,7 @@ Conectarse a una red cercana es una señal útil, pero un navegador no permite l
 
 La Wi‑Fi del mini PC se usa como perímetro local, pero la autorización se basa en un segundo factor físico y temporal.
 
-## Diseño recomendado
+## Diseño implementado
 
 1. El mini PC crea o utiliza una red Wi‑Fi exclusiva del almacén.
 2. Una pantalla conectada al mini PC muestra un QR que cambia cada 30–45 segundos.
@@ -26,7 +26,9 @@ La Wi‑Fi del mini PC se usa como perímetro local, pero la autorización se ba
 5. La aplicación contiene únicamente la clave pública.
 6. Antes de confirmar una operación, el técnico escanea el QR.
 7. La aplicación comprueba firma, punto autorizado, caducidad y duración máxima.
-8. El pase se consume para una única confirmación preparada.
+8. El pase queda ligado al `operationId` preparado.
+9. `saveAppData` consume la prueba y la adjunta al movimiento; saltarse el botón no evita la validación central.
+10. En modo reforzado, el mini PC canjea el nonce una sola vez y rechaza su reutilización.
 
 Formato:
 
@@ -36,41 +38,76 @@ ISIVOLT:STATION:<payload-base64url>.<firma-base64url>
 
 La firma se calcula sobre el segmento exacto `<payload-base64url>` usando ECDSA P‑256 y SHA‑256.
 
-## Nivel reforzado
+## Dos niveles de protección
 
-Para impedir también una fotografía compartida durante los pocos segundos de vigencia, el servicio del mini PC debe registrar cada nonce y permitir su consumo una sola vez.
+### Firma local sin conexión
 
-Opciones:
+La aplicación verifica criptográficamente el QR en el propio móvil. Permite trabajar aunque el mini PC no exponga una API HTTPS accesible.
 
-- **Aprobación del puesto fijo:** el técnico prepara la operación y el mini PC muestra una solicitud que debe aprobarse.
-- **Canje central:** una Edge Function valida firma, estación, nonce y operación, y marca el nonce como consumido antes de ejecutar la RPC PostgreSQL.
-- **Servidor local como autoridad:** el mini PC sirve la aplicación y la API operacional mediante HTTPS dentro de la red local.
+Protege frente a:
 
-El nivel recomendado para el piloto es QR rotatorio más aprobación opcional. Para producción multiusuario, añadir canje único en servidor.
+- QR inventados;
+- contenido manipulado;
+- códigos de otro almacén;
+- códigos caducados;
+- duración excesiva;
+- introducción manual.
 
-## Alternativas
+Una fotografía reciente podría compartirse durante sus pocos segundos de vigencia, por lo que este nivel es adecuado para piloto controlado, pero no representa la protección máxima.
 
-### Tablet o terminal fijo
+### Canje único reforzado
 
-Es la solución más simple y fuerte: todas las operaciones se terminan en un dispositivo anclado al almacén, usando lector QR USB o cámara. Los móviles quedan para consulta e identificación.
+Cuando se configura `VITE_ISIVOLT_STATION_REDEEM_URL`, después de verificar la firma el móvil consulta al mini PC. El servidor:
 
-### NFC fijo
+- comprueba nuevamente firma, estación y caducidad;
+- relaciona el nonce con un `operationId`;
+- acepta el primer canje;
+- rechaza un segundo intento para la misma operación;
+- rechaza que otra operación use ese nonce;
+- registra IP, agente de usuario, hora y resultado en auditoría JSONL.
 
-Puede usarse como apoyo, pero un contenido NDEF estático puede copiarse. Debe combinarse con un reto cambiante o validación del servidor.
+La URL debe usar HTTPS. Una aplicación cargada desde GitHub Pages no puede llamar de forma segura a una dirección HTTP de la red local debido al bloqueo de contenido mixto del navegador.
 
-### Bluetooth de proximidad
+## Evidencia registrada
 
-Aporta proximidad, pero Web Bluetooth no está disponible de forma uniforme y requiere permisos frecuentes. No se recomienda como única prueba.
+Cada movimiento físico puede conservar:
 
-### Geolocalización
+- `stationId`;
+- `stationNonce`;
+- `stationVerifiedAt`.
 
-No ofrece precisión suficiente dentro de edificios y puede falsearse. Solo sirve como dato de auditoría auxiliar.
+La evidencia se guarda en la copia local, cola offline y base central. PostgreSQL mantiene una tabla `station_redemptions` y evita que el mismo nonce quede asociado a otra operación.
 
-### Confirmación por responsable de almacén
+La migración central conserva la evidencia y bloquea reutilizaciones, pero la comprobación criptográfica completa sigue realizándose en el móvil y en el servicio del mini PC. Para que PostgreSQL sea por sí solo la autoridad criptográfica será necesario interponer una Edge Function o API firmada antes de la RPC.
 
-Es el control humano más claro. La operación queda pendiente hasta que el responsable confirma en el mini PC. Es adecuado cuando siempre hay personal en el punto de entrega.
+## Servicio del mini PC
+
+El módulo está en:
+
+```text
+station-service/
+```
+
+Incluye:
+
+- generación y persistencia de claves P‑256;
+- pantalla completa con QR rotatorio;
+- `GET /health`;
+- `GET /public-key.json`;
+- `GET /api/token`;
+- `GET /qr.svg`;
+- `POST /api/redeem`;
+- CORS limitado a orígenes autorizados;
+- soporte HTTP para la pantalla local y HTTPS para el canje web;
+- auditoría JSONL;
+- unidad systemd endurecida;
+- pruebas de servidor en puerto aleatorio.
+
+La guía completa de instalación está en `station-service/README.md`.
 
 ## Configuración del frontend
+
+Modo firmado local:
 
 ```env
 VITE_ISIVOLT_STATION_MODE=signed-qr
@@ -80,14 +117,58 @@ VITE_ISIVOLT_STATION_CLOCK_SKEW_SECONDS=10
 VITE_ISIVOLT_STATION_MAX_TOKEN_SECONDS=90
 ```
 
-Si el modo `signed-qr` está solicitado pero falta la clave o el identificador, la aplicación bloquea la confirmación y muestra el error de configuración. No degrada silenciosamente a modo desprotegido.
+Modo reforzado:
 
-## Estado RC38
+```env
+VITE_ISIVOLT_STATION_REDEEM_URL=https://almacen-pts.example.local:8787/api/redeem
+```
 
-- Modal de herramienta centrado en escritorio.
-- Verificación ECDSA P‑256 en navegador.
-- Caducidad, punto y duración máxima comprobados.
-- Introducción manual no admitida.
-- Barrera previa a la confirmación final.
-- Pase consumido una sola vez en la interfaz.
-- Servicio generador del mini PC y canje único en servidor pendientes del bloque de infraestructura.
+Si el modo `signed-qr` está solicitado pero falta la clave, el identificador o la URL reforzada no es segura, la aplicación bloquea la confirmación. No degrada silenciosamente a modo desprotegido.
+
+## Alternativas y refuerzos
+
+### Aprobación por responsable
+
+La operación puede quedar pendiente hasta que el responsable confirme en la pantalla del mini PC. Es el control humano más claro cuando siempre hay personal en el almacén.
+
+### Terminal fijo
+
+Todas las operaciones se terminan en un dispositivo anclado al almacén con lector QR USB o cámara. Los móviles quedan para consulta e identificación. Es la solución más simple y fuerte si no se necesita retirar material sin responsable presente.
+
+### NFC fijo
+
+Un contenido NDEF estático puede copiarse. Solo debe utilizarse combinado con un reto cambiante o validación del servidor.
+
+### Bluetooth de proximidad
+
+Aporta proximidad, pero Web Bluetooth no está disponible de forma uniforme y requiere permisos frecuentes. No se recomienda como única prueba.
+
+### Geolocalización
+
+No ofrece precisión suficiente dentro de edificios y puede falsearse. Solo sirve como dato de auditoría auxiliar.
+
+## Estado RC39
+
+Completado:
+
+- modal de herramienta centrado en escritorio;
+- verificación ECDSA P‑256 en navegador;
+- caducidad, punto y duración máxima;
+- barrera previa a la confirmación y refuerzo en almacenamiento;
+- prueba presencial adjunta al movimiento;
+- servicio generador del mini PC;
+- QR rotatorio a pantalla completa;
+- canje único del nonce;
+- auditoría local;
+- migración para evidencia central;
+- suite independiente del mini PC validada.
+
+Pendiente:
+
+- instalar el servicio en el mini PC real;
+- definir el punto de acceso o red del almacén;
+- disponer de HTTPS reconocido por los móviles para el canje reforzado;
+- validar cámara y QR físicamente en Android Chrome;
+- ejecutar las migraciones RC37–RC39 en una rama Supabase QA aislada;
+- probar dos técnicos y dos dispositivos concurrentes;
+- decidir si se añade aprobación humana desde el puesto fijo.

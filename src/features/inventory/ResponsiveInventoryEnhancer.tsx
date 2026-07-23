@@ -42,13 +42,16 @@ export default function ResponsiveInventoryEnhancer() {
       });
     };
 
-    const applyCategoryFilter = () => {
-      document.querySelectorAll<HTMLElement>('.tool-card[data-rc34-category]').forEach((card) => {
-        card.hidden = activeCategory !== 'all' && card.dataset.rc34Category !== activeCategory;
-      });
+    const syncCategoryButtons = () => {
       document.querySelectorAll<HTMLButtonElement>('.rc34-category-filter button').forEach((button) => {
         button.classList.toggle('active', button.dataset.category === activeCategory);
       });
+    };
+
+    const selectCategory = (key: string) => {
+      activeCategory = key;
+      syncCategoryButtons();
+      window.dispatchEvent(new CustomEvent('isivolt:presentation-category-filter', { detail: key }));
     };
 
     const reactivate = (toolId: string) => {
@@ -95,7 +98,10 @@ export default function ResponsiveInventoryEnhancer() {
         filter.setAttribute('aria-label', 'Clasificar herramientas por categoría');
         grid.before(filter);
       }
-      if (filter.dataset.signature === signature) return;
+      if (filter.dataset.signature === signature) {
+        syncCategoryButtons();
+        return;
+      }
       filter.dataset.signature = signature;
       filter.replaceChildren();
 
@@ -110,13 +116,10 @@ export default function ResponsiveInventoryEnhancer() {
         button.style.setProperty('--category-accent', category.accent);
         button.style.setProperty('--category-soft', category.soft);
         button.innerHTML = `<span>${category.label}</span><b>${category.count}</b>`;
-        button.addEventListener('click', () => {
-          activeCategory = category.key;
-          applyCategoryFilter();
-        });
+        button.addEventListener('click', () => selectCategory(category.key));
         filter?.appendChild(button);
       });
-      applyCategoryFilter();
+      syncCategoryButtons();
     };
 
     const decorateToolCards = () => {
@@ -174,7 +177,6 @@ export default function ResponsiveInventoryEnhancer() {
           actions.appendChild(button);
         }
       });
-      applyCategoryFilter();
     };
 
     const decorateTechnicianCards = () => {

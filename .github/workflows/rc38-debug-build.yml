@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   build:
@@ -21,5 +22,28 @@ jobs:
           cache: npm
       - name: Instalar dependencias
         run: npm ci
-      - name: Compilar RC38
-        run: npm run build
+      - name: Compilar RC38 y guardar diagnóstico
+        id: build
+        shell: bash
+        run: |
+          set +e
+          npm run build > build.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Publicar error en el PR temporalmente
+        if: steps.build.outputs.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '### Diagnóstico temporal RC38'
+            echo
+            echo '```text'
+            tail -n 80 build.log
+            echo '```'
+          } > build-comment.md
+          gh pr comment 70 --body-file build-comment.md
+      - name: Marcar fallo de compilación
+        if: steps.build.outputs.status != '0'
+        run: exit 1

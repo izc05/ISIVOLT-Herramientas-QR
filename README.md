@@ -4,21 +4,26 @@ Aplicación Android y web para el control local de préstamos, devoluciones, té
 
 ## Candidata actual
 
-- Aplicación: `1.0.0-rc.24`.
-- SQLite normalizado: versión 5.
+- Aplicación: `1.0.0-rc.30`.
+- SQLite normalizado: versión 6.
 - Rama de trabajo: `agent/rc24-storage-safety`.
-- PR de recuperación: #42, mantenida en borrador hasta completar las pruebas físicas.
+- PR de consolidación: #42, mantenida en borrador hasta completar las pruebas físicas.
 
-## Operaciones recuperadas
+El nombre histórico de la rama se conserva para no romper el PR abierto, pero la única candidata que representa actualmente es RC30.
+
+## Operaciones consolidadas
 
 - Préstamo y devolución mediante QR, código de barras, NFC o búsqueda manual.
 - Recorrido **Primero técnico** o **Primero herramienta**.
 - Revisión final del lote antes de guardar.
 - Condición individual por herramienta en devoluciones múltiples.
-- Observación obligatoria para revisión o avería.
+- OT, ubicación de trabajo y fecha prevista de devolución.
+- Checklist de accesorios por herramienta.
+- Observación obligatoria para revisión, avería o accesorio con incidencia.
 - Bloqueo de doble pulsación y estado visible `Guardando…`.
 - `operationId` persistido para impedir duplicados incluso después de reiniciar.
-- Recuperación de escrituras pendientes y reconstrucción de SQLite desde el estado local.
+- Cola secuencial de escrituras SQLite.
+- Recuperación de escrituras pendientes conservando `deviceId`, `syncStatus` y `operationId` ya confirmados por SQLite.
 
 ## Tarjetas corporativas
 
@@ -63,7 +68,7 @@ cd android
 ./gradlew assembleDebug
 ```
 
-La automatización de GitHub genera una APK paralela denominada **ISIVOLT RC24 Pruebas**, con application ID distinto, para instalarla junto a la versión existente sin compartir su base de datos.
+La automatización de GitHub genera una APK paralela denominada **ISIVOLT RC30 Pruebas**, con application ID distinto, para instalarla junto a la versión existente sin compartir su base de datos.
 
 ## Documentación
 
@@ -75,11 +80,13 @@ La automatización de GitHub genera una APK paralela denominada **ISIVOLT RC24 P
 
 ## Estado de validación
 
-La última tanda funcional ha superado:
+La validación automatizada comprueba:
 
-- Pruebas de dominio.
-- Migraciones SQLite reales v1-v5.
+- Pruebas de dominio y regresión de recuperación.
+- Migraciones SQLite reales v1-v6.
+- Coherencia de producción.
 - TypeScript y Vite.
-- Compilación de APK Android paralela.
+- Configuración de plugins Android.
+- Compilación de APK Android principal y RC30 paralela.
 
-La fusión con `main` queda bloqueada hasta completar las pruebas físicas de cámara, tarjeta corporativa, Atrás, safe areas, impresión QR, restauración y comparación pantalla por pantalla con RC29.
+La fusión con `main` queda bloqueada hasta completar las pruebas físicas de cámara, tarjeta corporativa, guardado con cierre inmediato, botón Atrás, safe areas, impresión QR, restauración y comparación pantalla por pantalla con RC29.

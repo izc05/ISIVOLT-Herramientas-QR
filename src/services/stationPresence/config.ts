@@ -1,7 +1,12 @@
 export type StationPresenceConfig =
   | {
       enabled: false;
-      reason: 'disabled' | 'missing-station-id' | 'missing-public-key' | 'invalid-public-key';
+      reason:
+        | 'disabled'
+        | 'missing-station-id'
+        | 'missing-public-key'
+        | 'invalid-public-key'
+        | 'invalid-redeem-url';
       stationId?: string;
     }
   | {
@@ -10,6 +15,7 @@ export type StationPresenceConfig =
       publicKey: JsonWebKey;
       clockSkewSeconds: number;
       maxTokenLifetimeSeconds: number;
+      redeemUrl?: string;
     };
 
 const clean = (value: unknown): string | undefined =>
@@ -38,6 +44,20 @@ const parsePublicKey = (raw: string | undefined): JsonWebKey | null => {
   }
 };
 
+const parseRedeemUrl = (raw: string | undefined): string | null | undefined => {
+  if (!raw) return undefined;
+  if (raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  try {
+    const url = new URL(raw);
+    const localDevelopment = url.protocol === 'http:'
+      && (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]');
+    if (url.protocol !== 'https:' && !localDevelopment) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+};
+
 export const resolveStationPresenceConfig = (
   environment: Record<string, unknown>,
 ): StationPresenceConfig => {
@@ -53,12 +73,16 @@ export const resolveStationPresenceConfig = (
   const publicKey = parsePublicKey(publicKeyRaw);
   if (!publicKey) return { enabled: false, reason: 'invalid-public-key', stationId };
 
+  const redeemUrl = parseRedeemUrl(clean(environment.VITE_ISIVOLT_STATION_REDEEM_URL));
+  if (redeemUrl === null) return { enabled: false, reason: 'invalid-redeem-url', stationId };
+
   return {
     enabled: true,
     stationId,
     publicKey,
     clockSkewSeconds: positiveInteger(environment.VITE_ISIVOLT_STATION_CLOCK_SKEW_SECONDS, 10),
     maxTokenLifetimeSeconds: positiveInteger(environment.VITE_ISIVOLT_STATION_MAX_TOKEN_SECONDS, 90),
+    redeemUrl,
   };
 };
 

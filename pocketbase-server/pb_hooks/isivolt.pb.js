@@ -222,7 +222,7 @@ routerAdd("GET", "/api/isivolt/health", (e) => {
 routerAdd("GET", "/api/isivolt/me", (e) => {
   var context = authContext(e);
   return e.json(200, context);
-}, $apis.requireAuth("users"));
+}, $apis.requireAuth("isivolt_users"));
 
 routerAdd("GET", "/api/isivolt/sync", (e) => {
   var context = authContext(e);
@@ -255,7 +255,7 @@ routerAdd("GET", "/api/isivolt/sync", (e) => {
     cursor: events.length ? events[events.length - 1].id : cursor,
     hasMore: events.length === 500
   });
-}, $apis.requireAuth("users"));
+}, $apis.requireAuth("isivolt_users"));
 
 routerAdd("POST", "/api/isivolt/entity", (e) => {
   var context = authContext(e);
@@ -285,7 +285,7 @@ routerAdd("POST", "/api/isivolt/entity", (e) => {
 
   var record = saveEntity(e.app, context.workspace, entity, entityId, asObject(data.payload), context.id);
   return e.json(200, { ok: true, id: record.id, version: Number(record.get("version")) });
-}, $apis.requireAuth("users"));
+}, $apis.requireAuth("isivolt_users"));
 
 routerAdd("POST", "/api/isivolt/movement", (e) => {
   var context = authContext(e);
@@ -358,4 +358,4 @@ routerAdd("POST", "/api/isivolt/movement", (e) => {
   });
 
   return e.json(200, result);
-}, $apis.requireAuth("users"));
+}, $apis.requireAuth("isivolt_users"));

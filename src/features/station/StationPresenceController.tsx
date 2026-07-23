@@ -13,6 +13,7 @@ import {
   type StationPresenceConfig,
 } from '../../services/stationPresence/config';
 import { registerStationPass } from '../../services/stationPresence/passRegistry';
+import { redeemStationPass } from '../../services/stationPresence/redeem';
 import {
   verifyStationToken,
   type StationPass,
@@ -24,6 +25,7 @@ const configMessage = (reason: DisabledStationReason) => {
   if (reason === 'missing-station-id') return 'Falta VITE_ISIVOLT_STATION_ID.';
   if (reason === 'missing-public-key') return 'Falta la clave pública del mini PC.';
   if (reason === 'invalid-public-key') return 'La clave pública configurada no es una clave ECDSA P-256 válida.';
+  if (reason === 'invalid-redeem-url') return 'La URL de canje debe usar HTTPS o localhost durante el desarrollo.';
   return 'El modo punto de entrega está desactivado.';
 };
 
@@ -90,25 +92,48 @@ export default function StationPresenceController() {
 
     const verifyValue = async (value: string) => {
       const result = await verifyStationToken(value, config);
-      if (result.valid) {
-        acceptedPass = result.pass;
-        setTone('success');
-        setMessage(`Punto ${result.pass.stationId} validado. La operación puede continuar.`);
+      if (!result.valid) {
+        setTone('error');
+        setMessage(result.message);
         return {
-          action: 'finish' as const,
-          title: 'Punto de entrega validado',
-          message: 'Presencia física confirmada. Cerrando lector…',
-          tone: 'success' as const,
+          action: 'continue' as const,
+          title: 'QR no válido',
+          message: result.message,
+          tone: 'error' as const,
         };
       }
 
-      setTone('error');
-      setMessage(result.message);
+      setMessage(config.redeemUrl
+        ? 'Firma correcta. Confirmando que el pase no se ha utilizado antes…'
+        : 'Firma y caducidad correctas.');
+      const redemption = await redeemStationPass(result.pass, pending.operationId, config);
+      if (!redemption.accepted) {
+        setTone('error');
+        setMessage(redemption.message);
+        return {
+          action: 'continue' as const,
+          title: 'Pase rechazado',
+          message: redemption.message,
+          tone: 'error' as const,
+        };
+      }
+
+      acceptedPass = redemption.required
+        ? { ...result.pass, verifiedAt: redemption.verifiedAt }
+        : result.pass;
+      setTone('success');
+      setMessage(
+        redemption.required
+          ? `Punto ${result.pass.stationId} validado y pase consumido una sola vez.`
+          : `Punto ${result.pass.stationId} validado. La operación puede continuar.`,
+      );
       return {
-        action: 'continue' as const,
-        title: 'QR no válido',
-        message: result.message,
-        tone: 'error' as const,
+        action: 'finish' as const,
+        title: 'Punto de entrega validado',
+        message: redemption.required
+          ? 'Presencia confirmada y nonce consumido. Cerrando lector…'
+          : 'Presencia física confirmada. Cerrando lector…',
+        tone: 'success' as const,
       };
     };
 
@@ -180,7 +205,7 @@ export default function StationPresenceController() {
           <QrCode size={22} /> {checking ? 'Comprobando…' : 'Escanear QR del mini PC'}
         </button>
         <p className="station-presence-note">
-          El código cambia con frecuencia, está firmado digitalmente y no puede sustituirse por un código escrito manualmente.
+          El código cambia con frecuencia, está firmado digitalmente y, en modo reforzado, solo puede canjearse una vez.
         </p>
       </section>
     </div>

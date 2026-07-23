@@ -121,23 +121,27 @@ export default function ResponsiveInventoryEnhancer() {
           const shimmer = card.querySelector('.card-shimmer');
           shimmer ? shimmer.after(media) : card.prepend(media);
         }
-        media.replaceChildren();
-        if (tool.imageDataUrl) {
-          const image = document.createElement('img');
-          image.src = tool.imageDataUrl;
-          image.alt = `Foto de ejemplo de ${tool.name}`;
-          image.loading = 'lazy';
-          media.appendChild(image);
-        } else {
-          const fallback = document.createElement('span');
-          fallback.className = 'rc34-tool-photo-fallback';
-          fallback.textContent = tool.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase();
-          media.appendChild(fallback);
+        const mediaSignature = `${tool.imageUpdatedAt ?? tool.updatedAt}:${Boolean(tool.imageDataUrl)}:${category.key}`;
+        if (media.dataset.signature !== mediaSignature) {
+          media.dataset.signature = mediaSignature;
+          media.replaceChildren();
+          if (tool.imageDataUrl) {
+            const image = document.createElement('img');
+            image.src = tool.imageDataUrl;
+            image.alt = `Foto de ejemplo de ${tool.name}`;
+            image.loading = 'lazy';
+            media.appendChild(image);
+          } else {
+            const fallback = document.createElement('span');
+            fallback.className = 'rc34-tool-photo-fallback';
+            fallback.textContent = tool.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase();
+            media.appendChild(fallback);
+          }
+          const categoryBadge = document.createElement('span');
+          categoryBadge.className = 'rc34-category-pill';
+          categoryBadge.textContent = category.label;
+          media.appendChild(categoryBadge);
         }
-        const categoryBadge = document.createElement('span');
-        categoryBadge.className = 'rc34-category-pill';
-        categoryBadge.textContent = category.label;
-        media.appendChild(categoryBadge);
 
         const actions = card.querySelector<HTMLElement>('.tool-card-actions');
         const existing = actions?.querySelector<HTMLButtonElement>('.rc34-unlock-button');

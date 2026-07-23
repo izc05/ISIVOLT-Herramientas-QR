@@ -43,7 +43,7 @@ const waitForHealth = async () => {
 
 await waitForHealth();
 
-const auth = await request('/api/collections/users/auth-with-password', {
+const auth = await request('/api/collections/isivolt_users/auth-with-password', {
   method: 'POST',
   body: JSON.stringify({ identity: email, password }),
 });

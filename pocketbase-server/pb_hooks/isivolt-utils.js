@@ -3,7 +3,22 @@ function asText(value) {
 }
 
 function asObject(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  if (!value) return {};
+  if (typeof value.string === "function") {
+    try {
+      return JSON.parse(value.string());
+    } catch (_) {
+      return {};
+    }
+  }
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch (_) {
+      return {};
+    }
+  }
+  if (typeof value !== "object" || Array.isArray(value)) return {};
   return JSON.parse(JSON.stringify(value));
 }
 

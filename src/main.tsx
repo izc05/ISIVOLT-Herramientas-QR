@@ -11,6 +11,8 @@ import './native-scanner.css';
 import './web-barcode-scanner.css';
 import './fast-scan-rc33.css';
 import './central-sync.css';
+import './central-sync-indicator-rc37.css';
+import './central-sync-center.css';
 import './report-center.css';
 import './tool-experience.css';
 import './tool-detail-mobile.css';

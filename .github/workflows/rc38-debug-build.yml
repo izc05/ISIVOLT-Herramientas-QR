@@ -1,7 +1,7 @@
 name: Diagnóstico RC38
 
 on:
-  push:
+  pull_request:
     branches:
       - agent/rc38-station-presence-ux
 
@@ -21,7 +21,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Instalar dependencias
-        run: npm ci
+        run: npm ci --silent
       - name: Compilar RC38 y guardar diagnóstico
         id: build
         shell: bash
@@ -31,7 +31,7 @@ jobs:
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
           exit 0
-      - name: Publicar error en el PR temporalmente
+      - name: Publicar error en el PR principal temporalmente
         if: steps.build.outputs.status != '0'
         env:
           GH_TOKEN: ${{ github.token }}

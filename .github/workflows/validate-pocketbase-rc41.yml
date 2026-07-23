@@ -41,12 +41,10 @@ jobs:
           chmod +x pocketbase
           ./pocketbase --version
 
-      - name: Aplicar migraciones desde cero
-        run: ./pocketbase migrate up --dir=./pb_data_ci
-
-      - name: Arrancar servidor de prueba
+      - name: Arrancar con base vacía y aplicar migraciones
         run: |
-          ./pocketbase serve --http=127.0.0.1:8090 --dir=./pb_data_ci > pocketbase-ci.log 2>&1 &
+          rm -rf ./pb_data_ci
+          ./pocketbase --dir=./pb_data_ci serve --http=127.0.0.1:8090 > pocketbase-ci.log 2>&1 &
           echo $! > pocketbase-ci.pid
 
       - name: Probar autenticación, movimiento y sincronización

@@ -45,6 +45,7 @@ import './qr-print-rc6.css';
 import './rc34-responsive-inventory.css';
 import './professional-shell-rc35.css';
 import './professional-more-rc35.css';
+import './professional-tool-panel-rc35.css';
 
 const root = document.getElementById('root');
 

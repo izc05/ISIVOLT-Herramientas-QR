@@ -14,8 +14,12 @@ jobs:
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Instalar dependencias
-        run: npm ci --silent
+        run: npm install
       - name: Compilar RC38
         id: build
         shell: bash

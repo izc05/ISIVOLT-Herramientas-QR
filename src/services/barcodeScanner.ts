@@ -14,8 +14,8 @@ import {
 
 export type NativeScanResult =
   | { status: 'success'; value: string; format?: BarcodeFormat | string }
-  | { status: 'completed' }
-  | { status: 'manual-requested' }
+  | { status: 'completed'; message: string }
+  | { status: 'manual-requested'; message: string }
   | { status: 'cancelled' }
   | { status: 'permission-denied'; message: string }
   | { status: 'unsupported'; message: string }
@@ -202,6 +202,12 @@ const scanWebBarcode = async (
 
   const result = await scanBarcodeWithWebCamera({ ...options, onDetected });
   if (result.status === 'unsupported' && !options.onDetected) return manualFallback(result.message);
+  if (result.status === 'completed') {
+    return { status: 'completed', message: 'Cámara cerrada. La operación preparada se mantiene.' };
+  }
+  if (result.status === 'manual-requested') {
+    return { status: 'manual-requested', message: 'Selección manual solicitada.' };
+  }
   if (result.status !== 'success') return result;
 
   const value = resolveKnownTechnician

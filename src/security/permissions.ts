@@ -19,7 +19,13 @@ const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<Permission>> = {
     'maintenance.manage',
     'reports.export',
   ]),
-  technician: new Set<Permission>(),
+  coordinator: new Set<Permission>([
+    'reports.export',
+    'audit.view',
+  ]),
+  technician: new Set<Permission>([
+    'operations.execute',
+  ]),
 };
 
 export class PermissionError extends Error {
@@ -37,3 +43,9 @@ export const assertPermission = (permission: Permission) => {
 };
 
 export const permissionsForRole = (role: UserRole) => [...ROLE_PERMISSIONS[role]];
+
+export const canChooseOperationTechnician = (user: SecurityUser | null = getCurrentSecurityUser()) =>
+  Boolean(user?.active && (user.role === 'admin' || user.role === 'warehouse'));
+
+export const requiresLinkedTechnician = (user: SecurityUser | null = getCurrentSecurityUser()) =>
+  Boolean(user?.active && user.role === 'technician');

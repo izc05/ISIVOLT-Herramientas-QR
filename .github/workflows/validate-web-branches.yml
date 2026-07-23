@@ -35,4 +35,20 @@ jobs:
         run: npm test
 
       - name: Compilar TypeScript y Vite
-        run: npm run build
+        id: web_build
+        continue-on-error: true
+        run: npm run build > build-web.log 2>&1
+
+      - name: Guardar diagnóstico de compilación
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostico-build-web-${{ github.run_id }}
+          path: build-web.log
+          retention-days: 7
+
+      - name: Mostrar error de compilación
+        if: steps.web_build.outcome == 'failure'
+        run: |
+          cat build-web.log
+          exit 1

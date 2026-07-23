@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { classifyWebCameraError, WEB_BARCODE_FORMATS } from './webBarcodeScanner';
+import {
+  classifyWebCameraError,
+  isRepeatedWebDetection,
+  WEB_BARCODE_FORMATS,
+} from './webBarcodeScanner';
 
 describe('lector web de códigos', () => {
   it('clasifica el permiso denegado con instrucciones recuperables', () => {
@@ -27,5 +31,17 @@ describe('lector web de códigos', () => {
     expect(WEB_BARCODE_FORMATS).toContain('qr_code');
     expect(WEB_BARCODE_FORMATS).toContain('code_39');
     expect(WEB_BARCODE_FORMATS).toContain('code_128');
+  });
+
+  it('bloquea el mismo código mientras permanece delante de la cámara', () => {
+    expect(isRepeatedWebDetection('HER-015', 'HER-015', 1_000, 2_000, 1_600)).toBe(true);
+  });
+
+  it('permite volver a leer el mismo código después del tiempo de seguridad', () => {
+    expect(isRepeatedWebDetection('HER-015', 'HER-015', 1_000, 2_700, 1_600)).toBe(false);
+  });
+
+  it('acepta inmediatamente un código diferente', () => {
+    expect(isRepeatedWebDetection('HER-016', 'HER-015', 1_000, 1_100, 1_600)).toBe(false);
   });
 });

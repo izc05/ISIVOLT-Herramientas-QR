@@ -1,4 +1,4 @@
-name: Publicar RC30 web en GitHub Pages
+name: Publicar RC33 web en GitHub Pages
 
 on:
   push:
@@ -21,16 +21,16 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-rc30
+  group: pages-rc33
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Validar y preparar RC30 web
+    name: Validar y preparar RC33 web
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar rama web RC30
+      - name: Descargar rama web RC33
         uses: actions/checkout@v4
         with:
           ref: agent/rc31-web-preview
@@ -58,7 +58,7 @@ jobs:
           path: ./dist
 
   deploy:
-    name: Publicar RC30
+    name: Publicar RC33
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

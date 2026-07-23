@@ -16,6 +16,7 @@ import NfcManagementCenter from './features/nfc/NfcManagementCenter';
 import FastScanWorkflow from './features/operations/FastScanWorkflow';
 import CommissioningCenter from './production/CommissioningCenter';
 import RectificationCenter from './security/RectificationCenter';
+import RoleExperienceController from './security/RoleExperienceController';
 import SecurityController from './security/SecurityController';
 import { startCentralSyncCapture } from './services/centralSync/capture';
 import { startAutomaticCentralSync } from './services/centralSync/engine';
@@ -104,7 +105,7 @@ export default function AppRoot() {
                 <Globe2 size={18} />
                 <div>
                   <strong>Modo web RC36</strong>
-                  <span>Una imagen · edición segura · filtros avanzados</span>
+                  <span>Una imagen · edición segura · perfiles operativos</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
@@ -121,6 +122,7 @@ export default function AppRoot() {
               <button type="button" onClick={retryNative}><RefreshCcw size={17} /> Reintentar SQLite</button>
             </aside>
           )}
+          <RoleExperienceController />
           {isWebMode && <FastScanWorkflow />}
           <AppStable />
           <InventoryFilterBridge />

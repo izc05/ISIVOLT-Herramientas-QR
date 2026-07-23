@@ -152,7 +152,7 @@ describe('cola offline de sincronización', () => {
     expect(items.map((item) => `${item.entity}:${item.entityId}`)).toEqual(['tools:tool-1']);
   });
 
-  it('sustituye el cambio pendiente de herramienta por el movimiento que contiene su estado final', () => {
+  it('conserva una edición administrativa pendiente y encola después el movimiento', () => {
     const storage = new MemoryStorage();
     enqueueSyncItems([queueItem()], storage);
     enqueueSyncItems([
@@ -165,7 +165,7 @@ describe('cola offline de sincronización', () => {
       }),
     ], storage);
 
-    expect(readSyncOutbox(storage).map((item) => item.entity)).toEqual(['movements']);
+    expect(readSyncOutbox(storage).map((item) => item.entity)).toEqual(['tools', 'movements']);
   });
 
   it('aplica espera exponencial después de un fallo', () => {

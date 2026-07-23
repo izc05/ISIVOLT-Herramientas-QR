@@ -6,6 +6,7 @@ import {
   CloudOff,
   LockKeyhole,
   RefreshCw,
+  Settings2,
 } from 'lucide-react';
 import { requestCentralSync } from '../services/centralSync/engine';
 import {
@@ -36,6 +37,10 @@ const labelByMode: Record<CentralSyncMode, string> = {
   error: 'Error de sincronización',
 };
 
+const openCenter = () => {
+  window.dispatchEvent(new CustomEvent('isivolt:central-sync-center-open'));
+};
+
 export default function SyncStatusIndicator() {
   const state = useSyncExternalStore(
     subscribeCentralSyncState,
@@ -51,20 +56,23 @@ export default function SyncStatusIndicator() {
       aria-label={`Estado de sincronización: ${labelByMode[state.mode]}`}
       title={state.message}
     >
-      <span className="central-sync-icon">
-        <Icon className={state.mode === 'syncing' ? 'central-sync-spin' : undefined} size={18} />
-      </span>
-      <span className="central-sync-copy">
-        <strong>{labelByMode[state.mode]}</strong>
-        <small>{state.message}</small>
-      </span>
-      {(state.pendingCount > 0 || state.conflictCount > 0) && (
-        <span className="central-sync-count" aria-label={`${state.pendingCount} pendientes y ${state.conflictCount} conflictos`}>
-          {state.conflictCount > 0 ? state.conflictCount : state.pendingCount}
+      <button type="button" className="central-sync-open-button" onClick={openCenter} aria-label="Abrir centro de sincronización">
+        <span className="central-sync-icon">
+          <Icon className={state.mode === 'syncing' ? 'central-sync-spin' : undefined} size={18} />
         </span>
-      )}
+        <span className="central-sync-copy">
+          <strong>{labelByMode[state.mode]}</strong>
+          <small>{state.message}</small>
+        </span>
+        {(state.pendingCount > 0 || state.conflictCount > 0) && (
+          <span className="central-sync-count" aria-label={`${state.pendingCount} pendientes y ${state.conflictCount} conflictos`}>
+            {state.conflictCount > 0 ? state.conflictCount : state.pendingCount}
+          </span>
+        )}
+        <Settings2 className="central-sync-settings-icon" size={15} />
+      </button>
       {canRetry && (
-        <button type="button" onClick={requestCentralSync} aria-label="Sincronizar ahora">
+        <button type="button" className="central-sync-retry-button" onClick={requestCentralSync} aria-label="Sincronizar ahora">
           <RefreshCw size={16} />
         </button>
       )}

@@ -1,13 +1,17 @@
 import { useEffect } from 'react';
+import { assertPermission } from '../../security/permissions';
+import { getCurrentOperatorName } from '../../security/session';
 import { loadAppData, saveAppData } from '../../services/storage';
 import {
   applyDemoToolImages,
-  canUnlockTool,
   listToolCategories,
   resolveTechnicianAccent,
   resolveToolCategory,
-  unlockToolData,
 } from './inventoryPresentation';
+import {
+  applyToolLifecycleAction,
+  resolveToolLifecyclePresentation,
+} from './toolLifecycle';
 
 const normalize = (value: string) => value.trim().toLocaleLowerCase('es-ES');
 
@@ -47,20 +51,34 @@ export default function ResponsiveInventoryEnhancer() {
       });
     };
 
-    const unlock = (toolId: string) => {
+    const reactivate = (toolId: string) => {
       const data = loadAppData();
       const tool = data.tools.find((item) => item.id === toolId);
-      if (!tool || !canUnlockTool(tool.status)) return;
-      const confirmed = window.confirm(
-        `¿Desbloquear ${tool.code} · ${tool.name}?\n\nLa herramienta volverá a Disponible y quedará registrado un movimiento de ajuste.`,
-      );
-      if (!confirmed) return;
+      if (!tool) return;
+      const lifecycle = resolveToolLifecyclePresentation(tool);
+      if (!['review', 'damaged', 'blocked'].includes(lifecycle.key)) return;
 
-      const result = unlockToolData(data, toolId);
-      if (!result.changed) return;
-      saveAppData(result.data);
-      showToast('Herramienta desbloqueada', `${tool.code} vuelve a estar disponible · ajuste registrado`);
-      schedule();
+      const reason = window.prompt(
+        `Motivo para reactivar ${tool.code} · ${tool.name}:`,
+        'Comprobación completada y herramienta apta para el servicio.',
+      );
+      if (!reason?.trim()) return;
+
+      try {
+        assertPermission('inventory.manage');
+        const result = applyToolLifecycleAction(
+          data,
+          toolId,
+          'reactivate',
+          reason,
+          getCurrentOperatorName(),
+        );
+        saveAppData(result.data);
+        showToast('Herramienta reactivada', `${tool.code} vuelve a estar disponible · cambio registrado`);
+        schedule();
+      } catch (error) {
+        showToast('No se pudo reactivar', error instanceof Error ? error.message : 'Revisa tus permisos y vuelve a intentarlo.');
+      }
     };
 
     const ensureCategoryFilter = () => {
@@ -109,53 +127,49 @@ export default function ResponsiveInventoryEnhancer() {
         if (!tool) return;
 
         const category = resolveToolCategory(tool.category);
+        const lifecycle = resolveToolLifecyclePresentation(tool);
         card.classList.add('rc34-tool-card');
         card.dataset.rc34Category = category.key;
+        card.dataset.toolLifecycle = lifecycle.key;
         card.style.setProperty('--category-accent', category.accent);
         card.style.setProperty('--category-soft', category.soft);
 
-        let media = card.querySelector<HTMLElement>('.rc34-tool-media');
-        if (!media) {
-          media = document.createElement('div');
-          media.className = 'rc34-tool-media';
-          const shimmer = card.querySelector('.card-shimmer');
-          shimmer ? shimmer.after(media) : card.prepend(media);
-        }
-        const mediaSignature = `${tool.imageUpdatedAt ?? tool.updatedAt}:${Boolean(tool.imageDataUrl)}:${category.key}`;
-        if (media.dataset.signature !== mediaSignature) {
-          media.dataset.signature = mediaSignature;
-          media.replaceChildren();
-          if (tool.imageDataUrl) {
-            const image = document.createElement('img');
-            image.src = tool.imageDataUrl;
-            image.alt = `Foto de ejemplo de ${tool.name}`;
-            image.loading = 'lazy';
-            media.appendChild(image);
-          } else {
-            const fallback = document.createElement('span');
-            fallback.className = 'rc34-tool-photo-fallback';
-            fallback.textContent = tool.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase();
-            media.appendChild(fallback);
+        card.querySelectorAll<HTMLElement>('.rc34-tool-media:not(.tool-media-trigger)').forEach((duplicate) => duplicate.remove());
+        const media = card.querySelector<HTMLButtonElement>('.tool-media-trigger');
+        if (media) {
+          media.classList.add('rc34-tool-media');
+          media.style.setProperty('--category-accent', category.accent);
+          media.style.setProperty('--category-soft', category.soft);
+          let categoryBadge = media.querySelector<HTMLElement>('.rc34-category-pill');
+          if (!categoryBadge) {
+            categoryBadge = document.createElement('span');
+            categoryBadge.className = 'rc34-category-pill';
+            media.appendChild(categoryBadge);
           }
-          const categoryBadge = document.createElement('span');
-          categoryBadge.className = 'rc34-category-pill';
           categoryBadge.textContent = category.label;
-          media.appendChild(categoryBadge);
+        }
+
+        const statusBadge = card.querySelector<HTMLElement>('.status-badge');
+        if (statusBadge) {
+          statusBadge.classList.remove('status-available', 'status-loaned', 'status-review', 'status-damaged', 'status-retired', 'status-blocked');
+          statusBadge.classList.add(`status-${lifecycle.key}`);
+          statusBadge.textContent = lifecycle.label;
         }
 
         const actions = card.querySelector<HTMLElement>('.tool-card-actions');
         const existing = actions?.querySelector<HTMLButtonElement>('.rc34-unlock-button');
-        if (!canUnlockTool(tool.status)) {
+        const canReactivate = ['review', 'damaged', 'blocked'].includes(lifecycle.key);
+        if (!canReactivate) {
           existing?.remove();
         } else if (actions && !existing) {
           const button = document.createElement('button');
           button.type = 'button';
           button.className = 'rc34-unlock-button';
-          button.textContent = 'Desbloquear';
+          button.textContent = 'Reactivar';
           button.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            unlock(tool.id);
+            reactivate(tool.id);
           });
           actions.appendChild(button);
         }
@@ -186,33 +200,11 @@ export default function ResponsiveInventoryEnhancer() {
     const decorateToolSheet = () => {
       const sheet = document.querySelector<HTMLElement>('.tool-sheet');
       if (!sheet) return;
-      const code = sheet.querySelector<HTMLElement>('.tool-sheet-title p')?.textContent?.split('·')[0]?.trim();
-      const data = loadAppData();
-      const tool = code ? data.tools.find((item) => item.code === code) : undefined;
-      if (!tool) return;
-
-      const footer = sheet.querySelector<HTMLElement>('.tool-sheet-footer');
-      const existing = footer?.querySelector<HTMLButtonElement>('.rc34-unlock-button');
-      if (!canUnlockTool(tool.status)) {
-        existing?.remove();
-      } else if (footer && !existing) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'rc34-unlock-button';
-        button.innerHTML = '<span>Desbloquear</span>';
-        button.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          unlock(tool.id);
-        });
-        footer.insertBefore(button, footer.querySelector('.primary'));
-      }
-
       const history = sheet.querySelector<HTMLElement>('.tool-history-section');
       if (history && !history.querySelector('.rc34-state-log-note')) {
         const note = document.createElement('p');
         note.className = 'rc34-state-log-note';
-        note.textContent = 'Cada préstamo, devolución, incidencia y desbloqueo queda registrado como cambio de estado.';
+        note.textContent = 'Cada préstamo, devolución, incidencia, bloqueo y reactivación queda registrado como cambio de estado.';
         history.querySelector('header')?.after(note);
       }
     };

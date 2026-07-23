@@ -6,13 +6,13 @@ migrate((app) => {
   if (!email || !password) return;
 
   try {
-    app.findAuthRecordByEmail("users", email);
+    app.findAuthRecordByEmail("isivolt_users", email);
     return;
   } catch (_) {
     // El usuario inicial todavía no existe.
   }
 
-  const record = new Record(app.findCollectionByNameOrId("users"));
+  const record = new Record(app.findCollectionByNameOrId("isivolt_users"));
   record.set("email", email);
   record.setPassword(password);
   record.setVerified(true);
@@ -25,7 +25,7 @@ migrate((app) => {
   const email = ($os.getenv("ISIVOLT_BOOTSTRAP_ADMIN_EMAIL") || "").trim();
   if (!email) return;
   try {
-    app.delete(app.findAuthRecordByEmail("users", email));
+    app.delete(app.findAuthRecordByEmail("isivolt_users", email));
   } catch (_) {
     // Reversión idempotente.
   }

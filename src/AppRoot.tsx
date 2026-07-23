@@ -8,6 +8,7 @@ import SyncStatusIndicator from './components/SyncStatusIndicator';
 import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
 import NfcManagementCenter from './features/nfc/NfcManagementCenter';
+import FastScanWorkflow from './features/operations/FastScanWorkflow';
 import CommissioningCenter from './production/CommissioningCenter';
 import RectificationCenter from './security/RectificationCenter';
 import SecurityController from './security/SecurityController';
@@ -97,8 +98,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC30</strong>
-                  <span>Caché local activa · consulta el estado central de sincronización</span>
+                  <strong>Modo web RC33</strong>
+                  <span>Técnico primero · cámara continua · datos locales</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
@@ -114,6 +115,7 @@ export default function AppRoot() {
               <button type="button" onClick={retryNative}><RefreshCcw size={17} /> Reintentar SQLite</button>
             </aside>
           )}
+          {isWebMode && <FastScanWorkflow />}
           <AppStable />
           <InventoryOperationalEnhancer />
           <MaintenanceBoard onSaved={() => window.dispatchEvent(new CustomEvent('isivolt:management-refresh'))} />

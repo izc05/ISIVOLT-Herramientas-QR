@@ -1,9 +1,31 @@
 export type WebBarcodeScanResult =
   | { status: 'success'; value: string; format?: string }
+  | { status: 'completed' }
+  | { status: 'manual-requested' }
   | { status: 'cancelled' }
   | { status: 'permission-denied'; message: string }
   | { status: 'unsupported'; message: string }
   | { status: 'error'; message: string };
+
+export type WebBarcodeDetectionDecision = {
+  action?: 'continue' | 'finish';
+  title?: string;
+  message?: string;
+  tone?: 'success' | 'warning' | 'error';
+};
+
+export type WebBarcodeScannerOptions = {
+  title?: string;
+  instruction?: string;
+  manualLabel?: string;
+  autoStart?: boolean;
+  continuous?: boolean;
+  duplicateCooldownMs?: number;
+  onDetected?: (
+    value: string,
+    format?: string,
+  ) => WebBarcodeDetectionDecision | Promise<WebBarcodeDetectionDecision>;
+};
 
 type BrowserBarcode = {
   rawValue?: string;
@@ -25,9 +47,12 @@ type ScannerControls = {
 
 type ScannerUi = {
   backdrop: HTMLDivElement;
+  heading: HTMLHeadingElement;
+  description: HTMLParagraphElement;
   video: HTMLVideoElement;
   status: HTMLParagraphElement;
   startButton: HTMLButtonElement;
+  manualButton: HTMLButtonElement;
   cancelButton: HTMLButtonElement;
 };
 
@@ -95,52 +120,81 @@ export const classifyWebCameraError = (error: unknown): WebBarcodeScanResult => 
   };
 };
 
-const createScannerUi = (): ScannerUi => {
+export const isRepeatedWebDetection = (
+  value: string,
+  previousValue: string,
+  previousAt: number,
+  now: number,
+  cooldownMs = 1_600,
+): boolean => value === previousValue && now - previousAt < cooldownMs;
+
+const createScannerUi = (options: WebBarcodeScannerOptions): ScannerUi => {
   const backdrop = document.createElement('div');
   backdrop.className = 'web-barcode-backdrop';
   backdrop.innerHTML = `
     <section class="web-barcode-panel" role="dialog" aria-modal="true" aria-label="Escáner web de códigos">
       <header>
-        <span class="web-barcode-kicker">Cámara segura del navegador</span>
-        <h2>Escanear técnico o herramienta</h2>
-        <p>La imagen se procesa en este dispositivo. No se graban ni se envían fotografías o vídeos.</p>
+        <span class="web-barcode-kicker">Escaneo rápido · cámara local</span>
+        <h2></h2>
+        <p></p>
       </header>
       <div class="web-barcode-preview">
         <video playsinline muted aria-label="Vista previa de la cámara"></video>
         <span class="web-barcode-frame" aria-hidden="true"></span>
         <span class="web-barcode-sweep" aria-hidden="true"></span>
       </div>
-      <p class="web-barcode-status" role="status">Pulsa “Activar cámara” para conceder permiso y comenzar la lectura.</p>
+      <p class="web-barcode-status" role="status">Abriendo cámara trasera…</p>
       <footer>
-        <button class="web-barcode-cancel" type="button">Cancelar</button>
-        <button class="web-barcode-start" type="button">Activar cámara</button>
+        <button class="web-barcode-manual" type="button"></button>
+        <button class="web-barcode-cancel" type="button">Cerrar cámara</button>
+        <button class="web-barcode-start" type="button">Abrir cámara</button>
       </footer>
     </section>
   `;
 
+  const heading = backdrop.querySelector('h2');
+  const description = backdrop.querySelector('header p');
   const video = backdrop.querySelector('video');
   const status = backdrop.querySelector('.web-barcode-status');
   const startButton = backdrop.querySelector('.web-barcode-start');
+  const manualButton = backdrop.querySelector('.web-barcode-manual');
   const cancelButton = backdrop.querySelector('.web-barcode-cancel');
 
-  if (!(video instanceof HTMLVideoElement)
+  if (!(heading instanceof HTMLHeadingElement)
+    || !(description instanceof HTMLParagraphElement)
+    || !(video instanceof HTMLVideoElement)
     || !(status instanceof HTMLParagraphElement)
     || !(startButton instanceof HTMLButtonElement)
+    || !(manualButton instanceof HTMLButtonElement)
     || !(cancelButton instanceof HTMLButtonElement)) {
     throw new Error('No se ha podido construir el visor de cámara.');
   }
 
+  heading.textContent = options.title ?? 'Primero técnico, después herramientas';
+  description.textContent = options.instruction
+    ?? 'La cámara permanece abierta para añadir varias herramientas. La imagen se procesa únicamente en este dispositivo.';
+  manualButton.textContent = options.manualLabel ?? 'Selección manual';
+
   document.body.appendChild(backdrop);
-  window.setTimeout(() => startButton.focus(), 0);
-  return { backdrop, video, status, startButton, cancelButton };
+  return {
+    backdrop,
+    heading,
+    description,
+    video,
+    status,
+    startButton,
+    manualButton,
+    cancelButton,
+  };
 };
 
 const getCameraConstraints = (): MediaStreamConstraints => ({
   audio: false,
   video: {
     facingMode: { ideal: 'environment' },
-    width: { ideal: 1920 },
-    height: { ideal: 1080 },
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30, max: 60 },
   },
 });
 
@@ -152,7 +206,24 @@ const selectSupportedFormats = async (
   return WEB_BARCODE_FORMATS.filter((format) => supported.includes(format));
 };
 
-export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> => {
+const pulseDetection = (
+  ui: ScannerUi,
+  tone: WebBarcodeDetectionDecision['tone'] = 'success',
+) => {
+  ui.backdrop.classList.remove('scan-success', 'scan-warning', 'scan-error');
+  ui.backdrop.classList.add(`scan-${tone}`);
+  window.setTimeout(() => {
+    ui.backdrop.classList.remove('scan-success', 'scan-warning', 'scan-error');
+  }, 520);
+
+  if (tone === 'success') navigator.vibrate?.([45, 20, 70]);
+  else if (tone === 'warning') navigator.vibrate?.([90, 35, 90]);
+  else navigator.vibrate?.([150, 55, 150]);
+};
+
+export const scanBarcodeWithWebCamera = async (
+  options: WebBarcodeScannerOptions = {},
+): Promise<WebBarcodeScanResult> => {
   if (!isWebBarcodeScannerSupported()) {
     return {
       status: 'unsupported',
@@ -162,7 +233,7 @@ export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> 
 
   let ui: ScannerUi;
   try {
-    ui = createScannerUi();
+    ui = createScannerUi(options);
   } catch (error) {
     return classifyWebCameraError(error);
   }
@@ -174,6 +245,9 @@ export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> 
     let controls: ScannerControls | null = null;
     let animationFrame: number | null = null;
     let detectorBusy = false;
+    let processingDetection = false;
+    let lastValue = '';
+    let lastDetectedAt = 0;
 
     const stopResources = () => {
       if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
@@ -201,13 +275,59 @@ export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> 
       if (settled) return;
       settled = true;
       cleanup();
-      if (result.status === 'success') navigator.vibrate?.([55, 25, 85]);
       resolve(result);
     };
 
-    const cancelScan = () => finish({ status: 'cancelled' });
+    const cancelScan = () => finish(options.continuous ? { status: 'completed' } : { status: 'cancelled' });
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') cancelScan();
+    };
+
+    const deliverDetection = async (value: string, format?: string) => {
+      const normalized = value.trim();
+      if (!normalized || settled || processingDetection) return;
+
+      const now = Date.now();
+      if (isRepeatedWebDetection(
+        normalized,
+        lastValue,
+        lastDetectedAt,
+        now,
+        options.duplicateCooldownMs,
+      )) return;
+
+      lastValue = normalized;
+      lastDetectedAt = now;
+      processingDetection = true;
+
+      try {
+        if (!options.onDetected) {
+          finish({ status: 'success', value: normalized, format });
+          return;
+        }
+
+        const decision = await options.onDetected(normalized, format);
+        if (decision.title) ui.heading.textContent = decision.title;
+        if (decision.message) ui.status.textContent = decision.message;
+        pulseDetection(ui, decision.tone);
+
+        if (decision.action === 'finish' || options.continuous === false) {
+          finish({ status: 'success', value: normalized, format });
+          return;
+        }
+
+        window.setTimeout(() => {
+          processingDetection = false;
+        }, 420);
+      } catch (error) {
+        ui.status.textContent = error instanceof Error
+          ? error.message
+          : 'No se ha podido procesar el código leído.';
+        pulseDetection(ui, 'error');
+        window.setTimeout(() => {
+          processingDetection = false;
+        }, 620);
+      }
     };
 
     const startNativeDetection = async (): Promise<boolean> => {
@@ -222,18 +342,14 @@ export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> 
         const detectFrame = async () => {
           if (settled) return;
           animationFrame = window.requestAnimationFrame(() => { void detectFrame(); });
-          if (detectorBusy || ui.video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+          if (detectorBusy || processingDetection || ui.video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
 
           detectorBusy = true;
           try {
             const barcodes = await detector.detect(ui.video);
             const detected = barcodes.find((barcode) => barcode.rawValue?.trim());
             if (detected?.rawValue) {
-              finish({
-                status: 'success',
-                value: detected.rawValue.trim(),
-                format: detected.format,
-              });
+              await deliverDetection(detected.rawValue, detected.format);
             }
           } catch {
             // Los fallos de una imagen concreta se ignoran y se continúa leyendo.
@@ -242,7 +358,7 @@ export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> 
           }
         };
 
-        ui.status.textContent = 'Apunta el código dentro del marco. Detección rápida del navegador activa.';
+        ui.status.textContent = 'Cámara activa. Identifica al técnico y continúa con las herramientas.';
         animationFrame = window.requestAnimationFrame(() => { void detectFrame(); });
         return true;
       } catch {
@@ -256,17 +372,13 @@ export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> 
       const reader = new BrowserMultiFormatReader();
       controls = await reader.decodeFromStream(stream as MediaStream, ui.video, (result, error, scanControls) => {
         if (scanControls) controls = scanControls;
-        if (!result) {
+        if (!result || processingDetection) {
           void error;
           return;
         }
-        finish({
-          status: 'success',
-          value: result.getText().trim(),
-          format: String(result.getBarcodeFormat()),
-        });
+        void deliverDetection(result.getText(), String(result.getBarcodeFormat()));
       });
-      ui.status.textContent = 'Apunta el código dentro del marco y mantén el teléfono estable.';
+      ui.status.textContent = 'Cámara activa. Acerca el código al marco sin mantenerlo fijo después de leerlo.';
     };
 
     const startCamera = async () => {
@@ -274,7 +386,7 @@ export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> 
       starting = true;
       ui.startButton.disabled = true;
       ui.startButton.textContent = 'Abriendo…';
-      ui.status.textContent = 'Solicitando permiso y buscando la cámara trasera…';
+      ui.status.textContent = 'Solicitando permiso y preparando la cámara trasera…';
 
       try {
         stream = await navigator.mediaDevices.getUserMedia(getCameraConstraints());
@@ -282,6 +394,7 @@ export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> 
         await ui.video.play();
         ui.backdrop.classList.add('camera-active');
         ui.startButton.hidden = true;
+        ui.backdrop.classList.add('auto-started');
 
         const nativeStarted = await startNativeDetection();
         if (!nativeStarted) await startZxingDetection();
@@ -291,11 +404,18 @@ export const scanBarcodeWithWebCamera = async (): Promise<WebBarcodeScanResult> 
     };
 
     ui.startButton.addEventListener('click', () => { void startCamera(); });
+    ui.manualButton.addEventListener('click', () => finish({ status: 'manual-requested' }));
     ui.cancelButton.addEventListener('click', cancelScan);
     ui.backdrop.addEventListener('click', (event) => {
       if (event.target === ui.backdrop) cancelScan();
     });
     window.addEventListener('pagehide', cancelScan);
     window.addEventListener('keydown', handleKeyDown);
+
+    if (options.autoStart !== false) {
+      window.setTimeout(() => { void startCamera(); }, 0);
+    } else {
+      window.setTimeout(() => ui.startButton.focus(), 0);
+    }
   });
 };

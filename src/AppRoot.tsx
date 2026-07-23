@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { Database, Globe2, LoaderCircle, RefreshCcw, ShieldCheck } from 'lucide-react';
 import AppStable from './AppStable';
 import BootErrorBoundary from './BootErrorBoundary';
+import CentralSyncCenter from './components/CentralSyncCenter';
 import MobileToolsMenu from './components/MobileToolsMenu';
 import ProfessionalShell from './components/ProfessionalShell';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
@@ -104,11 +105,12 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC36</strong>
-                  <span>Una imagen · edición segura · perfiles operativos</span>
+                  <strong>Modo web RC37</strong>
+                  <span>Offline protegido · perfiles · sincronización preparada</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
+              <CentralSyncCenter />
               <ProfessionalShell />
             </>
           )}

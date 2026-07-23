@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - agent/rc31-web-preview
-      - agent/rc32-central-sync-foundation
   pull_request:
     branches:
       - agent/rc24-storage-safety
@@ -43,18 +42,18 @@ jobs:
         run: npm run build
 
       - name: Configurar GitHub Pages
-        if: github.ref == 'refs/heads/agent/rc31-web-preview' && github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5
 
       - name: Subir sitio web
-        if: github.ref == 'refs/heads/agent/rc31-web-preview' && github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
 
   deploy:
     name: Publicar sitio
-    if: github.ref == 'refs/heads/agent/rc31-web-preview' && github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

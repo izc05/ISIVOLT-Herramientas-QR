@@ -42,6 +42,7 @@ import './mobile-optimization.css';
 import './mobile-optimization-rc4.css';
 import './rc6-mobile.css';
 import './qr-print-rc6.css';
+import './rc34-responsive-inventory.css';
 
 const root = document.getElementById('root');
 

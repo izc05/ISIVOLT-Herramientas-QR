@@ -58,7 +58,9 @@ export const mergeRemoteSyncEvents = (
           entityId: event.entity_id,
           localItemId: localItem.id,
           remoteEventId: event.id,
+          remoteAction: event.action,
           remotePayload: clone(event.payload),
+          remoteOccurredAt: event.occurred_at,
           detectedAt: new Date().toISOString(),
           reason: 'local-change-pending',
         });

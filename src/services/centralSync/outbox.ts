@@ -1,4 +1,4 @@
-import type { AppData } from '../../domain/types';
+import type { AppData, Movement, Tool } from '../../domain/types';
 import type {
   CentralSyncConfig,
   SyncConflict,
@@ -140,6 +140,38 @@ const entityItems = <T extends { id: string }>(
     }));
 };
 
+const movementToolState = (tool: Tool | undefined): Record<string, unknown> | undefined => tool ? {
+  id: tool.id,
+  status: tool.status,
+  serviceStatus: tool.serviceStatus ?? null,
+  reservedTechnicianId: tool.reservedTechnicianId ?? null,
+  holderTechnicianId: tool.holderTechnicianId ?? null,
+  loanedAt: tool.loanedAt ?? null,
+  notes: tool.notes ?? null,
+  active: tool.active ?? true,
+  updatedAt: tool.updatedAt,
+} : undefined;
+
+const movementQueueItem = (
+  movement: Movement,
+  next: AppData,
+  workspaceId: string,
+  createdAt: string,
+): SyncQueueItem => ({
+  id: randomId(),
+  workspaceId,
+  entity: 'movements',
+  entityId: movement.id,
+  action: 'insert',
+  payload: {
+    ...clone(movement) as unknown as Record<string, unknown>,
+    toolState: movementToolState(next.tools.find((tool) => tool.id === movement.toolId)),
+  },
+  operationId: movement.operationId,
+  createdAt,
+  attempts: 0,
+});
+
 export const buildAppDataSyncItems = (
   previous: AppData | null,
   next: AppData,
@@ -147,22 +179,20 @@ export const buildAppDataSyncItems = (
   createdAt = new Date().toISOString(),
 ): SyncQueueItem[] => {
   const previousMovementIds = new Set(previous?.movements.map((item) => item.id) ?? []);
-  const movements: SyncQueueItem[] = next.movements
-    .filter((item) => !previousMovementIds.has(item.id))
-    .map((item) => ({
-      id: randomId(),
-      workspaceId,
-      entity: 'movements',
-      entityId: item.id,
-      action: 'insert',
-      payload: clone(item) as unknown as Record<string, unknown>,
-      operationId: item.operationId,
-      createdAt,
-      attempts: 0,
-    }));
+  const newMovements = next.movements.filter((item) => !previousMovementIds.has(item.id));
+  const movementToolIds = new Set(newMovements.map((movement) => movement.toolId));
+  const movements = newMovements.map((movement) => movementQueueItem(
+    movement,
+    next,
+    workspaceId,
+    createdAt,
+  ));
+  const tools = entityItems(workspaceId, 'tools', previous?.tools, next.tools, createdAt)
+    .filter((item) => !movementToolIds.has(item.entityId));
 
   return [
-    ...entityItems(workspaceId, 'tools', previous?.tools, next.tools, createdAt),
+    ...movements,
+    ...tools,
     ...entityItems(workspaceId, 'technicians', previous?.technicians, next.technicians, createdAt),
     ...entityItems(workspaceId, 'accessories', previous?.accessories, next.accessories, createdAt),
     ...entityItems(
@@ -172,7 +202,6 @@ export const buildAppDataSyncItems = (
       next.maintenanceRecords,
       createdAt,
     ),
-    ...movements,
   ];
 };
 

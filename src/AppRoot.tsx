@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { Database, Globe2, LoaderCircle, RefreshCcw, ShieldCheck } from 'lucide-react';
 import AppStable from './AppStable';
 import BootErrorBoundary from './BootErrorBoundary';
+import CentralSyncCenter from './components/CentralSyncCenter';
 import MobileToolsMenu from './components/MobileToolsMenu';
 import ProfessionalShell from './components/ProfessionalShell';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
@@ -14,6 +15,7 @@ import ToolLifecycleManager from './features/inventory/ToolLifecycleManager';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
 import NfcManagementCenter from './features/nfc/NfcManagementCenter';
 import FastScanWorkflow from './features/operations/FastScanWorkflow';
+import StationPresenceController from './features/station/StationPresenceController';
 import CommissioningCenter from './production/CommissioningCenter';
 import RectificationCenter from './security/RectificationCenter';
 import RoleExperienceController from './security/RoleExperienceController';
@@ -104,11 +106,12 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC36</strong>
-                  <span>Una imagen · edición segura · perfiles operativos</span>
+                  <strong>Modo web RC38</strong>
+                  <span>Offline protegido · sincronización · punto de entrega</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
+              <CentralSyncCenter />
               <ProfessionalShell />
             </>
           )}
@@ -123,6 +126,7 @@ export default function AppRoot() {
             </aside>
           )}
           <RoleExperienceController />
+          <StationPresenceController />
           {isWebMode && <FastScanWorkflow />}
           <AppStable />
           <InventoryFilterBridge />

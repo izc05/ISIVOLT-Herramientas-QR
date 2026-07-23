@@ -1,123 +1,158 @@
 @media (min-width: 1100px) {
   .tool-sheet-backdrop {
     display: flex !important;
-    align-items: stretch !important;
-    justify-content: flex-end !important;
-    padding: 0 !important;
-    background: linear-gradient(90deg, rgba(2, 8, 18, .16), rgba(2, 8, 18, .58)) !important;
-    backdrop-filter: blur(5px) !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 24px 24px 24px calc(var(--professional-sidebar-width, 248px) + 24px) !important;
+    background:
+      radial-gradient(circle at 56% 12%, rgba(23, 202, 255, .12), transparent 34%),
+      rgba(2, 8, 18, .72) !important;
+    backdrop-filter: blur(12px) !important;
   }
 
   .tool-sheet {
-    width: min(540px, calc(100vw - var(--professional-sidebar-width, 248px))) !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
-    border-top: 0 !important;
-    border-right: 0 !important;
-    border-bottom: 0 !important;
-    border-radius: 26px 0 0 26px !important;
-    box-shadow: -24px 0 90px rgba(0, 0, 0, .52), -1px 0 rgba(82, 225, 255, .14) !important;
+    width: min(980px, calc(100vw - var(--professional-sidebar-width, 248px) - 64px)) !important;
+    height: auto !important;
+    max-height: calc(100dvh - 48px) !important;
+    border: 1px solid rgba(91, 229, 255, .24) !important;
+    border-radius: 28px !important;
+    box-shadow:
+      0 34px 110px rgba(0, 0, 0, .62),
+      0 0 76px rgba(0, 214, 255, .12),
+      inset 0 1px rgba(255, 255, 255, .06) !important;
   }
 
   .tool-sheet-scroll {
-    padding: 24px 22px 22px !important;
+    padding: 28px 28px 24px !important;
   }
 
   .tool-sheet-close {
-    top: 14px !important;
-    right: 14px !important;
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 13px !important;
+    top: 16px !important;
+    right: 16px !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 14px !important;
   }
 
   .tool-sheet-hero {
-    grid-template-columns: 160px minmax(0, 1fr) !important;
-    gap: 18px !important;
-    padding-right: 42px !important;
-    margin-bottom: 18px !important;
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+    gap: 24px !important;
+    padding-right: 48px !important;
+    margin-bottom: 20px !important;
   }
 
   .tool-sheet-image,
   .tool-sheet-image img,
   .tool-sheet-image > div {
-    min-height: 160px !important;
-    height: 160px !important;
+    min-height: 210px !important;
+    height: 210px !important;
   }
 
   .tool-sheet-image {
-    border-radius: 18px !important;
+    border-radius: 22px !important;
   }
 
   .tool-sheet-title h2 {
-    margin-top: 10px !important;
-    font-size: clamp(1.45rem, 2.4vw, 2.15rem) !important;
+    margin-top: 12px !important;
+    font-size: clamp(1.9rem, 3vw, 3rem) !important;
   }
 
   .tool-sheet-title p,
   .tool-holder-line {
-    font-size: .82rem !important;
+    font-size: .9rem !important;
   }
 
   .tool-sheet-facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 9px !important;
-    margin-bottom: 16px !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin-bottom: 20px !important;
   }
 
   .tool-sheet-facts article {
-    min-height: 72px !important;
-    padding: 12px !important;
-    border-radius: 14px !important;
-  }
-
-  .tool-qr-card {
-    grid-template-columns: 180px minmax(0, 1fr) !important;
-    gap: 14px !important;
-    padding: 16px !important;
-    border-radius: 18px !important;
-  }
-
-  .tool-qr-touch {
-    min-height: 190px !important;
-    padding: 10px !important;
+    min-height: 86px !important;
+    padding: 14px !important;
     border-radius: 16px !important;
   }
 
+  .tool-qr-card {
+    grid-template-columns: minmax(245px, .8fr) minmax(0, 1.2fr) !important;
+    gap: 20px !important;
+    padding: 20px !important;
+    border-radius: 22px !important;
+  }
+
+  .tool-qr-touch {
+    min-height: 258px !important;
+    padding: 14px !important;
+    border-radius: 20px !important;
+  }
+
   .tool-qr-canvas svg {
-    width: 164px !important;
-    height: 164px !important;
+    width: 220px !important;
+    height: 220px !important;
   }
 
   .tool-qr-actions {
     grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
+    gap: 9px !important;
   }
 
   .tool-qr-actions button {
-    min-height: 46px !important;
-    border-radius: 12px !important;
-    font-size: .76rem !important;
+    min-height: 50px !important;
+    border-radius: 13px !important;
+    font-size: .8rem !important;
   }
 
   .tool-history-section {
-    margin-top: 16px !important;
-    padding: 15px !important;
-    border-radius: 18px !important;
+    margin-top: 18px !important;
+    padding: 18px !important;
+    border-radius: 20px !important;
   }
 
   .tool-sheet-footer {
-    gap: 8px !important;
-    padding: 12px 18px !important;
+    gap: 10px !important;
+    padding: 14px 22px !important;
   }
 
   .tool-sheet-footer > button {
-    min-height: 48px !important;
+    min-height: 50px !important;
   }
 }
 
-@media (min-width: 1500px) {
+@media (min-width: 1100px) and (max-width: 1350px) {
+  .tool-sheet-backdrop {
+    padding-left: calc(var(--professional-sidebar-width, 248px) + 18px) !important;
+    padding-right: 18px !important;
+  }
+
   .tool-sheet {
-    width: 580px !important;
+    width: min(820px, calc(100vw - var(--professional-sidebar-width, 248px) - 44px)) !important;
+  }
+
+  .tool-sheet-hero {
+    grid-template-columns: 190px minmax(0, 1fr) !important;
+  }
+
+  .tool-sheet-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tool-qr-card {
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+  }
+
+  .tool-qr-touch {
+    min-height: 225px !important;
+  }
+
+  .tool-qr-canvas svg {
+    width: 190px !important;
+    height: 190px !important;
+  }
+}
+
+@media (min-width: 1600px) {
+  .tool-sheet {
+    width: min(1040px, calc(100vw - var(--professional-sidebar-width, 248px) - 80px)) !important;
   }
 }

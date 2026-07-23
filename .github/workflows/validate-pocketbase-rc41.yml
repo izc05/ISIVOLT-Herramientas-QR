@@ -1,0 +1,128 @@
+name: Validar servidor PocketBase RC41
+
+on:
+  pull_request:
+    branches:
+      - agent/rc40-presence-audit-ui
+      - agent/rc31-web-preview
+  push:
+    branches:
+      - agent/rc41-pocketbase-local-server
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pocketbase:
+    name: Migraciones, API, permisos y restauración
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      POCKETBASE_VERSION: 0.39.8
+      ISIVOLT_BOOTSTRAP_ADMIN_EMAIL: admin@example.test
+      ISIVOLT_BOOTSTRAP_ADMIN_PASSWORD: ChangeThis123!
+      ISIVOLT_BOOTSTRAP_ADMIN_NAME: Administrador CI
+      ISIVOLT_BOOTSTRAP_WORKSPACE: ISIVOLT-CI
+      ISIVOLT_BOOTSTRAP_TECH_EMAIL: tecnico@example.test
+      ISIVOLT_BOOTSTRAP_TECH_PASSWORD: Technician123!
+      ISIVOLT_BOOTSTRAP_TECH_NAME: Técnico CI
+      ISIVOLT_BOOTSTRAP_TECHNICIAN_ID: tech-ci-1
+      ISIVOLT_REQUIRE_STATION: "false"
+    defaults:
+      run:
+        working-directory: pocketbase-server
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Descargar PocketBase fijado
+        run: |
+          curl --fail --location --silent --show-error \
+            "https://github.com/pocketbase/pocketbase/releases/download/v${POCKETBASE_VERSION}/pocketbase_${POCKETBASE_VERSION}_linux_amd64.zip" \
+            --output pocketbase.zip
+          unzip -q pocketbase.zip pocketbase
+          chmod +x pocketbase
+          ./pocketbase --version
+
+      - name: Arrancar con base vacía y aplicar migraciones
+        run: |
+          rm -rf ./pb_data_ci ./pb_restore_ci
+          ./pocketbase --dir=./pb_data_ci serve --dev --http=127.0.0.1:8090 > pocketbase-ci.log 2>&1 &
+          echo $! > pocketbase-ci.pid
+
+      - name: Probar autenticación, movimiento y sincronización
+        run: |
+          set +e
+          node tests/smoke.mjs > smoke-ci.log 2>&1
+          status=$?
+          cat smoke-ci.log
+          exit "$status"
+
+      - name: Crear y restaurar una copia real
+        run: |
+          primary_pid="$(cat pocketbase-ci.pid)"
+          if kill -0 "$primary_pid" 2>/dev/null; then
+            kill "$primary_pid" 2>/dev/null || true
+            for _ in $(seq 1 50); do
+              kill -0 "$primary_pid" 2>/dev/null || break
+              sleep 0.1
+            done
+          fi
+          tar --create --gzip --file pocketbase-backup-ci.tar.gz --directory ./pb_data_ci .
+          rm -rf ./pb_restore_ci
+          mkdir -p ./pb_restore_ci
+          tar --extract --gzip --file pocketbase-backup-ci.tar.gz --directory ./pb_restore_ci
+          test -s ./pb_restore_ci/data.db
+          ./pocketbase --dir=./pb_restore_ci serve --dev --http=127.0.0.1:8091 > pocketbase-restore-ci.log 2>&1 &
+          echo $! > pocketbase-restore-ci.pid
+          node tests/restore-check.mjs
+
+      - name: Detener servidores
+        if: always()
+        run: |
+          for pid_file in pocketbase-ci.pid pocketbase-restore-ci.pid; do
+            if [ -f "$pid_file" ]; then
+              kill "$(cat "$pid_file")" 2>/dev/null || true
+            fi
+          done
+
+      - name: Guardar diagnóstico si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocketbase-rc41-diagnostic
+          path: |
+            pocketbase-server/pocketbase-ci.log
+            pocketbase-server/pocketbase-restore-ci.log
+            pocketbase-server/smoke-ci.log
+            pocketbase-server/pocketbase-backup-ci.tar.gz
+            pocketbase-server/pb_data_ci/logs.db
+            pocketbase-server/pb_restore_ci/logs.db
+          if-no-files-found: ignore
+          retention-days: 2
+
+  web:
+    name: Pruebas, TypeScript y Vite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Ejecutar pruebas web
+        run: npm test
+
+      - name: Compilar aplicación
+        env:
+          VITE_POCKETBASE_URL: same-origin
+          VITE_ISIVOLT_WORKSPACE_ID: ISIVOLT-CI
+        run: npm run build

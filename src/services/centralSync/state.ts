@@ -15,7 +15,7 @@ const initialState = (): CentralSyncState => {
       enabled: false,
       pendingCount,
       conflictCount,
-      message: 'Solo local · servidor central sin configurar',
+      message: 'Solo local · mini PC sin configurar',
     };
   }
 
@@ -28,7 +28,7 @@ const initialState = (): CentralSyncState => {
       ? `${conflictCount} conflicto${conflictCount === 1 ? '' : 's'} pendiente${conflictCount === 1 ? '' : 's'}`
       : pendingCount > 0
         ? `${pendingCount} cambio${pendingCount === 1 ? '' : 's'} pendiente${pendingCount === 1 ? '' : 's'}`
-        : 'Preparado para sincronizar',
+        : 'Mini PC preparado para sincronizar',
   };
 };
 

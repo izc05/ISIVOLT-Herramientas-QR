@@ -2,6 +2,8 @@ import type { AppData, Technician } from '../domain/types';
 import { hasPermission } from './permissions';
 import type { SecurityUser } from './types';
 
+let trustedRemoteDepth = 0;
+
 export type OperationAuthorizationCode =
   | 'operation-not-allowed'
   | 'technician-link-required'
@@ -17,6 +19,17 @@ export class OperationAuthorizationError extends Error {
     this.name = 'OperationAuthorizationError';
   }
 }
+
+export const isTrustedRemoteChange = () => trustedRemoteDepth > 0;
+
+export const runTrustedRemoteChange = <T,>(change: () => T): T => {
+  trustedRemoteDepth += 1;
+  try {
+    return change();
+  } finally {
+    trustedRemoteDepth = Math.max(0, trustedRemoteDepth - 1);
+  }
+};
 
 export const resolveLinkedTechnician = (
   data: AppData,
@@ -45,7 +58,7 @@ export const assertAuthorizedDataChange = (
   next: AppData,
   user: SecurityUser | null,
 ): void => {
-  if (!user?.active || !previous) return;
+  if (isTrustedRemoteChange() || !user?.active || !previous) return;
 
   const previousMovementIds = new Set(previous.movements.map((movement) => movement.id));
   const newMovements = next.movements.filter((movement) => !previousMovementIds.has(movement.id));

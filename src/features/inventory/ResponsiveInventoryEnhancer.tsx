@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { getMovementPresenceState } from '../history/presenceAudit';
 import { assertPermission } from '../../security/permissions';
 import { getCurrentOperatorName } from '../../security/session';
 import { loadAppData, saveAppData } from '../../services/storage';
@@ -14,6 +15,11 @@ import {
 } from './toolLifecycle';
 
 const normalize = (value: string) => value.trim().toLocaleLowerCase('es-ES');
+
+const formatShortDateTime = (value: string) => new Intl.DateTimeFormat('es-ES', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+}).format(new Date(value));
 
 const showToast = (title: string, detail: string) => {
   document.querySelector('.rc34-action-toast')?.remove();
@@ -203,11 +209,75 @@ export default function ResponsiveInventoryEnhancer() {
       const sheet = document.querySelector<HTMLElement>('.tool-sheet');
       if (!sheet) return;
       const history = sheet.querySelector<HTMLElement>('.tool-history-section');
-      if (history && !history.querySelector('.rc34-state-log-note')) {
+      if (!history) return;
+
+      if (!history.querySelector('.rc34-state-log-note')) {
         const note = document.createElement('p');
         note.className = 'rc34-state-log-note';
         note.textContent = 'Cada préstamo, devolución, incidencia, bloqueo y reactivación queda registrado como cambio de estado.';
         history.querySelector('header')?.after(note);
+      }
+
+      const data = loadAppData();
+      const identity = sheet.querySelector<HTMLElement>('.tool-sheet-title p')?.textContent ?? '';
+      const tool = data.tools.find((item) => identity.includes(item.code));
+      let summary = history.querySelector<HTMLElement>('.rc40-tool-presence-summary');
+      if (!tool) {
+        summary?.remove();
+        return;
+      }
+
+      const physical = data.movements
+        .filter((movement) => movement.toolId === tool.id)
+        .filter((movement) => getMovementPresenceState(movement) !== 'not-applicable');
+      const verified = physical.filter((movement) => getMovementPresenceState(movement) === 'verified');
+      const withoutProof = physical.filter((movement) => {
+        const state = getMovementPresenceState(movement);
+        return state === 'missing' || state === 'partial';
+      });
+      const latestVerified = [...verified]
+        .filter((movement) => movement.stationVerifiedAt)
+        .sort((left, right) => right.stationVerifiedAt!.localeCompare(left.stationVerifiedAt!))[0];
+      const signature = [
+        tool.id,
+        physical.length,
+        verified.length,
+        withoutProof.length,
+        latestVerified?.stationId ?? '',
+        latestVerified?.stationVerifiedAt ?? '',
+      ].join(':');
+
+      if (!summary) {
+        summary = document.createElement('div');
+        summary.className = 'rc40-tool-presence-summary';
+        history.querySelector('.rc34-state-log-note')?.after(summary);
+      }
+      if (summary.dataset.signature === signature) return;
+      summary.dataset.signature = signature;
+      summary.replaceChildren();
+
+      const heading = document.createElement('div');
+      const kicker = document.createElement('small');
+      const title = document.createElement('strong');
+      kicker.textContent = 'Control presencial';
+      title.textContent = physical.length === 0
+        ? 'Todavía no hay movimientos físicos registrados'
+        : `${verified.length} de ${physical.length} movimiento${physical.length === 1 ? '' : 's'} con presencia validada`;
+      heading.append(kicker, title);
+      summary.appendChild(heading);
+
+      if (latestVerified?.stationId && latestVerified.stationVerifiedAt) {
+        const last = document.createElement('span');
+        last.className = 'rc40-presence-last';
+        last.textContent = `Última validación: ${latestVerified.stationId} · ${formatShortDateTime(latestVerified.stationVerifiedAt)}`;
+        summary.appendChild(last);
+      }
+
+      if (withoutProof.length > 0) {
+        const legacy = document.createElement('span');
+        legacy.className = 'rc40-presence-legacy';
+        legacy.textContent = `${withoutProof.length} registro${withoutProof.length === 1 ? '' : 's'} sin evidencia presencial; pueden ser anteriores a la activación.`;
+        summary.appendChild(legacy);
       }
     };
 

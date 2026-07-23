@@ -4,6 +4,7 @@ import {
   assertAuthorizedDataChange,
   OperationAuthorizationError,
   resolveLinkedTechnician,
+  runTrustedRemoteChange,
 } from './operationAuthorization';
 import type { SecurityUser } from './types';
 
@@ -94,6 +95,22 @@ describe('autorización de movimientos por perfil', () => {
   it('mantiene al coordinador en modo consulta', () => {
     const previous = baseData();
     const next = { ...previous, movements: [movement(technician.id)] };
+    expect(() => assertAuthorizedDataChange(previous, next, user('coordinator')))
+      .toThrow('Tu perfil es de consulta');
+  });
+
+  it('acepta para el coordinador un movimiento verificado descargado del servidor', () => {
+    const previous = baseData();
+    const next = { ...previous, movements: [movement(technician.id)] };
+    expect(() => runTrustedRemoteChange(() => (
+      assertAuthorizedDataChange(previous, next, user('coordinator'))
+    ))).not.toThrow();
+  });
+
+  it('restaura la protección local después del contexto remoto', () => {
+    const previous = baseData();
+    const next = { ...previous, movements: [movement(technician.id)] };
+    runTrustedRemoteChange(() => undefined);
     expect(() => assertAuthorizedDataChange(previous, next, user('coordinator')))
       .toThrow('Tu perfil es de consulta');
   });

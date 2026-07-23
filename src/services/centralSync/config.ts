@@ -6,42 +6,54 @@ const clean = (value: unknown): string | undefined => {
   return normalized || undefined;
 };
 
-const validUrl = (value: string | undefined): value is string => {
-  if (!value) return false;
+const isLoopback = (hostname: string) =>
+  hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1';
+
+const resolveServerUrl = (
+  raw: string | undefined,
+  currentOrigin?: string,
+): { url?: string; reason?: 'missing-url' | 'insecure-url' } => {
+  if (!raw) return { reason: 'missing-url' };
+  const candidate = raw.toLowerCase() === 'same-origin' ? currentOrigin : raw;
+  if (!candidate) return { reason: 'missing-url' };
+
   try {
-    const url = new URL(value);
-    return url.protocol === 'https:';
+    const url = new URL(candidate);
+    if (url.protocol === 'https:') return { url: url.origin };
+    if (url.protocol === 'http:' && isLoopback(url.hostname)) return { url: url.origin };
+    return { reason: 'insecure-url' };
   } catch {
-    return false;
+    return { reason: 'missing-url' };
   }
 };
 
 export const resolveCentralSyncConfig = (
   environment: Record<string, unknown>,
+  currentOrigin = typeof window === 'undefined' ? undefined : window.location.origin,
 ): CentralSyncConfig => {
-  const supabaseUrl = clean(environment.VITE_SUPABASE_URL);
-  const publishableKey = clean(environment.VITE_SUPABASE_PUBLISHABLE_KEY);
+  const resolved = resolveServerUrl(clean(environment.VITE_POCKETBASE_URL), currentOrigin);
   const workspaceId = clean(environment.VITE_ISIVOLT_WORKSPACE_ID);
 
-  if (!validUrl(supabaseUrl)) {
-    return { enabled: false, reason: 'missing-url' };
-  }
-  if (!publishableKey) {
-    return { enabled: false, supabaseUrl, reason: 'missing-key' };
+  if (!resolved.url) {
+    return {
+      provider: 'pocketbase',
+      enabled: false,
+      reason: resolved.reason ?? 'missing-url',
+    };
   }
   if (!workspaceId) {
     return {
+      provider: 'pocketbase',
       enabled: false,
-      supabaseUrl,
-      publishableKey,
+      serverUrl: resolved.url,
       reason: 'missing-workspace',
     };
   }
 
   return {
+    provider: 'pocketbase',
     enabled: true,
-    supabaseUrl,
-    publishableKey,
+    serverUrl: resolved.url,
     workspaceId,
   };
 };

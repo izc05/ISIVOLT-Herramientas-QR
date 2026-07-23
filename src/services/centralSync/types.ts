@@ -39,7 +39,9 @@ export type SyncConflict = {
   entityId: string;
   localItemId: string;
   remoteEventId: number;
+  remoteAction?: RemoteSyncEvent['action'];
   remotePayload: Record<string, unknown>;
+  remoteOccurredAt?: string;
   detectedAt: string;
   reason: 'local-change-pending';
 };
@@ -64,11 +66,19 @@ export type CentralSyncState = {
 };
 
 export type CentralSyncConfig = {
+  provider: 'pocketbase';
   enabled: boolean;
-  supabaseUrl?: string;
-  publishableKey?: string;
+  serverUrl?: string;
   workspaceId?: string;
-  reason?: 'missing-url' | 'missing-key' | 'missing-workspace';
+  reason?: 'missing-url' | 'insecure-url' | 'missing-workspace';
+};
+
+export type PocketBaseIdentity = {
+  id: string;
+  name: string;
+  role: 'admin' | 'warehouse' | 'coordinator' | 'technician';
+  workspace: string;
+  technicianId?: string;
 };
 
 export type AppDataMergeResult<T> = {

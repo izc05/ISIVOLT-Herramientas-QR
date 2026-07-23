@@ -8,6 +8,7 @@ import ProfessionalShell from './components/ProfessionalShell';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
 import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
 import ResponsiveInventoryEnhancer from './features/inventory/ResponsiveInventoryEnhancer';
+import ToolLifecycleManager from './features/inventory/ToolLifecycleManager';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
 import NfcManagementCenter from './features/nfc/NfcManagementCenter';
 import FastScanWorkflow from './features/operations/FastScanWorkflow';
@@ -100,8 +101,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC35</strong>
-                  <span>Estructura profesional · técnico primero · inventario compacto</span>
+                  <strong>Modo web RC36</strong>
+                  <span>Una imagen por activo · estados trazables · técnico primero</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
@@ -122,6 +123,7 @@ export default function AppRoot() {
           <AppStable />
           <InventoryOperationalEnhancer />
           <ResponsiveInventoryEnhancer />
+          <ToolLifecycleManager />
           <MaintenanceBoard onSaved={() => window.dispatchEvent(new CustomEvent('isivolt:management-refresh'))} />
           <NfcManagementCenter />
           <RectificationCenter />

@@ -1,28 +1,23 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import PocketBase from 'pocketbase';
 import { getCentralSyncConfig } from './config';
 
-let client: SupabaseClient | null = null;
+let client: PocketBase | null = null;
 let fingerprint = '';
 
-export const getCentralSyncClient = (): SupabaseClient | null => {
+export const getCentralSyncClient = (): PocketBase | null => {
   const config = getCentralSyncConfig();
-  if (!config.enabled || !config.supabaseUrl || !config.publishableKey) return null;
+  if (!config.enabled || !config.serverUrl) return null;
 
-  const nextFingerprint = `${config.supabaseUrl}|${config.publishableKey}`;
-  if (client && fingerprint === nextFingerprint) return client;
+  if (client && fingerprint === config.serverUrl) return client;
 
-  fingerprint = nextFingerprint;
-  client = createClient(config.supabaseUrl, config.publishableKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-  });
+  fingerprint = config.serverUrl;
+  client = new PocketBase(config.serverUrl);
+  client.autoCancellation(false);
   return client;
 };
 
 export const resetCentralSyncClientForTests = () => {
+  client?.authStore.clear();
   client = null;
   fingerprint = '';
 };

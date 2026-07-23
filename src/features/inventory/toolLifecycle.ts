@@ -56,6 +56,14 @@ const actionMeta: Record<ToolLifecycleAction, ToolLifecycleActionMeta> = {
   },
 };
 
+const actionTarget: Record<ToolLifecycleAction, ToolLifecycleKey> = {
+  review: 'review',
+  damage: 'damaged',
+  block: 'blocked',
+  retire: 'retired',
+  reactivate: 'available',
+};
+
 const createId = (prefix: string) => {
   const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   return `${prefix}-${random}`;
@@ -80,7 +88,7 @@ export const listToolLifecycleActions = (tool: Tool): ToolLifecycleActionMeta[] 
   }
   if (current === 'retired') return [actionMeta.reactivate];
   return [actionMeta.reactivate, actionMeta.review, actionMeta.damage, actionMeta.block, actionMeta.retire]
-    .filter((item) => item.action !== current);
+    .filter((item) => actionTarget[item.action] !== current);
 };
 
 const targetForAction = (action: ToolLifecycleAction): {

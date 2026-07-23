@@ -1,12 +1,8 @@
-name: Publicar RC33 web
+name: Desplegar ISIVOLT web
 
 on:
   push:
     branches:
-      - agent/rc31-web-preview
-  pull_request:
-    branches:
-      - agent/rc24-storage-safety
       - agent/rc31-web-preview
   workflow_dispatch:
 
@@ -17,12 +13,12 @@ permissions:
   issues: write
 
 concurrency:
-  group: github-pages-${{ github.ref }}
+  group: pages-isivolt-web
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Validar y preparar RC33 web
+    name: Validar y preparar web
     runs-on: ubuntu-latest
     steps:
       - name: Descargar código
@@ -43,18 +39,15 @@ jobs:
         run: npm run build
 
       - name: Configurar GitHub Pages
-        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5
 
       - name: Subir sitio web
-        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
 
   deploy:
-    name: Publicar RC33
-    if: github.event_name != 'pull_request'
+    name: Publicar en GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -70,4 +63,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
-          gh issue comment 53 --repo "${{ github.repository }}" --body "🚀 **RC33 publicada correctamente en GitHub Pages**\n\nDespliegue verificado por GitHub Actions: ${PAGE_URL}\n\nCommit web publicado: \`${GITHUB_SHA}\`."
+          cat > deployment-comment.md <<EOF
+          🚀 **ISIVOLT publicada correctamente en GitHub Pages**
+
+          Despliegue verificado por GitHub Actions: ${PAGE_URL}
+
+          Commit web publicado: \`${GITHUB_SHA}\`.
+          EOF
+          gh issue comment 53 --repo "${{ github.repository }}" --body-file deployment-comment.md

@@ -1,20 +1,17 @@
-name: Aplicar operaciones rc.5
+name: Aplicar operaciones rc.5 (histórico · manual)
 
 on:
-  push:
-    branches:
-      - feature/inventory-operations-1.0.0-rc.5
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: apply-rc5-operations-${{ github.ref }}
+  group: apply-rc5-operations-manual
   cancel-in-progress: true
 
 jobs:
   patch:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: aplicar operaciones rc.5') }}
     runs-on: ubuntu-latest
     steps:
       - name: Descargar código

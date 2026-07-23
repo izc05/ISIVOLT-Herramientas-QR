@@ -1,5 +1,7 @@
 import { seedData } from '../data/seed';
 import type { AppData, Movement } from '../domain/types';
+import { assertAuthorizedDataChange } from '../security/operationAuthorization';
+import { getCurrentSecurityUser } from '../security/session';
 import { enforceAppDataIntegrity, type IntegrityIssue } from './dataIntegrity';
 import { getDeviceId } from './deviceIdentity';
 import { recordAppError } from './errorLog';
@@ -237,6 +239,7 @@ export const saveAppData = (
   options: { replaceNative?: boolean } = {},
 ): void => {
   const previous = readLocalDataWithoutFallback();
+  assertAuthorizedDataChange(previous, data, getCurrentSecurityUser());
   const clean = prepareData(data);
   const replaceNative = options.replaceNative === true || hasRemovedIds(previous, clean);
 

@@ -12,6 +12,7 @@ import {
   getStationPresenceConfig,
   type StationPresenceConfig,
 } from '../../services/stationPresence/config';
+import { registerStationPass } from '../../services/stationPresence/passRegistry';
 import {
   verifyStationToken,
   type StationPass,
@@ -32,13 +33,9 @@ const operationIdFromButton = (button: HTMLButtonElement): string | null => {
   return value || null;
 };
 
-const passStillValid = (pass: StationPass, now = new Date()) =>
-  now.getTime() <= new Date(pass.expiresAt).getTime();
-
 export default function StationPresenceController() {
   const config = useMemo(() => getStationPresenceConfig(), []);
   const nextAllowedButtonRef = useRef<HTMLButtonElement | null>(null);
-  const passesRef = useRef(new Map<string, StationPass>());
   const [pending, setPending] = useState<{
     operationId: string;
     button: HTMLButtonElement;
@@ -55,20 +52,13 @@ export default function StationPresenceController() {
       const button = target?.closest<HTMLButtonElement>('.operation-review-footer button');
       if (!button || button.disabled) return;
 
-      const operationId = operationIdFromButton(button);
-      if (!operationId) return;
-
       if (nextAllowedButtonRef.current === button) {
         nextAllowedButtonRef.current = null;
-        passesRef.current.delete(operationId);
         return;
       }
 
-      const storedPass = passesRef.current.get(operationId);
-      if (storedPass && passStillValid(storedPass)) {
-        passesRef.current.delete(operationId);
-        return;
-      }
+      const operationId = operationIdFromButton(button);
+      if (!operationId) return;
 
       event.preventDefault();
       event.stopPropagation();
@@ -149,7 +139,7 @@ export default function StationPresenceController() {
     }
 
     const currentPending = pending;
-    passesRef.current.set(currentPending.operationId, acceptedPass);
+    registerStationPass(currentPending.operationId, acceptedPass);
     window.setTimeout(() => {
       nextAllowedButtonRef.current = currentPending.button;
       setPending(null);

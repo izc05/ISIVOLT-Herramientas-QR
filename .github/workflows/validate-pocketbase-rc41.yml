@@ -48,7 +48,12 @@ jobs:
           echo $! > pocketbase-ci.pid
 
       - name: Probar autenticación, movimiento y sincronización
-        run: node tests/smoke.mjs
+        run: |
+          set +e
+          node tests/smoke.mjs > smoke-ci.log 2>&1
+          status=$?
+          cat smoke-ci.log
+          exit "$status"
 
       - name: Detener servidor
         if: always()
@@ -64,6 +69,7 @@ jobs:
           name: pocketbase-rc41-diagnostic
           path: |
             pocketbase-server/pocketbase-ci.log
+            pocketbase-server/smoke-ci.log
             pocketbase-server/pb_data_ci/logs.db
           if-no-files-found: ignore
           retention-days: 2

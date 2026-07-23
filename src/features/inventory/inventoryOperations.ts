@@ -91,7 +91,15 @@ export const getDeliveryAlert = (tool: Tool, technicianId?: string): ToolScanAle
     };
   }
 
-  if (serviceStatus === 'reserved' && tool.reservedTechnicianId && tool.reservedTechnicianId !== technicianId) {
+  // En el flujo «Primero herramienta» todavía no conocemos al técnico.
+  // La reserva se muestra como seleccionable y el motor transaccional la valida
+  // definitivamente cuando se identifica al responsable antes de guardar.
+  if (
+    serviceStatus === 'reserved'
+    && technicianId
+    && tool.reservedTechnicianId
+    && tool.reservedTechnicianId !== technicianId
+  ) {
     return {
       blocked: true,
       title: 'Herramienta reservada',

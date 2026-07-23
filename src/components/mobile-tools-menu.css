@@ -7,7 +7,11 @@
   .maintenance-board-launcher,
   .rectification-launcher,
   .commissioning-launcher,
-  .qr-label-launcher {
+  .qr-label-launcher,
+  .nfc-management-launcher,
+  .technician-barcode-launcher,
+  .experience-settings-button,
+  .stability-badge {
     display: none !important;
   }
 
@@ -43,8 +47,8 @@
   }
 
   .mobile-tools-sheet {
-    width: min(330px, calc(100vw - 24px));
-    max-height: min(68dvh, 520px);
+    width: min(350px, calc(100vw - 24px));
+    max-height: min(72dvh, 590px);
     overflow: hidden;
     border: 1px solid rgba(88, 224, 255, .24);
     border-radius: 20px;
@@ -72,7 +76,7 @@
   .mobile-tools-sheet > header button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; color: #fff; background: rgba(255,255,255,.035); }
 
   .mobile-tools-sheet > div {
-    max-height: calc(min(68dvh, 520px) - 60px);
+    max-height: calc(min(72dvh, 590px) - 60px);
     overflow-y: auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -119,5 +123,5 @@
 
 @media (max-width: 430px) {
   .mobile-tools-sheet > div { grid-template-columns: 1fr; }
-  .mobile-tools-sheet { width: min(310px, calc(100vw - 20px)); }
+  .mobile-tools-sheet { width: min(320px, calc(100vw - 20px)); }
 }

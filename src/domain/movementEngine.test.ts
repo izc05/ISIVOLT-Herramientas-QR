@@ -61,6 +61,20 @@ const baseData = (): AppData => ({
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-07-09T08:00:00.000Z',
     },
+    {
+      id: 'tool-3',
+      code: 'HER-003',
+      qrCode: 'ISIVOLT:TOOL:HER-003',
+      name: 'Pinza amperimétrica',
+      category: 'Medición',
+      location: 'Almacén',
+      status: 'loaned',
+      holderTechnicianId: 'tech-1',
+      loanedAt: '2026-07-09T08:10:00.000Z',
+      active: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-07-09T08:10:00.000Z',
+    },
   ],
   movements: [],
   accessories: [],
@@ -73,10 +87,11 @@ const ids = () => {
 };
 
 describe('applyMovementCommand', () => {
-  it('entrega una herramienta disponible y crea el movimiento', () => {
+  it('entrega una herramienta disponible y conserva operationId', () => {
     const result = applyMovementCommand(
       baseData(),
       {
+        operationId: 'op-test-1',
         mode: 'delivery',
         toolIds: ['tool-1'],
         technicianId: 'tech-1',
@@ -91,6 +106,7 @@ describe('applyMovementCommand', () => {
     expect(tool?.holderTechnicianId).toBe('tech-1');
     expect(result.movements).toHaveLength(1);
     expect(result.movements[0]).toMatchObject({
+      operationId: 'op-test-1',
       type: 'delivery',
       previousStatus: 'available',
       nextStatus: 'loaned',
@@ -116,6 +132,42 @@ describe('applyMovementCommand', () => {
     expect(result.movements[0]).toMatchObject({ type: 'return', technicianId: 'tech-1' });
   });
 
+  it('aplica una condición distinta a cada herramienta devuelta', () => {
+    const result = applyMovementCommand(
+      baseData(),
+      {
+        operationId: 'op-mixed-return',
+        mode: 'return',
+        toolIds: ['tool-2', 'tool-3'],
+        technicianId: 'tech-1',
+        returnConditions: {
+          'tool-2': 'ok',
+          'tool-3': 'damaged',
+        },
+        notes: 'La pinza presenta daños en la carcasa.',
+        operatorName: 'Almacén',
+        occurredAt: '2026-07-10T11:30:00.000Z',
+      },
+      ids(),
+    );
+
+    expect(result.data.tools.find((item) => item.id === 'tool-2')?.status).toBe('available');
+    expect(result.data.tools.find((item) => item.id === 'tool-3')?.status).toBe('damaged');
+    expect(result.movements).toEqual(expect.arrayContaining([
+      expect.objectContaining({ toolId: 'tool-2', type: 'return', condition: 'ok' }),
+      expect.objectContaining({ toolId: 'tool-3', type: 'incident', condition: 'damaged' }),
+    ]));
+  });
+
+  it('exige una condición para cada herramienta de una devolución múltiple', () => {
+    expect(() => applyMovementCommand(baseData(), {
+      mode: 'return',
+      toolIds: ['tool-2', 'tool-3'],
+      returnConditions: { 'tool-2': 'ok' },
+      operatorName: 'Almacén',
+    })).toThrowError(/condición/i);
+  });
+
   it('exige observaciones para una devolución averiada', () => {
     expect(() => applyMovementCommand(baseData(), {
       mode: 'return',
@@ -123,6 +175,39 @@ describe('applyMovementCommand', () => {
       condition: 'damaged',
       operatorName: 'Almacén',
     })).toThrowError(MovementRuleError);
+  });
+
+  it('rechaza repetir una operación ya registrada', () => {
+    const data = baseData();
+    data.movements.push({
+      id: 'mov-existing',
+      operationId: 'op-existing',
+      type: 'delivery',
+      toolId: 'tool-1',
+      technicianId: 'tech-1',
+      operatorName: 'Almacén',
+      occurredAt: '2026-07-10T09:00:00.000Z',
+      previousStatus: 'available',
+      nextStatus: 'loaned',
+    });
+
+    expect(() => applyMovementCommand(data, {
+      operationId: 'op-existing',
+      mode: 'delivery',
+      toolIds: ['tool-1'],
+      technicianId: 'tech-1',
+      operatorName: 'Almacén',
+    })).toThrowError(/ya fue registrada/i);
+  });
+
+  it('bloquea devolver herramientas de otro técnico en el mismo lote', () => {
+    expect(() => applyMovementCommand(baseData(), {
+      mode: 'return',
+      toolIds: ['tool-2'],
+      technicianId: 'tech-3',
+      condition: 'ok',
+      operatorName: 'Almacén',
+    })).toThrowError(/técnico seleccionado/i);
   });
 
   it('bloquea una entrega a un técnico inactivo', () => {
@@ -189,5 +274,89 @@ describe('applyMovementCommand', () => {
       technicianId: 'tech-1',
       operatorName: 'Almacén',
     })).toThrowError(/bloqueada/i);
+  });
+
+  it('conserva OT, ubicación, vencimiento y accesorios en el préstamo', () => {
+    const data = baseData();
+    data.accessories = [{
+      id: 'acc-1',
+      toolId: 'tool-1',
+      name: 'Maletín',
+      required: true,
+      active: true,
+      condition: 'not_checked',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }];
+
+    const result = applyMovementCommand(data, {
+      operationId: 'op-context',
+      mode: 'delivery',
+      toolIds: ['tool-1'],
+      technicianId: 'tech-1',
+      accessoryChecks: { 'tool-1': { 'acc-1': 'ok' } },
+      expectedReturnAt: '2026-07-12T14:00:00.000Z',
+      workOrder: 'OT 104582',
+      workLocation: 'Quirófano 2',
+      operatorName: 'Almacén',
+      occurredAt: '2026-07-10T12:00:00.000Z',
+    });
+
+    expect(result.movements[0]).toMatchObject({
+      operationId: 'op-context',
+      expectedReturnAt: '2026-07-12T14:00:00.000Z',
+      workOrder: 'OT 104582',
+      workLocation: 'Quirófano 2',
+      accessoryChecks: [{ accessoryId: 'acc-1', condition: 'ok' }],
+    });
+  });
+
+  it('exige comprobar los accesorios obligatorios antes de prestar', () => {
+    const data = baseData();
+    data.accessories = [{
+      id: 'acc-1',
+      toolId: 'tool-1',
+      name: 'Cargador',
+      required: true,
+      active: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }];
+
+    expect(() => applyMovementCommand(data, {
+      mode: 'delivery',
+      toolIds: ['tool-1'],
+      technicianId: 'tech-1',
+      operatorName: 'Almacén',
+    })).toThrowError(/Comprueba el accesorio/i);
+  });
+
+  it('convierte en incidencia una devolución con accesorio ausente', () => {
+    const data = baseData();
+    data.accessories = [{
+      id: 'acc-2',
+      toolId: 'tool-2',
+      name: 'Batería',
+      required: true,
+      active: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }];
+
+    const result = applyMovementCommand(data, {
+      mode: 'return',
+      toolIds: ['tool-2'],
+      condition: 'ok',
+      accessoryChecks: { 'tool-2': { 'acc-2': 'missing' } },
+      notes: 'La batería no se entrega.',
+      operatorName: 'Almacén',
+    });
+
+    expect(result.movements[0]).toMatchObject({
+      type: 'incident',
+      condition: 'review',
+      accessoryChecks: [{ accessoryId: 'acc-2', condition: 'missing' }],
+    });
+    expect(result.data.tools.find((item) => item.id === 'tool-2')?.status).toBe('review');
   });
 });

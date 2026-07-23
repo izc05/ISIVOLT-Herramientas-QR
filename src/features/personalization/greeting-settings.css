@@ -1,0 +1,165 @@
+.greeting-settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 156;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(2, 6, 23, 0.8);
+  backdrop-filter: blur(12px);
+}
+
+.greeting-settings-panel {
+  width: min(470px, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 23px;
+  background: linear-gradient(155deg, rgba(9, 20, 39, 0.99), rgba(7, 29, 45, 0.99));
+  box-shadow: 0 30px 90px rgba(2, 6, 23, 0.58);
+  color: #e5eefb;
+}
+
+.greeting-settings-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.13);
+}
+
+.greeting-settings-panel > header > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.greeting-settings-panel > header > div > span,
+.greeting-settings-preview > span {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(14, 165, 233, 0.15);
+  color: #7dd3fc;
+}
+
+.greeting-settings-panel header small,
+.greeting-settings-preview small {
+  display: block;
+  color: #38bdf8;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.greeting-settings-panel header h2 {
+  margin: 2px 0;
+  font-size: 1.3rem;
+}
+
+.greeting-settings-panel header p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.greeting-settings-panel > header > button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.66);
+  color: #e2e8f0;
+}
+
+.greeting-settings-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 17px 18px 13px;
+  padding: 13px;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  border-radius: 15px;
+  background: rgba(14, 165, 233, 0.08);
+}
+
+.greeting-settings-preview strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.02rem;
+}
+
+.greeting-settings-panel > label {
+  display: grid;
+  gap: 8px;
+  margin: 0 18px 18px;
+  color: #b8c8d9;
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.greeting-settings-panel > label input {
+  width: 100%;
+  min-height: 47px;
+  padding: 0 13px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 13px;
+  outline: 0;
+  background: rgba(15, 23, 42, 0.72);
+  color: #f8fafc;
+  font: inherit;
+}
+
+.greeting-settings-panel > label input:focus {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.08);
+}
+
+.greeting-settings-panel > footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(148, 163, 184, 0.13);
+  background: rgba(2, 8, 23, 0.3);
+}
+
+.greeting-settings-panel > footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 13px;
+  background: rgba(15, 23, 42, 0.66);
+  color: #dbeafe;
+  font-weight: 850;
+}
+
+.greeting-settings-panel > footer button.primary {
+  border-color: rgba(56, 189, 248, 0.3);
+  background: linear-gradient(145deg, rgba(14, 165, 233, 0.33), rgba(6, 182, 212, 0.18));
+  color: #ecfeff;
+}
+
+@media (max-width: 560px) {
+  .greeting-settings-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .greeting-settings-panel {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 23px 23px 0 0;
+  }
+}

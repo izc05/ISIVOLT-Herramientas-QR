@@ -21,6 +21,12 @@ export type MaintenanceStatus = 'open' | 'in_progress' | 'waiting_parts' | 'comp
 
 export type AccessoryCondition = 'ok' | 'missing' | 'damaged' | 'not_checked';
 
+export type MovementAccessoryCheck = {
+  accessoryId: string;
+  condition: AccessoryCondition;
+  notes?: string;
+};
+
 export type Tool = {
   id: string;
   code: string;
@@ -57,6 +63,7 @@ export type Technician = {
   id: string;
   code: string;
   nfcUid?: string;
+  barcodeValue?: string;
   name: string;
   specialty: string;
   role?: string;
@@ -71,6 +78,7 @@ export type Technician = {
 
 export type Movement = {
   id: string;
+  operationId?: string;
   sequenceNumber?: number;
   type: MovementType;
   toolId: string;
@@ -82,6 +90,10 @@ export type Movement = {
   nextStatus: ToolStatus;
   condition?: ReturnCondition;
   notes?: string;
+  expectedReturnAt?: string;
+  workOrder?: string;
+  workLocation?: string;
+  accessoryChecks?: MovementAccessoryCheck[];
   reversedMovementId?: string;
   syncStatus?: MovementSyncStatus;
 };

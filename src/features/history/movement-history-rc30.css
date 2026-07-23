@@ -1,0 +1,34 @@
+.advanced-history-accessories {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+  margin-top: 3px;
+  padding: 7px 9px;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  border-radius: 10px;
+  background: rgba(8, 47, 73, 0.22);
+  color: #bae6fd;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.advanced-history-accessories > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.advanced-history-accessories > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 620px) {
+  .advanced-history-list article {
+    align-items: start;
+  }
+
+  .advanced-history-main small {
+    align-items: flex-start;
+    line-height: 1.35;
+  }
+}

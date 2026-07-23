@@ -41,6 +41,8 @@ const initialData = (): AppData => ({
   maintenanceRecords: [],
 });
 
+const checkedAccessories = { 'tool-1': { 'acc-1': 'ok' as const } };
+
 const ids = () => {
   let sequence = 0;
   return () => `mov-production-${++sequence}`;
@@ -53,6 +55,7 @@ describe('flujo candidato de producción', () => {
       mode: 'delivery',
       toolIds: ['tool-1'],
       technicianId: 'tech-1',
+      accessoryChecks: checkedAccessories,
       operatorName: 'Responsable almacén',
       occurredAt: '2026-07-10T08:00:00.000Z',
     }, idFactory);
@@ -64,6 +67,7 @@ describe('flujo candidato de producción', () => {
       mode: 'return',
       toolIds: ['tool-1'],
       condition: 'ok',
+      accessoryChecks: checkedAccessories,
       operatorName: 'Responsable almacén',
       occurredAt: '2026-07-10T12:00:00.000Z',
     }, idFactory);
@@ -75,6 +79,7 @@ describe('flujo candidato de producción', () => {
       mode: 'delivery',
       toolIds: ['tool-1'],
       technicianId: 'tech-1',
+      accessoryChecks: checkedAccessories,
       operatorName: 'Responsable almacén',
       occurredAt: '2026-07-11T08:00:00.000Z',
     }, idFactory);
@@ -83,6 +88,7 @@ describe('flujo candidato de producción', () => {
       mode: 'return',
       toolIds: ['tool-1'],
       condition: 'damaged',
+      accessoryChecks: checkedAccessories,
       notes: 'Pantalla rota durante el uso.',
       operatorName: 'Responsable almacén',
       occurredAt: '2026-07-11T11:30:00.000Z',
@@ -106,6 +112,7 @@ describe('flujo candidato de producción', () => {
       mode: 'return',
       toolIds: ['tool-1'],
       condition: 'damaged',
+      accessoryChecks: checkedAccessories,
       operatorName: 'Almacén',
     })).toThrowError(MovementRuleError);
   });

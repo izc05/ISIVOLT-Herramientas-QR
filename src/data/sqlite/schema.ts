@@ -241,4 +241,39 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_tools_nfc_uid
   WHERE nfc_uid IS NOT NULL AND nfc_uid <> '';
 `,
   },
+  {
+    version: 4,
+    name: 'movement_operation_idempotency',
+    statements: `
+ALTER TABLE movements ADD COLUMN operation_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_movements_operation_id
+  ON movements(operation_id)
+  WHERE operation_id IS NOT NULL AND operation_id <> '';
+`,
+  },
+  {
+    version: 5,
+    name: 'technician_barcode_identification',
+    statements: `
+ALTER TABLE technicians ADD COLUMN barcode_value TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_technicians_barcode_value
+  ON technicians(barcode_value COLLATE NOCASE)
+  WHERE barcode_value IS NOT NULL AND barcode_value <> '';
+`,
+  },
+  {
+    version: 6,
+    name: 'movement_context_and_accessory_checks',
+    statements: `
+ALTER TABLE movements ADD COLUMN expected_return_at TEXT;
+ALTER TABLE movements ADD COLUMN work_order TEXT;
+ALTER TABLE movements ADD COLUMN work_location TEXT;
+CREATE INDEX IF NOT EXISTS idx_movements_expected_return
+  ON movements(expected_return_at)
+  WHERE expected_return_at IS NOT NULL AND expected_return_at <> '';
+CREATE INDEX IF NOT EXISTS idx_movements_work_order
+  ON movements(work_order COLLATE NOCASE)
+  WHERE work_order IS NOT NULL AND work_order <> '';
+`,
+  },
 ];

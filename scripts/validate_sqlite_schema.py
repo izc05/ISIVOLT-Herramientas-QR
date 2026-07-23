@@ -90,10 +90,10 @@ connection.execute(
 )
 connection.execute(
     """INSERT INTO movements
-       (id, sequence_number, type, tool_id, operator_name, previous_status,
+       (id, operation_id, sequence_number, type, tool_id, operator_name, previous_status,
         next_status, occurred_at, sync_status, created_at)
-       VALUES (?, 1, 'adjustment', ?, 'Sistema', 'available', 'available', ?, 'local', ?)""",
-    ("mov-1", "tool-1", now, now),
+       VALUES (?, ?, 1, 'adjustment', ?, 'Sistema', 'available', 'available', ?, 'local', ?)""",
+    ("mov-1", "op-test-1", "tool-1", now, now),
 )
 
 
@@ -157,8 +157,9 @@ version = connection.execute("PRAGMA user_version").fetchone()[0]
 assert version == max(item[0] for item in migrations), "La versión SQLite no coincide con la última migración"
 assert connection.execute("SELECT COUNT(*) FROM accessories").fetchone()[0] == 1
 assert connection.execute("SELECT COUNT(*) FROM maintenance_records").fetchone()[0] == 1
+assert connection.execute("SELECT operation_id FROM movements WHERE id = 'mov-1'").fetchone()[0] == "op-test-1"
 
 print(
     f"Esquema SQLite v{version} validado: migraciones, gestión, mantenimiento, "
-    "UNIQUE, CHECK y trazabilidad inmutable."
+    "operationId, UNIQUE, CHECK y trazabilidad inmutable."
 )

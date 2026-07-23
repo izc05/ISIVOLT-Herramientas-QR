@@ -60,8 +60,9 @@ describe('inventario operativo', () => {
     expect(alert?.detail).toContain('Pantalla rota');
   });
 
-  it('bloquea una reserva destinada a otro técnico', () => {
+  it('aplaza la reserva hasta conocer el técnico y bloquea al responsable incorrecto', () => {
     const reserved = tool({ serviceStatus: 'reserved', reservedTechnicianId: 'tech-2' });
+    expect(getDeliveryAlert(reserved)).toBeNull();
     expect(getDeliveryAlert(reserved, 'tech-1')?.title).toBe('Herramienta reservada');
     expect(getDeliveryAlert(reserved, 'tech-2')).toBeNull();
   });

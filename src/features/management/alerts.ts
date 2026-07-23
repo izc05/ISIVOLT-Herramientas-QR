@@ -1,4 +1,4 @@
-import type { AppData, Tool } from '../../domain/types';
+import type { AppData, Movement, Tool } from '../../domain/types';
 
 export type ManagementAlertSeverity = 'critical' | 'warning' | 'info';
 
@@ -20,26 +20,77 @@ const validDate = (value?: string) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const latestDelivery = (data: AppData, toolId: string): Movement | undefined => data.movements
+  .filter((movement) => movement.toolId === toolId && movement.type === 'delivery')
+  .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+
+const appendLoanAlert = (
+  alerts: ManagementAlert[],
+  data: AppData,
+  tool: Tool,
+  now: Date,
+) => {
+  if (tool.status !== 'loaned') return;
+  const holder = data.technicians.find((item) => item.id === tool.holderTechnicianId)?.name ?? 'Sin responsable';
+  const delivery = latestDelivery(data, tool.id);
+  const explicitDue = validDate(delivery?.expectedReturnAt);
+
+  if (explicitDue) {
+    const remainingMilliseconds = explicitDue.getTime() - now.getTime();
+    const remainingHours = Math.ceil(remainingMilliseconds / 3_600_000);
+    if (remainingMilliseconds < 0) {
+      const overdueHours = Math.max(1, Math.ceil(Math.abs(remainingMilliseconds) / 3_600_000));
+      const detail = overdueHours < 48
+        ? `${overdueHours} horas de retraso · responsable: ${holder}`
+        : `${Math.ceil(overdueHours / 24)} días de retraso · responsable: ${holder}`;
+      alerts.push({
+        id: `overdue-${tool.id}`,
+        toolId: tool.id,
+        severity: 'critical',
+        type: 'overdue',
+        title: `${tool.name}: devolución vencida`,
+        detail,
+        dueAt: delivery?.expectedReturnAt,
+      });
+      return;
+    }
+
+    if (remainingHours <= 24) {
+      alerts.push({
+        id: `overdue-soon-${tool.id}`,
+        toolId: tool.id,
+        severity: 'warning',
+        type: 'overdue',
+        title: `${tool.name}: devolución próxima`,
+        detail: remainingHours <= 1
+          ? `Vence en menos de una hora · responsable: ${holder}`
+          : `Vence en ${remainingHours} horas · responsable: ${holder}`,
+        dueAt: delivery?.expectedReturnAt,
+      });
+    }
+    return;
+  }
+
+  if (!tool.loanedAt || (tool.maxLoanDays ?? 0) <= 0) return;
+  const loaned = validDate(tool.loanedAt);
+  if (!loaned) return;
+  const elapsed = Math.max(0, daysBetween(loaned, now));
+  if (elapsed > (tool.maxLoanDays ?? 0)) {
+    alerts.push({
+      id: `overdue-${tool.id}`,
+      toolId: tool.id,
+      severity: 'critical',
+      type: 'overdue',
+      title: `${tool.name} supera el plazo de préstamo`,
+      detail: `${elapsed} días fuera · responsable: ${holder} · límite: ${tool.maxLoanDays} días`,
+    });
+  }
+};
+
 const toolAlerts = (data: AppData, tool: Tool, now: Date): ManagementAlert[] => {
   const alerts: ManagementAlert[] = [];
 
-  if (tool.status === 'loaned' && tool.loanedAt && (tool.maxLoanDays ?? 0) > 0) {
-    const loaned = validDate(tool.loanedAt);
-    if (loaned) {
-      const elapsed = Math.max(0, daysBetween(loaned, now));
-      if (elapsed > (tool.maxLoanDays ?? 0)) {
-        const holder = data.technicians.find((item) => item.id === tool.holderTechnicianId)?.name ?? 'Sin responsable';
-        alerts.push({
-          id: `overdue-${tool.id}`,
-          toolId: tool.id,
-          severity: 'critical',
-          type: 'overdue',
-          title: `${tool.name} supera el plazo de préstamo`,
-          detail: `${elapsed} días fuera · responsable: ${holder} · límite: ${tool.maxLoanDays} días`,
-        });
-      }
-    }
-  }
+  appendLoanAlert(alerts, data, tool, now);
 
   const review = validDate(tool.nextReviewDate);
   if (review) {

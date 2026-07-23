@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Boxes, CheckCircle2, Filter, RotateCcw, Users } from 'lucide-react';
+import {
+  AlertTriangle,
+  Boxes,
+  CheckCircle2,
+  ChevronDown,
+  Filter,
+  RotateCcw,
+  Users,
+} from 'lucide-react';
 import type { AppData } from '../../domain/types';
 import { loadAppData } from '../../services/storage';
 import {
@@ -39,6 +47,9 @@ export default function InventoryOperationalEnhancer() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [preset, setPreset] = useState<InventoryPreset>('all');
   const [category, setCategory] = useState('Todas');
+  const [filtersOpen, setFiltersOpen] = useState(
+    () => !window.matchMedia('(max-width: 820px)').matches,
+  );
 
   const categories = useMemo(() => buildToolCategories(data.tools), [data.tools]);
   const visibleTools = useMemo(
@@ -116,6 +127,7 @@ export default function InventoryOperationalEnhancer() {
     const openPreset = (nextPreset: InventoryPreset) => {
       setPreset(nextPreset);
       setCategory('Todas');
+      setFiltersOpen(true);
       findNavButton('Inventario')?.click();
     };
 
@@ -149,29 +161,37 @@ export default function InventoryOperationalEnhancer() {
   if (!host) return null;
 
   return createPortal(
-    <section className="inventory-operational-filters" aria-label="Filtros del inventario">
-      <div className="inventory-filter-heading">
+    <section className={`inventory-operational-filters ${filtersOpen ? 'filters-open' : ''}`} aria-label="Filtros del inventario">
+      <button
+        className="inventory-filter-heading"
+        type="button"
+        aria-expanded={filtersOpen}
+        onClick={() => setFiltersOpen((value) => !value)}
+      >
         <span><Filter size={18} /><strong>Filtrar herramientas</strong></span>
-        <b>{visibleTools.length} visibles</b>
-      </div>
-      <div className="inventory-preset-grid">
-        {presetMeta.map(({ id, label, icon: Icon }) => (
-          <button key={id} type="button" className={preset === id ? 'active' : ''} onClick={() => setPreset(id)}>
-            <Icon size={17} /> {label}
+        <span className="inventory-filter-summary"><b>{visibleTools.length} visibles</b><ChevronDown size={17} /></span>
+      </button>
+
+      <div className="inventory-filter-curtain">
+        <div className="inventory-preset-grid">
+          {presetMeta.map(({ id, label, icon: Icon }) => (
+            <button key={id} type="button" className={preset === id ? 'active' : ''} onClick={() => setPreset(id)}>
+              <Icon size={17} /> {label}
+            </button>
+          ))}
+        </div>
+        <label className="inventory-category-filter">
+          <span>Categoría</span>
+          <select value={category} onChange={(event) => setCategory(event.target.value)}>
+            {categories.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </label>
+        {(preset !== 'all' || category !== 'Todas') && (
+          <button className="inventory-reset-filter" type="button" onClick={() => { setPreset('all'); setCategory('Todas'); }}>
+            <RotateCcw size={16} /> Mostrar todo
           </button>
-        ))}
+        )}
       </div>
-      <label className="inventory-category-filter">
-        <span>Categoría</span>
-        <select value={category} onChange={(event) => setCategory(event.target.value)}>
-          {categories.map((item) => <option key={item} value={item}>{item}</option>)}
-        </select>
-      </label>
-      {(preset !== 'all' || category !== 'Todas') && (
-        <button className="inventory-reset-filter" type="button" onClick={() => { setPreset('all'); setCategory('Todas'); }}>
-          <RotateCcw size={16} /> Mostrar todo
-        </button>
-      )}
     </section>,
     host,
   );

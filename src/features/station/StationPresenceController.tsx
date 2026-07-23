@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -8,13 +8,18 @@ import {
   X,
 } from 'lucide-react';
 import { scanQrCode } from '../../services/barcodeScanner';
-import { getStationPresenceConfig } from '../../services/stationPresence/config';
+import {
+  getStationPresenceConfig,
+  type StationPresenceConfig,
+} from '../../services/stationPresence/config';
 import {
   verifyStationToken,
   type StationPass,
 } from '../../services/stationPresence/token';
 
-const configMessage = (reason: ReturnType<typeof getStationPresenceConfig>['reason']) => {
+type DisabledStationReason = Extract<StationPresenceConfig, { enabled: false }>['reason'];
+
+const configMessage = (reason: DisabledStationReason) => {
   if (reason === 'missing-station-id') return 'Falta VITE_ISIVOLT_STATION_ID.';
   if (reason === 'missing-public-key') return 'Falta la clave pública del mini PC.';
   if (reason === 'invalid-public-key') return 'La clave pública configurada no es una clave ECDSA P-256 válida.';
@@ -31,7 +36,7 @@ const passStillValid = (pass: StationPass, now = new Date()) =>
   now.getTime() <= new Date(pass.expiresAt).getTime();
 
 export default function StationPresenceController() {
-  const config = getStationPresenceConfig();
+  const config = useMemo(() => getStationPresenceConfig(), []);
   const nextAllowedButtonRef = useRef<HTMLButtonElement | null>(null);
   const passesRef = useRef(new Map<string, StationPass>());
   const [pending, setPending] = useState<{
@@ -50,13 +55,15 @@ export default function StationPresenceController() {
       const button = target?.closest<HTMLButtonElement>('.operation-review-footer button');
       if (!button || button.disabled) return;
 
+      const operationId = operationIdFromButton(button);
+      if (!operationId) return;
+
       if (nextAllowedButtonRef.current === button) {
         nextAllowedButtonRef.current = null;
+        passesRef.current.delete(operationId);
         return;
       }
 
-      const operationId = operationIdFromButton(button);
-      if (!operationId) return;
       const storedPass = passesRef.current.get(operationId);
       if (storedPass && passStillValid(storedPass)) {
         passesRef.current.delete(operationId);
@@ -89,7 +96,7 @@ export default function StationPresenceController() {
     setChecking(true);
     setTone('info');
     setMessage('Abriendo la cámara para validar el punto de entrega…');
-    let acceptedPass: StationPass | null = null;
+    let acceptedPass: StationPass | undefined;
 
     const verifyValue = async (value: string) => {
       const result = await verifyStationToken(value, config);

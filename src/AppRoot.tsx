@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Database, LoaderCircle, RefreshCcw, ShieldCheck } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Database, Globe2, LoaderCircle, RefreshCcw, ShieldCheck } from 'lucide-react';
 import AppStable from './AppStable';
 import BootErrorBoundary from './BootErrorBoundary';
 import MobileToolsMenu from './components/MobileToolsMenu';
@@ -20,15 +21,17 @@ const timeout = (milliseconds: number) => new Promise<never>((_, reject) => {
 });
 
 export default function AppRoot() {
-  const [bootState, setBootState] = useState<BootState>(() =>
-    window.sessionStorage.getItem('isivolt:skip-native-hydration') === '1' ? 'degraded' : 'loading',
-  );
+  const isWebMode = !Capacitor.isNativePlatform();
+  const [bootState, setBootState] = useState<BootState>(() => {
+    if (isWebMode) return 'ready';
+    return window.sessionStorage.getItem('isivolt:skip-native-hydration') === '1' ? 'degraded' : 'loading';
+  });
   const [bootMessage, setBootMessage] = useState('Preparando la base de datos local…');
 
   useEffect(() => installModalStateObserver(), []);
 
   useEffect(() => {
-    if (bootState !== 'loading') return;
+    if (isWebMode || bootState !== 'loading') return;
     let active = true;
 
     void Promise.race([
@@ -47,7 +50,7 @@ export default function AppRoot() {
     });
 
     return () => { active = false; };
-  }, [bootState]);
+  }, [bootState, isWebMode]);
 
   const retryNative = () => {
     window.sessionStorage.removeItem('isivolt:skip-native-hydration');
@@ -76,6 +79,15 @@ export default function AppRoot() {
         </main>
       ) : (
         <>
+          {isWebMode && (
+            <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
+              <Globe2 size={18} />
+              <div>
+                <strong>Modo web RC30</strong>
+                <span>Los datos se guardan en este navegador · sincronización central pendiente</span>
+              </div>
+            </aside>
+          )}
           {bootState === 'degraded' && (
             <aside className="boot-degraded-banner">
               <Database size={18} />
@@ -93,7 +105,7 @@ export default function AppRoot() {
           <RectificationCenter />
           <CommissioningCenter />
           <MobileToolsMenu />
-          {bootState === 'ready' && (
+          {!isWebMode && bootState === 'ready' && (
             <span className="boot-ready-marker" aria-label="Arranque protegido completado"><ShieldCheck size={14} /></span>
           )}
         </>

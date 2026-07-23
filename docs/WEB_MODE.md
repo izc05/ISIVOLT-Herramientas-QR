@@ -4,7 +4,7 @@
 
 Publicar ISIVOLT Herramientas QR en GitHub Pages para validar la interfaz y las operaciones desde móvil, tablet y ordenador sin generar una APK en cada cambio.
 
-## Dirección prevista
+## Dirección
 
 `https://izc05.github.io/ISIVOLT-Herramientas-QR/`
 
@@ -19,12 +19,28 @@ Cada actualización de `agent/rc31-web-preview` valida y publica automáticament
 En navegador la aplicación mantiene disponibles:
 
 - Inventario y fichas de herramientas.
-- Técnicos y tarjetas asociadas mediante entrada manual.
+- Técnicos y tarjetas asociadas.
 - Préstamos, devoluciones e incidencias.
 - OT, ubicación y fecha prevista de devolución.
 - Comprobación de accesorios.
 - Historial, filtros, alertas y auditoría.
 - Exportaciones y copias compatibles con las funciones web.
+- Escaneo de QR y códigos lineales mediante la cámara del navegador.
+- Selección manual permanente como alternativa.
+
+## Escáner web
+
+El botón de cámara abre un visor específico que:
+
+- Explica el uso de la cámara antes de pedir permiso.
+- Prioriza la cámara trasera del móvil.
+- Procesa la imagen exclusivamente en el dispositivo.
+- Usa primero `BarcodeDetector` cuando el navegador lo admite.
+- Utiliza ZXing como lector alternativo para QR y códigos lineales.
+- Reutiliza el registro de tarjetas de técnico y los mismos flujos de validación de la aplicación.
+- Detiene todas las pistas de vídeo al detectar, cancelar, cerrar o abandonar la página.
+
+La cámara no graba ni sube fotografías o vídeos. Los formatos prioritarios incluyen QR, CODE 39, CODE 93, CODE 128, Codabar, EAN, ITF, UPC, Data Matrix, PDF417 y Aztec.
 
 ## Persistencia
 
@@ -46,10 +62,8 @@ Las siguientes funciones permanecen reservadas para Android o necesitan una alte
 - SQLite nativo.
 - NFC.
 - Impresión Android nativa.
-- Vibración y control físico del botón Atrás.
-- Escáner ML Kit de la APK.
-
-La selección manual de herramientas y técnicos continúa disponible. La cámara web se añadirá como bloque independiente.
+- Control físico del botón Atrás.
+- ML Kit, que continúa reservado para una futura APK.
 
 ## Publicación
 
@@ -64,8 +78,8 @@ La rama de publicación inicial es `agent/rc31-web-preview`.
 
 ## Próximos bloques
 
-1. Validar el despliegue y la experiencia responsive.
-2. Incorporar escaneo QR y código de barras mediante cámara web.
+1. Validar físicamente QR de herramienta y tarjeta corporativa en Android Chrome.
+2. Limpiar workflows heredados que se ejecutan fuera de sus ramas.
 3. Diseñar la base central y la cola de sincronización.
 4. Añadir autenticación y permisos por técnico.
 5. Sustituir los datos aislados del navegador por información compartida.

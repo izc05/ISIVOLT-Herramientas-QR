@@ -46,6 +46,11 @@ export default function MobileToolsMenu() {
     };
   }, []);
 
+  useEffect(() => {
+    document.body.classList.toggle('mobile-tools-open', open);
+    return () => document.body.classList.remove('mobile-tools-open');
+  }, [open]);
+
   const launch = (selector: string) => {
     setOpen(false);
     window.setTimeout(() => {

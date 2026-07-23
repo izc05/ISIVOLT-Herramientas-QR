@@ -21,6 +21,7 @@ import './stability.css';
 import './components/mobile-tools-menu.css';
 import './features/history/movement-history.css';
 import './features/history/movement-history-rc30.css';
+import './features/history/presence-audit-rc40.css';
 import './features/inventory/inventory-operational.css';
 import './features/inventory/tool-scan-alert.css';
 import './features/management/management.css';

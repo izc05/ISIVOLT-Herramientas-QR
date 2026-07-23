@@ -35,21 +35,32 @@ La aplicación se valida y evoluciona mediante GitHub Pages. Android se conserva
 
 ### Bloque 4 — Base central y sincronización
 
-- [ ] Modelo central de técnicos, herramientas, movimientos y accesorios.
-- [ ] Servidor como fuente de verdad.
-- [ ] Cola offline de operaciones pendientes.
-- [ ] Idempotencia mediante `operationId`.
-- [ ] Resolución de conflictos de préstamo y devolución.
-- [ ] Diagnóstico y reintento seguro.
+- [x] Modelo central de técnicos, herramientas, movimientos y accesorios preparado.
+- [ ] Servidor como fuente de verdad validado en Supabase QA.
+- [x] Cola offline de operaciones pendientes.
+- [x] Idempotencia mediante `operationId`.
+- [x] Resolución explícita de conflictos preparada.
+- [x] Diagnóstico y reintento seguro.
 
 ### Bloque 5 — Usuarios y panel central
 
-- [ ] Autenticación.
-- [ ] Roles Administrador, Almacén y Técnico.
-- [ ] Permisos reales por técnico.
-- [ ] Inventario global compartido.
+- [x] Acceso Supabase preparado.
+- [x] Roles Administrador, Almacén, Coordinador y Técnico.
+- [x] Permisos locales reales por técnico.
+- [ ] Inventario global compartido validado con dos sesiones.
 - [ ] Alertas, vencimientos y auditoría central.
 - [ ] Kits o maletines de herramientas.
+
+### Bloque 6 — Punto de entrega físico
+
+- [x] Ficha de herramienta centrada en escritorio.
+- [x] Modo opcional de QR firmado y rotatorio.
+- [x] Verificación ECDSA P-256, estación y caducidad.
+- [x] Bloqueo seguro cuando la configuración está incompleta.
+- [ ] Servicio generador de QR en el mini PC.
+- [ ] Consumo único del nonce en servidor.
+- [ ] Piloto físico en la red Wi-Fi del almacén.
+- [ ] Evaluar aprobación adicional desde el puesto fijo.
 
 ## Principios históricos conservados
 
@@ -76,6 +87,13 @@ Seguimiento: PR #42.
 - [x] Identificación empezando por técnico o herramienta.
 - [x] Confirmación al cancelar una operación preparada.
 - [x] RC30 Android paralela conservada para una fase posterior.
+
+## RC36–RC38 — Ruta multiusuario
+
+- RC36: perfiles locales y técnico vinculado.
+- RC37: sincronización transaccional, acceso Supabase y centro de conflictos.
+- RC38: modal de herramienta centrado y punto de entrega presencial.
+- Bloqueo actual: validación PostgreSQL en una rama Supabase QA aislada.
 
 ## Núcleo profesional ya construido
 

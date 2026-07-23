@@ -1,0 +1,33 @@
+name: Validar punto de entrega
+
+on:
+  pull_request:
+    branches:
+      - agent/rc38-station-presence-ux
+      - agent/rc31-web-preview
+  push:
+    branches:
+      - agent/rc39-mini-pc-station-service
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  station:
+    name: Probar servicio de estación
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: station-service
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependencias
+        run: npm install
+      - name: Ejecutar pruebas del mini PC
+        run: npm test

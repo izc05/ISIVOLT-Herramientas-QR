@@ -6,6 +6,7 @@ import BootErrorBoundary from './BootErrorBoundary';
 import MobileToolsMenu from './components/MobileToolsMenu';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
 import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
+import ResponsiveInventoryEnhancer from './features/inventory/ResponsiveInventoryEnhancer';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
 import NfcManagementCenter from './features/nfc/NfcManagementCenter';
 import FastScanWorkflow from './features/operations/FastScanWorkflow';
@@ -98,8 +99,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC33</strong>
-                  <span>Técnico primero · cámara continua · datos locales</span>
+                  <strong>Modo web RC34</strong>
+                  <span>Responsive · técnico primero · inventario compacto</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
@@ -118,6 +119,7 @@ export default function AppRoot() {
           {isWebMode && <FastScanWorkflow />}
           <AppStable />
           <InventoryOperationalEnhancer />
+          <ResponsiveInventoryEnhancer />
           <MaintenanceBoard onSaved={() => window.dispatchEvent(new CustomEvent('isivolt:management-refresh'))} />
           <NfcManagementCenter />
           <RectificationCenter />

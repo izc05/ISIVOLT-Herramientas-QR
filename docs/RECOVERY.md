@@ -6,7 +6,7 @@ Evitar pérdidas, duplicados o confirmaciones falsas cuando Android pausa o cier
 
 ## Capas de persistencia
 
-La candidata RC24 utiliza varias capas coordinadas:
+La candidata RC30 utiliza varias capas coordinadas:
 
 1. Estado local inmediato para mantener la interfaz operativa.
 2. Cola secuencial de escrituras para que dos cambios no se pisen.
@@ -42,6 +42,17 @@ Durante el arranque se comparan el estado local y SQLite.
 
 Cuando el estado local contiene herramientas, técnicos o movimientos que todavía no aparecen en SQLite, la aplicación vuelve a escribir el estado normalizado. La reconstrucción no elimina el registro local que sirve de recuperación.
 
+Si SQLite llegó a confirmar un movimiento antes del cierre, pero Android no tuvo tiempo de copiar de vuelta sus metadatos al almacenamiento local, la recuperación combina ambas copias antes de reconstruir la base. De esta forma se conservan:
+
+- `deviceId`, que identifica el teléfono que registró la operación.
+- `syncStatus`, que informa del estado de sincronización.
+- `operationId`, que impide volver a aplicar el mismo lote.
+- El resto del movimiento local pendiente.
+
+La combinación nunca sustituye un `deviceId` o `syncStatus` que ya estuviera definido en el estado local. También mantiene intactos los movimientos nuevos que todavía no existan en SQLite.
+
+Este comportamiento está cubierto por pruebas automatizadas de regresión.
+
 ## Tarjetas corporativas
 
 Desde SQLite v5, cada técnico puede incluir `barcodeValue`.
@@ -65,6 +76,7 @@ La fuente principal es la ficha del técnico. La preferencia auxiliar solo actú
 - v3: identificación NFC.
 - v4: `operationId` para idempotencia.
 - v5: código de barras único por técnico.
+- v6: fecha prevista de devolución, OT, ubicación y comprobaciones de accesorios.
 
 Las migraciones se ejecutan dentro de transacciones y se validan automáticamente sobre sqlite3 real.
 
@@ -85,10 +97,12 @@ Una restauración completa debe comprobar:
 2. Técnicos activos e inactivos.
 3. Códigos de barras de técnicos.
 4. Movimientos y `operationId`.
-5. Accesorios.
-6. Mantenimiento.
-7. Fotografías incluidas o referenciadas según el formato de copia.
-8. Diagnóstico SQLite v5.
+5. `deviceId` y `syncStatus` de cada movimiento.
+6. Accesorios y sus comprobaciones.
+7. OT, ubicación y fecha prevista de devolución.
+8. Mantenimiento.
+9. Fotografías incluidas o referenciadas según el formato de copia.
+10. Diagnóstico SQLite v6.
 
 ## Prueba de cierre forzado
 
@@ -99,7 +113,7 @@ Para validar la recuperación:
 3. Cerrar inmediatamente la aplicación desde tareas recientes.
 4. Volver a abrir.
 5. Comprobar que la herramienta está prestada una sola vez.
-6. Revisar el historial y el `operationId`.
+6. Revisar el historial, `operationId`, `deviceId` y `syncStatus`.
 7. Repetir el proceso con una devolución.
 8. Repetir después de asociar una tarjeta a un técnico.
 

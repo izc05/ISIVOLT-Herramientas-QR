@@ -1,4 +1,4 @@
-name: Publicar RC30 web
+name: Publicar RC33 web
 
 on:
   push:
@@ -14,6 +14,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  issues: write
 
 concurrency:
   group: github-pages-${{ github.ref }}
@@ -21,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    name: Validar y preparar web
+    name: Validar y preparar RC33 web
     runs-on: ubuntu-latest
     steps:
       - name: Descargar código
@@ -52,7 +53,7 @@ jobs:
           path: ./dist
 
   deploy:
-    name: Publicar sitio
+    name: Publicar RC33
     if: github.event_name != 'pull_request'
     environment:
       name: github-pages
@@ -63,3 +64,10 @@ jobs:
       - name: Desplegar en GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Registrar despliegue verificado
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          gh issue comment 53 --repo "${{ github.repository }}" --body "🚀 **RC33 publicada correctamente en GitHub Pages**\n\nDespliegue verificado por GitHub Actions: ${PAGE_URL}\n\nCommit web publicado: \`${GITHUB_SHA}\`."

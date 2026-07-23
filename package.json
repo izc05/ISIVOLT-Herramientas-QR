@@ -25,6 +25,8 @@
     "@capacitor/preferences": "^8.0.0",
     "@capacitor/share": "^8.0.0",
     "@capgo/capacitor-printer": "^8.1.0",
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
     "lucide-react": "^0.468.0",
     "motion": "^12.0.0",
     "qrcode.react": "^4.2.0",

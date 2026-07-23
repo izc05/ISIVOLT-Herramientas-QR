@@ -15,9 +15,9 @@ permissions:
 
 jobs:
   pocketbase:
-    name: Migraciones, API e idempotencia
+    name: Migraciones, API, permisos y restauración
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     env:
       POCKETBASE_VERSION: 0.39.8
       ISIVOLT_BOOTSTRAP_ADMIN_EMAIL: admin@example.test
@@ -47,7 +47,7 @@ jobs:
 
       - name: Arrancar con base vacía y aplicar migraciones
         run: |
-          rm -rf ./pb_data_ci
+          rm -rf ./pb_data_ci ./pb_restore_ci
           ./pocketbase --dir=./pb_data_ci serve --dev --http=127.0.0.1:8090 > pocketbase-ci.log 2>&1 &
           echo $! > pocketbase-ci.pid
 
@@ -59,12 +59,25 @@ jobs:
           cat smoke-ci.log
           exit "$status"
 
-      - name: Detener servidor
+      - name: Crear y restaurar una copia real
+        run: |
+          kill "$(cat pocketbase-ci.pid)"
+          wait "$(cat pocketbase-ci.pid)" 2>/dev/null || true
+          tar --create --gzip --file pocketbase-backup-ci.tar.gz --directory ./pb_data_ci .
+          mkdir -p ./pb_restore_ci
+          tar --extract --gzip --file pocketbase-backup-ci.tar.gz --directory ./pb_restore_ci
+          ./pocketbase --dir=./pb_restore_ci serve --dev --http=127.0.0.1:8091 > pocketbase-restore-ci.log 2>&1 &
+          echo $! > pocketbase-restore-ci.pid
+          node tests/restore-check.mjs
+
+      - name: Detener servidores
         if: always()
         run: |
-          if [ -f pocketbase-ci.pid ]; then
-            kill "$(cat pocketbase-ci.pid)" 2>/dev/null || true
-          fi
+          for pid_file in pocketbase-ci.pid pocketbase-restore-ci.pid; do
+            if [ -f "$pid_file" ]; then
+              kill "$(cat "$pid_file")" 2>/dev/null || true
+            fi
+          done
 
       - name: Guardar diagnóstico si falla
         if: failure()
@@ -73,8 +86,11 @@ jobs:
           name: pocketbase-rc41-diagnostic
           path: |
             pocketbase-server/pocketbase-ci.log
+            pocketbase-server/pocketbase-restore-ci.log
             pocketbase-server/smoke-ci.log
+            pocketbase-server/pocketbase-backup-ci.tar.gz
             pocketbase-server/pb_data_ci/logs.db
+            pocketbase-server/pb_restore_ci/logs.db
           if-no-files-found: ignore
           retention-days: 2
 

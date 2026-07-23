@@ -42,6 +42,8 @@ El botón de cámara abre un visor específico que:
 
 La cámara no graba ni sube fotografías o vídeos. Los formatos prioritarios incluyen QR, CODE 39, CODE 93, CODE 128, Codabar, EAN, ITF, UPC, Data Matrix, PDF417 y Aztec.
 
+La prueba física está descrita en `docs/WEB_SCANNER_TEST.md`.
+
 ## Persistencia
 
 Hasta incorporar el servidor central, los datos se guardan en `localStorage` dentro del navegador utilizado.

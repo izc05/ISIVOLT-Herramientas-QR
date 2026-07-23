@@ -136,7 +136,7 @@ const attachDeviceToNewMovements = async (
   };
 };
 
-const mergeMovementMetadata = (current: AppData, persisted: AppData): AppData => {
+export const mergeMovementMetadata = (current: AppData, persisted: AppData): AppData => {
   const persistedById = new Map<string, Movement>(
     persisted.movements.map((movement) => [movement.id, movement]),
   );
@@ -200,15 +200,16 @@ export const hydrateAppDataFromNative = async (): Promise<void> => {
 
       if (shouldRecoverLocal && localData) {
         const cleanLocal = prepareData(localData);
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanLocal));
-        await writeNativeAppData(cleanLocal, { replace: true });
+        const recoveredLocal = prepareData(mergeMovementMetadata(cleanLocal, cleanNative));
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(recoveredLocal));
+        await writeNativeAppData(recoveredLocal, { replace: true });
         clearPendingNativeWrite();
         lastNativeWriteError = null;
         await recordNativeStorageEvent(
           'recover-local',
-          'Se ha conservado el estado local pendiente y se ha reconstruido SQLite para evitar pérdida de movimientos.',
+          'Se ha conservado el estado local pendiente, incluidos los metadatos ya confirmados por SQLite, y se ha reconstruido la base nativa.',
         );
-        notifyDataUpdated(cleanLocal);
+        notifyDataUpdated(recoveredLocal);
         return;
       }
 

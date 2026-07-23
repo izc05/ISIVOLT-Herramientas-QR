@@ -4,6 +4,7 @@ import { Database, Globe2, LoaderCircle, RefreshCcw, ShieldCheck } from 'lucide-
 import AppStable from './AppStable';
 import BootErrorBoundary from './BootErrorBoundary';
 import MobileToolsMenu from './components/MobileToolsMenu';
+import ProfessionalShell from './components/ProfessionalShell';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
 import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
 import ResponsiveInventoryEnhancer from './features/inventory/ResponsiveInventoryEnhancer';
@@ -99,11 +100,12 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC34</strong>
-                  <span>Responsive · técnico primero · inventario compacto</span>
+                  <strong>Modo web RC35</strong>
+                  <span>Estructura profesional · técnico primero · inventario compacto</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
+              <ProfessionalShell />
             </>
           )}
           {bootState === 'degraded' && (

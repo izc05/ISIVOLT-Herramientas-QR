@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 const actions = [
+  { label: 'Historial', detail: 'Movimientos y auditoría', selector: '.core-bottom-nav > button:last-child', Icon: History },
   { label: 'Gestión', detail: 'Herramientas y técnicos', selector: '.management-launcher', Icon: SlidersHorizontal },
   { label: 'Tarjetas', detail: 'Código de barras personal', selector: '.technician-barcode-launcher', Icon: Barcode },
   { label: 'NFC', detail: 'Tarjetas y etiquetas NFC', selector: '.nfc-management-launcher', Icon: ScanLine },
@@ -45,6 +46,11 @@ export default function MobileToolsMenu() {
     };
   }, []);
 
+  useEffect(() => {
+    document.body.classList.toggle('mobile-tools-open', open);
+    return () => document.body.classList.remove('mobile-tools-open');
+  }, [open]);
+
   const launch = (selector: string) => {
     setOpen(false);
     window.setTimeout(() => {
@@ -57,7 +63,7 @@ export default function MobileToolsMenu() {
     <div className={`mobile-tools-menu ${open ? 'open' : ''}`}>
       {open && (
         <div className="mobile-tools-sheet" role="menu" aria-label="Herramientas de administración">
-          <header><div><ClipboardCheck size={19} /><span><strong>Herramientas</strong><small>Accesos administrativos</small></span></div><button onClick={() => setOpen(false)} aria-label="Cerrar"><X size={19} /></button></header>
+          <header><div><ClipboardCheck size={19} /><span><strong>Más opciones</strong><small>Historial y administración</small></span></div><button onClick={() => setOpen(false)} aria-label="Cerrar"><X size={19} /></button></header>
           <div>
             {actions.map(({ label, detail, selector, Icon }) => (
               <button type="button" role="menuitem" key={label} onClick={() => launch(selector)}>
@@ -68,7 +74,7 @@ export default function MobileToolsMenu() {
           </div>
         </div>
       )}
-      <button className="mobile-tools-launcher" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label="Abrir herramientas">
+      <button className="mobile-tools-launcher" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label="Abrir más opciones">
         {open ? <X size={22} /> : <SlidersHorizontal size={22} />}
       </button>
     </div>

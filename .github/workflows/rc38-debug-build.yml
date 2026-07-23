@@ -13,37 +13,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar código
-        uses: actions/checkout@v4
-      - name: Preparar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Instalar dependencias
-        run: npm ci --silent
-      - name: Compilar RC38 y guardar diagnóstico
-        id: build
+      - name: Compilar y publicar diagnóstico
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_BRANCH: ${{ github.head_ref }}
         run: |
+          set -o pipefail
+          git clone --quiet --depth 1 --branch "$HEAD_BRANCH" "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
+          cd repo
+          npm ci --silent
           set +e
           npm run build > build.log 2>&1
           status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit 0
-      - name: Publicar error en el PR principal temporalmente
-        if: steps.build.outputs.status != '0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          {
-            echo '### Diagnóstico temporal RC38'
-            echo
-            echo '```text'
+          set -e
+          if [ "$status" -ne 0 ]; then
             tail -n 80 build.log
-            echo '```'
-          } > build-comment.md
-          gh pr comment 70 --body-file build-comment.md
-      - name: Marcar fallo de compilación
-        if: steps.build.outputs.status != '0'
-        run: exit 1
+            {
+              echo '### Diagnóstico temporal RC38'
+              echo
+              echo '```text'
+              tail -n 80 build.log
+              echo '```'
+            } > build-comment.md
+            gh pr comment 70 --body-file build-comment.md
+            exit "$status"
+          fi
+          echo 'RC38 compila correctamente.'

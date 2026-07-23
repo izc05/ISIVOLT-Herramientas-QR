@@ -135,6 +135,9 @@ export const toRemoteRow = (
     expected_return_at: payload.expectedReturnAt ?? null,
     work_order: payload.workOrder ?? null,
     work_location: payload.workLocation ?? null,
+    station_id: payload.stationId ?? null,
+    station_nonce: payload.stationNonce ?? null,
+    station_verified_at: payload.stationVerifiedAt ?? null,
     reversed_movement_id: payload.reversedMovementId ?? null,
   };
 };
@@ -236,6 +239,9 @@ export const remoteMovementToDomain = (row: Record<string, unknown>): Movement =
   expectedReturnAt: optionalString(row.expected_return_at),
   workOrder: optionalString(row.work_order),
   workLocation: optionalString(row.work_location),
+  stationId: optionalString(row.station_id),
+  stationNonce: optionalString(row.station_nonce),
+  stationVerifiedAt: optionalString(row.station_verified_at),
   reversedMovementId: optionalString(row.reversed_movement_id),
   syncStatus: 'synced',
 });

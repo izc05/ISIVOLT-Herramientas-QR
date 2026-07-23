@@ -48,7 +48,7 @@ const decorateSheet = () => {
     status.classList.remove('status-available', 'status-loaned', 'status-review', 'status-damaged', 'status-retired', 'status-blocked');
     status.classList.add(`status-${lifecycle.key}`);
     const icon = status.querySelector('svg')?.outerHTML ?? '';
-    status.innerHTML = `${icon}${lifecycle.label}`;
+    status.innerHTML = `${icon}<span>${lifecycle.label}</span>`;
   }
 
   const footer = sheet.querySelector<HTMLElement>('.tool-sheet-footer');
@@ -113,6 +113,19 @@ export default function ToolLifecycleManager() {
     };
     window.addEventListener('isivolt:data-updated', update);
     return () => window.removeEventListener('isivolt:data-updated', update);
+  }, [tool]);
+
+  useEffect(() => {
+    document.body.classList.toggle('rc36-state-open', Boolean(tool));
+    if (!tool) return undefined;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setTool(null);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape);
+      document.body.classList.remove('rc36-state-open');
+    };
   }, [tool]);
 
   const actions = useMemo(() => tool ? listToolLifecycleActions(tool) : [], [tool]);

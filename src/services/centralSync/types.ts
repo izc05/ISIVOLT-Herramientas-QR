@@ -39,7 +39,9 @@ export type SyncConflict = {
   entityId: string;
   localItemId: string;
   remoteEventId: number;
+  remoteAction?: RemoteSyncEvent['action'];
   remotePayload: Record<string, unknown>;
+  remoteOccurredAt?: string;
   detectedAt: string;
   reason: 'local-change-pending';
 };

@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { permissionsForRole } from './permissions';
+import {
+  canChooseOperationTechnician,
+  permissionsForRole,
+  requiresLinkedTechnician,
+} from './permissions';
+import type { SecurityUser } from './types';
+
+const user = (role: SecurityUser['role']): SecurityUser => ({
+  id: `user-${role}`,
+  name: role,
+  role,
+  pinHash: 'hash',
+  active: true,
+  failedAttempts: 0,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+});
 
 describe('permisos por rol', () => {
   it('concede control completo al administrador', () => {
@@ -19,7 +35,30 @@ describe('permisos por rol', () => {
     expect(permissions).not.toContain('backup.restore');
   });
 
-  it('mantiene al técnico en modo consulta', () => {
-    expect(permissionsForRole('technician')).toEqual([]);
+  it('mantiene al coordinador en consulta e informes', () => {
+    const permissions = permissionsForRole('coordinator');
+    expect(permissions).toContain('reports.export');
+    expect(permissions).toContain('audit.view');
+    expect(permissions).not.toContain('operations.execute');
+    expect(permissions).not.toContain('inventory.manage');
+  });
+
+  it('permite al técnico operar sin conceder gestión administrativa', () => {
+    const permissions = permissionsForRole('technician');
+    expect(permissions).toContain('operations.execute');
+    expect(permissions).not.toContain('inventory.manage');
+    expect(permissions).not.toContain('maintenance.manage');
+  });
+
+  it('solo permite elegir cualquier técnico a administración y almacén', () => {
+    expect(canChooseOperationTechnician(user('admin'))).toBe(true);
+    expect(canChooseOperationTechnician(user('warehouse'))).toBe(true);
+    expect(canChooseOperationTechnician(user('coordinator'))).toBe(false);
+    expect(canChooseOperationTechnician(user('technician'))).toBe(false);
+  });
+
+  it('exige una ficha vinculada únicamente al usuario técnico', () => {
+    expect(requiresLinkedTechnician(user('technician'))).toBe(true);
+    expect(requiresLinkedTechnician(user('coordinator'))).toBe(false);
   });
 });

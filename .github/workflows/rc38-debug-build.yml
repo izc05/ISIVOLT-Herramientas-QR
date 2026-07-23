@@ -1,0 +1,25 @@
+name: Diagnóstico RC38
+
+on:
+  push:
+    branches:
+      - agent/rc38-station-presence-ux
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Compilar RC38
+        run: npm run build

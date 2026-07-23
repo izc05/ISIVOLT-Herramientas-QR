@@ -39,6 +39,12 @@ const decodeBase64Url = (value: string): Uint8Array => {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 };
 
+const copyToArrayBuffer = (value: Uint8Array): ArrayBuffer => {
+  const copy = new Uint8Array(value.byteLength);
+  copy.set(value);
+  return copy.buffer;
+};
+
 const decodeText = (value: string): string =>
   new TextDecoder().decode(decodeBase64Url(value));
 
@@ -143,11 +149,13 @@ export const verifyStationToken = async (
       false,
       ['verify'],
     );
+    const signature = copyToArrayBuffer(parsed.signature);
+    const message = copyToArrayBuffer(new TextEncoder().encode(parsed.payloadSegment));
     const valid = await globalThis.crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },
       publicKey,
-      parsed.signature,
-      new TextEncoder().encode(parsed.payloadSegment),
+      signature,
+      message,
     );
     if (!valid) {
       return { valid: false, code: 'signature-invalid', message: 'La firma del QR no pertenece al mini PC autorizado.' };

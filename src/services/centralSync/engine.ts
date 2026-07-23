@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { loadAppData, saveAppData } from '../storage';
+import { loadAppData } from '../storage';
+import { saveRemoteAppData } from './capture';
 import { getCentralSyncClient } from './client';
 import { getCentralSyncConfig } from './config';
 import { mergeRemoteSyncEvents } from './merge';
@@ -137,7 +138,7 @@ const downloadRemoteEvents = async (
       readSyncConflicts(),
     );
 
-    saveAppData(result.data, { skipCentralSync: true });
+    saveRemoteAppData(result.data);
     writeSyncConflicts(result.conflicts);
     cursor = Math.max(cursor, result.cursor);
     writeSyncCursor(cursor);

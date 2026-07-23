@@ -43,6 +43,7 @@ import './mobile-optimization-rc4.css';
 import './rc6-mobile.css';
 import './qr-print-rc6.css';
 import './rc34-responsive-inventory.css';
+import './professional-shell-rc35.css';
 
 const root = document.getElementById('root');
 

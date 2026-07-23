@@ -1,10 +1,9 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type PocketBase from 'pocketbase';
 import { loadAppData } from '../storage';
 import { saveRemoteAppData } from './capture';
 import { getCentralSyncClient } from './client';
 import { getCentralSyncConfig } from './config';
 import { mergeRemoteSyncEvents } from './merge';
-import { toRemoteRow } from './mappers';
 import {
   getReadySyncItems,
   markSyncItemFailed,
@@ -26,60 +25,40 @@ const errorMessage = (error: unknown) => {
     const message = (error as { message?: unknown }).message;
     if (typeof message === 'string' && message.trim()) return message;
   }
-  return 'No se ha podido completar la sincronización.';
-};
-
-const registerDevice = async (
-  client: SupabaseClient,
-  item: SyncQueueItem,
-  userId: string,
-) => {
-  if (item.entity !== 'movements') return;
-  const deviceId = typeof item.payload.deviceId === 'string' ? item.payload.deviceId : undefined;
-  if (!deviceId) return;
-
-  const { error } = await client.from('devices').upsert({
-    workspace_id: item.workspaceId,
-    id: deviceId,
-    user_id: userId,
-    name: typeof navigator === 'undefined' ? 'Dispositivo ISIVOLT' : navigator.userAgent,
-    platform: typeof navigator === 'undefined' ? 'unknown' : navigator.platform,
-    last_seen_at: new Date().toISOString(),
-  }, { onConflict: 'workspace_id,id' });
-
-  if (error) throw error;
+  return 'No se ha podido completar la sincronización con el mini PC.';
 };
 
 const uploadItem = async (
-  client: SupabaseClient,
+  client: PocketBase,
   item: SyncQueueItem,
-  userId: string,
 ) => {
-  await registerDevice(client, item, userId);
-
   if (item.entity === 'movements') {
-    const { error } = await client.rpc('apply_tool_movement', {
-      p_workspace_id: item.workspaceId,
-      p_payload: item.payload,
+    await client.send('/api/isivolt/movement', {
+      method: 'POST',
+      body: {
+        workspaceId: item.workspaceId,
+        payload: item.payload,
+      },
     });
-    if (error) throw error;
     return;
   }
 
-  const row = toRemoteRow(item.entity, item.workspaceId, item.payload, userId);
-  const { error } = await client
-    .from(item.entity)
-    .upsert(row, { onConflict: 'workspace_id,id' });
-  if (error) throw error;
+  await client.send('/api/isivolt/entity', {
+    method: 'POST',
+    body: {
+      workspaceId: item.workspaceId,
+      entity: item.entity,
+      entityId: item.entityId,
+      action: item.action === 'delete' ? 'delete' : 'upsert',
+      payload: item.payload,
+    },
+  });
 };
 
-const uploadPendingItems = async (
-  client: SupabaseClient,
-  userId: string,
-) => {
+const uploadPendingItems = async (client: PocketBase) => {
   for (const item of getReadySyncItems()) {
     try {
-      await uploadItem(client, item, userId);
+      await uploadItem(client, item);
       removeSyncItems([item.id]);
     } catch (error) {
       markSyncItemFailed(item.id, errorMessage(error));
@@ -88,24 +67,28 @@ const uploadPendingItems = async (
   }
 };
 
+type PocketBaseSyncResponse = {
+  events?: RemoteSyncEvent[];
+  cursor?: number;
+  hasMore?: boolean;
+};
+
 const downloadRemoteEvents = async (
-  client: SupabaseClient,
+  client: PocketBase,
   workspaceId: string,
 ) => {
   let cursor = readSyncCursor();
   let keepLoading = true;
 
   while (keepLoading) {
-    const { data, error } = await client
-      .from('sync_events')
-      .select('id,workspace_id,entity,entity_id,action,payload,actor_user_id,occurred_at')
-      .eq('workspace_id', workspaceId)
-      .gt('id', cursor)
-      .order('id', { ascending: true })
-      .limit(500);
-
-    if (error) throw error;
-    const events = (data ?? []) as RemoteSyncEvent[];
+    const response = await client.send<PocketBaseSyncResponse>('/api/isivolt/sync', {
+      method: 'GET',
+      query: {
+        workspace: workspaceId,
+        cursor,
+      },
+    });
+    const events = Array.isArray(response.events) ? response.events : [];
     if (events.length === 0) break;
 
     const result = mergeRemoteSyncEvents(
@@ -117,9 +100,9 @@ const downloadRemoteEvents = async (
 
     saveRemoteAppData(result.data);
     writeSyncConflicts(result.conflicts);
-    cursor = Math.max(cursor, result.cursor);
+    cursor = Math.max(cursor, result.cursor, Number(response.cursor ?? 0));
     writeSyncCursor(cursor);
-    keepLoading = events.length === 500;
+    keepLoading = response.hasMore === true || events.length === 500;
   }
 };
 
@@ -145,14 +128,12 @@ const performCentralSync = async (): Promise<void> => {
     return;
   }
 
-  const { data, error } = await client.auth.getSession();
-  if (error) throw error;
-  const userId = data.session?.user.id;
-  if (!userId) {
+  const userId = client.authStore.record?.id;
+  if (!client.authStore.isValid || !userId) {
     setCentralSyncState({
       mode: 'auth-required',
       enabled: true,
-      message: 'Servidor preparado · inicia sesión para sincronizar',
+      message: 'Mini PC preparado · inicia sesión para sincronizar',
     });
     return;
   }
@@ -160,10 +141,10 @@ const performCentralSync = async (): Promise<void> => {
   setCentralSyncState({
     mode: 'syncing',
     enabled: true,
-    message: 'Sincronizando cambios pendientes…',
+    message: 'Sincronizando con el servidor local…',
   });
 
-  await uploadPendingItems(client, userId);
+  await uploadPendingItems(client);
   await downloadRemoteEvents(client, config.workspaceId);
 
   const conflicts = readSyncConflicts();
@@ -179,7 +160,7 @@ const performCentralSync = async (): Promise<void> => {
       ? `${conflicts.length} conflicto${conflicts.length === 1 ? '' : 's'} requiere${conflicts.length === 1 ? '' : 'n'} revisión`
       : pending.length > 0
         ? `${pending.length} cambio${pending.length === 1 ? '' : 's'} esperando reintento`
-        : 'Datos sincronizados',
+        : 'Datos sincronizados con el mini PC',
   });
 };
 

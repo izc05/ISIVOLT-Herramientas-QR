@@ -19,6 +19,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  issues: write
 
 concurrency:
   group: pages-rc33
@@ -68,3 +69,10 @@ jobs:
       - name: Publicar en GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Registrar despliegue verificado
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          gh issue comment 53 --repo "${{ github.repository }}" --body "🚀 **RC33 publicada correctamente en GitHub Pages**\n\nDespliegue verificado por GitHub Actions: ${PAGE_URL}\n\nCommit web publicado: \`293bc0912f6ee8d1a8f35811650defef2eba5239\`."

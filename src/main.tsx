@@ -36,6 +36,7 @@ import './features/technicians/technician-create.css';
 import './features/technicians/technician-barcode.css';
 import './features/technicians/technician-visual-rc29.css';
 import './features/nfc/nfc-management.css';
+import './features/station/station-presence.css';
 import './security/security.css';
 import './security/role-experience.css';
 import './security/rectification.css';

@@ -6,6 +6,8 @@ La infraestructura de sincronización está incorporada, pero permanece **desact
 
 No se ha conectado esta rama a `isivoltpro-demo-madrid` ni se ha creado un proyecto Supabase nuevo.
 
+El bloque se valida de forma independiente en el PR #49 antes de incorporarlo a la vista previa pública.
+
 ## Arquitectura
 
 - GitHub Pages sirve el frontend estático.

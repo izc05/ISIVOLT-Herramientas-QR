@@ -6,15 +6,28 @@ import {
 } from '@capacitor-mlkit/barcode-scanning';
 import { resolveTechnicianBarcode, loadTechnicianBarcodeRegistry } from './barcodeRegistry';
 import { loadAppData } from './storage';
-import { scanBarcodeWithWebCamera } from './webBarcodeScanner';
+import {
+  scanBarcodeWithWebCamera,
+  type WebBarcodeDetectionDecision,
+  type WebBarcodeScannerOptions,
+} from './webBarcodeScanner';
 
 export type NativeScanResult =
-  | { status: 'success'; value: string; format?: BarcodeFormat }
+  | { status: 'success'; value: string; format?: BarcodeFormat | string }
+  | { status: 'completed' }
+  | { status: 'manual-requested' }
   | { status: 'cancelled' }
   | { status: 'permission-denied'; message: string }
   | { status: 'unsupported'; message: string }
   | { status: 'module-installing'; message: string }
   | { status: 'error'; message: string };
+
+export type ScanQrCodeOptions = Omit<WebBarcodeScannerOptions, 'onDetected'> & {
+  onDetected?: (
+    value: string,
+    format?: string,
+  ) => WebBarcodeDetectionDecision | Promise<WebBarcodeDetectionDecision>;
+};
 
 export type IsivoltQrPayload =
   | { type: 'technician'; code: string; raw: string }
@@ -176,27 +189,38 @@ const resolveRegisteredBarcode = async (rawValue: string): Promise<string> => {
 const scanWebBarcode = async (
   resolveKnownTechnician: boolean,
   manualFallback: (reason?: string) => NativeScanResult,
+  options: ScanQrCodeOptions = {},
 ): Promise<NativeScanResult> => {
-  const result = await scanBarcodeWithWebCamera();
-  if (result.status === 'unsupported') return manualFallback(result.message);
+  const onDetected = options.onDetected
+    ? async (rawValue: string, format?: string) => {
+      const value = resolveKnownTechnician
+        ? await resolveRegisteredBarcode(rawValue)
+        : rawValue;
+      return options.onDetected?.(value, format) ?? { action: 'continue' as const };
+    }
+    : undefined;
+
+  const result = await scanBarcodeWithWebCamera({ ...options, onDetected });
+  if (result.status === 'unsupported' && !options.onDetected) return manualFallback(result.message);
   if (result.status !== 'success') return result;
 
   const value = resolveKnownTechnician
     ? await resolveRegisteredBarcode(result.value)
     : result.value;
 
-  return { status: 'success', value };
+  return { status: 'success', value, format: result.format };
 };
 
 const scanSupportedBarcode = async (
   resolveKnownTechnician: boolean,
+  options: ScanQrCodeOptions = {},
 ): Promise<NativeScanResult> => {
   const manualFallback = (reason?: string) => resolveKnownTechnician
     ? requestManualQrValue(reason)
     : requestManualRawBarcodeValue(reason);
 
   if (!Capacitor.isNativePlatform()) {
-    return scanWebBarcode(resolveKnownTechnician, manualFallback);
+    return scanWebBarcode(resolveKnownTechnician, manualFallback, options);
   }
 
   try {
@@ -248,8 +272,9 @@ const scanSupportedBarcode = async (
   }
 };
 
-export const scanQrCode = async (): Promise<NativeScanResult> =>
-  scanSupportedBarcode(true);
+export const scanQrCode = async (
+  options: ScanQrCodeOptions = {},
+): Promise<NativeScanResult> => scanSupportedBarcode(true, options);
 
 export const scanRawBarcode = async (): Promise<NativeScanResult> =>
   scanSupportedBarcode(false);

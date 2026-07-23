@@ -53,17 +53,6 @@ export const enqueueSyncItems = (
   const current = readSyncOutbox(storage);
 
   for (const item of newItems) {
-    if (item.entity === 'movements') {
-      const toolId = typeof item.payload.toolId === 'string' ? item.payload.toolId : undefined;
-      if (toolId) {
-        for (let index = current.length - 1; index >= 0; index -= 1) {
-          if (current[index].entity === 'tools' && current[index].entityId === toolId) {
-            current.splice(index, 1);
-          }
-        }
-      }
-    }
-
     const existingIndex = current.findIndex((candidate) =>
       candidate.workspaceId === item.workspaceId
       && candidate.entity === item.entity

@@ -1,4 +1,4 @@
-name: Publicar RC33 web en GitHub Pages
+name: Publicar ISIVOLT web en GitHub Pages
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       - .github/workflows/pages.yml
   workflow_run:
     workflows:
-      - Publicar RC30 web
+      - Publicar RC33 web
     branches:
       - agent/rc31-web-preview
     types:
@@ -22,16 +22,16 @@ permissions:
   issues: write
 
 concurrency:
-  group: pages-rc33
+  group: pages-isivolt-web
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Validar y preparar RC33 web
+    name: Validar y preparar ISIVOLT web
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar rama web RC33
+      - name: Descargar rama web
         uses: actions/checkout@v4
         with:
           ref: agent/rc31-web-preview
@@ -59,7 +59,7 @@ jobs:
           path: ./dist
 
   deploy:
-    name: Publicar RC33
+    name: Publicar ISIVOLT
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -74,5 +74,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          WEB_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
-          gh issue comment 53 --repo "${{ github.repository }}" --body "🚀 **RC33 publicada correctamente en GitHub Pages**\n\nDespliegue verificado por GitHub Actions: ${PAGE_URL}\n\nCommit web publicado: \`293bc0912f6ee8d1a8f35811650defef2eba5239\`."
+          gh issue comment 53 --repo "${{ github.repository }}" --body "🚀 **ISIVOLT publicada correctamente en GitHub Pages**
+
+Despliegue verificado por GitHub Actions: ${PAGE_URL}
+
+Commit web publicado: \`${WEB_SHA}\`."

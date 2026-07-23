@@ -9,6 +9,7 @@ import './technician-detail.css';
 import './qr-print.css';
 import './native-scanner.css';
 import './web-barcode-scanner.css';
+import './central-sync.css';
 import './report-center.css';
 import './tool-experience.css';
 import './tool-detail-mobile.css';

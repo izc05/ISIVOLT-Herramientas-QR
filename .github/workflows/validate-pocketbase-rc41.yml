@@ -61,11 +61,19 @@ jobs:
 
       - name: Crear y restaurar una copia real
         run: |
-          kill "$(cat pocketbase-ci.pid)"
-          wait "$(cat pocketbase-ci.pid)" 2>/dev/null || true
+          primary_pid="$(cat pocketbase-ci.pid)"
+          if kill -0 "$primary_pid" 2>/dev/null; then
+            kill "$primary_pid" 2>/dev/null || true
+            for _ in $(seq 1 50); do
+              kill -0 "$primary_pid" 2>/dev/null || break
+              sleep 0.1
+            done
+          fi
           tar --create --gzip --file pocketbase-backup-ci.tar.gz --directory ./pb_data_ci .
+          rm -rf ./pb_restore_ci
           mkdir -p ./pb_restore_ci
           tar --extract --gzip --file pocketbase-backup-ci.tar.gz --directory ./pb_restore_ci
+          test -s ./pb_restore_ci/data.db
           ./pocketbase --dir=./pb_restore_ci serve --dev --http=127.0.0.1:8091 > pocketbase-restore-ci.log 2>&1 &
           echo $! > pocketbase-restore-ci.pid
           node tests/restore-check.mjs

@@ -27,6 +27,12 @@ export type MovementAccessoryCheck = {
   notes?: string;
 };
 
+export type StationProof = {
+  stationId: string;
+  nonce: string;
+  verifiedAt: string;
+};
+
 export type Tool = {
   id: string;
   code: string;
@@ -94,6 +100,9 @@ export type Movement = {
   workOrder?: string;
   workLocation?: string;
   accessoryChecks?: MovementAccessoryCheck[];
+  stationId?: string;
+  stationNonce?: string;
+  stationVerifiedAt?: string;
   reversedMovementId?: string;
   syncStatus?: MovementSyncStatus;
 };

@@ -21,8 +21,6 @@ import type { RemoteSyncEvent, SyncQueueItem } from './types';
 let syncPromise: Promise<void> | null = null;
 let stopAutomaticSync: (() => void) | null = null;
 
-const duplicateKey = (error: { code?: string } | null) => error?.code === '23505';
-
 const errorMessage = (error: unknown) => {
   if (error && typeof error === 'object' && 'message' in error) {
     const message = (error as { message?: unknown }).message;
@@ -52,44 +50,23 @@ const registerDevice = async (
   if (error) throw error;
 };
 
-const uploadAccessoryChecks = async (
-  client: SupabaseClient,
-  item: SyncQueueItem,
-) => {
-  if (item.entity !== 'movements' || !Array.isArray(item.payload.accessoryChecks)) return;
-
-  for (const check of item.payload.accessoryChecks) {
-    if (!check || typeof check !== 'object') continue;
-    const candidate = check as Record<string, unknown>;
-    if (typeof candidate.accessoryId !== 'string' || typeof candidate.condition !== 'string') continue;
-
-    const { error } = await client.from('movement_accessories').insert({
-      workspace_id: item.workspaceId,
-      movement_id: item.entityId,
-      accessory_id: candidate.accessoryId,
-      condition: candidate.condition,
-      notes: candidate.notes ?? null,
-    });
-
-    if (error && !duplicateKey(error)) throw error;
-  }
-};
-
 const uploadItem = async (
   client: SupabaseClient,
   item: SyncQueueItem,
   userId: string,
 ) => {
   await registerDevice(client, item, userId);
-  const row = toRemoteRow(item.entity, item.workspaceId, item.payload, userId);
 
   if (item.entity === 'movements') {
-    const { error } = await client.from('movements').insert(row);
-    if (error && !duplicateKey(error)) throw error;
-    await uploadAccessoryChecks(client, item);
+    const { error } = await client.rpc('apply_tool_movement', {
+      p_workspace_id: item.workspaceId,
+      p_payload: item.payload,
+    });
+    if (error) throw error;
     return;
   }
 
+  const row = toRemoteRow(item.entity, item.workspaceId, item.payload, userId);
   const { error } = await client
     .from(item.entity)
     .upsert(row, { onConflict: 'workspace_id,id' });

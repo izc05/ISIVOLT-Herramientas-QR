@@ -1,8 +1,8 @@
 # Hoja de ruta técnica
 
-## Prioridad actual: web multiusuario con control presencial
+## Prioridad actual: servidor local gratuito y piloto multiusuario
 
-La aplicación se valida y evoluciona mediante GitHub Pages. Android se conserva como plataforma futura, pero el flujo principal es web-first hasta completar la sincronización central, el piloto multiusuario y el punto físico del almacén.
+La aplicación seguirá publicándose en GitHub Pages como vista previa. La implantación real se servirá desde el mini PC mediante HTTPS, con PocketBase como servidor central y SQLite como base de datos. No se utiliza Supabase, Firebase ni ningún servicio mensual.
 
 ### Bloque 1 — Publicación web
 
@@ -11,6 +11,7 @@ La aplicación se valida y evoluciona mediante GitHub Pages. Android se conserva
 - [x] Persistencia local sin iniciar SQLite Android.
 - [x] Diseño profesional responsive para escritorio y móvil.
 - [ ] Piloto completo en móvil, tablet y ordenador.
+- [ ] Publicación de producción desde el mini PC bajo una única URL HTTPS.
 
 ### Bloque 2 — Cámara web
 
@@ -31,26 +32,32 @@ La aplicación se valida y evoluciona mediante GitHub Pages. Android se conserva
 
 - [ ] Limitar workflows históricos a sus ramas originales.
 - [ ] Evitar automatizaciones Android durante la ruta web.
-- [ ] Cerrar o archivar PR antiguos sustituidos por RC30–RC40.
+- [ ] Cerrar o archivar PR antiguos sustituidos por RC30–RC41.
+- [ ] Archivar migraciones Supabase como diseño histórico no desplegable.
 - [ ] Actualizar versión y documentación pública tras integrar la cadena estable.
 
-### Bloque 4 — Base central y sincronización
+### Bloque 4 — Servidor central gratuito
 
-- [x] Modelo central de técnicos, herramientas, movimientos y accesorios preparado.
-- [ ] Servidor como fuente de verdad validado en Supabase QA.
+- [x] PocketBase fijado y reproducible desde una base vacía.
+- [x] SQLite central con usuarios, entidades, movimientos, eventos y dispositivos.
+- [x] API autoritativa: los móviles no escriben directamente en las colecciones.
+- [x] Movimiento transaccional e idempotente mediante `operationId`.
 - [x] Cola offline de operaciones pendientes.
-- [x] Idempotencia mediante `operationId`.
-- [x] Operación PostgreSQL transaccional preparada.
-- [x] Resolución explícita de conflictos preparada.
+- [x] Descarga incremental mediante cursor.
+- [x] Resolución explícita de conflictos.
 - [x] Diagnóstico y reintento seguro.
-- [ ] Prueba real con dos usuarios y dos dispositivos concurrentes.
+- [x] Prueba real de login, préstamo, reintento duplicado y sincronización.
+- [ ] Prueba concurrente con dos usuarios y dos dispositivos.
+- [ ] Restauración de una copia validada en un entorno temporal.
 
-### Bloque 5 — Usuarios y panel central
+### Bloque 5 — Usuarios y gestión central
 
-- [x] Acceso Supabase preparado.
 - [x] Roles Administrador, Almacén, Coordinador y Técnico.
 - [x] Permisos locales reales por técnico.
 - [x] Identidad técnica vinculada y selección propia.
+- [x] Autenticación PocketBase desde la aplicación.
+- [x] Centro de cola offline y conflictos.
+- [ ] Alta y edición de usuarios desde un panel ISIVOLT simplificado.
 - [ ] Inventario global compartido validado con dos sesiones.
 - [ ] Alertas y vencimientos centrales.
 - [ ] Kits o maletines de herramientas.
@@ -66,7 +73,7 @@ La aplicación se valida y evoluciona mediante GitHub Pages. Android se conserva
 - [x] Consumo único del nonce ligado a `operationId`.
 - [x] Auditoría JSONL del mini PC.
 - [x] Evidencia presencial incorporada al movimiento y a la cola offline.
-- [x] Migración PostgreSQL para conservar estación, nonce y hora.
+- [x] Evidencia presencial conservada por PocketBase.
 - [ ] HTTPS reconocido por los móviles para el canje reforzado.
 - [ ] Instalación física en el mini PC real.
 - [ ] Piloto en la red Wi‑Fi del almacén.
@@ -83,55 +90,53 @@ La aplicación se valida y evoluciona mediante GitHub Pages. Android se conserva
 - [ ] Panel central con tendencias y operaciones que requieren revisión.
 - [ ] Reglas configurables de alerta sin acusación automática.
 
+### Bloque 8 — Instalación y operación del mini PC
+
+- [x] Instalador Ubuntu para amd64 y arm64.
+- [x] Usuario de servicio sin acceso interactivo.
+- [x] Servicio `systemd` endurecido.
+- [x] Copia diaria automática con retención.
+- [x] Despliegue de la web en `pb_public`.
+- [x] Proxy HTTPS Caddy preparado.
+- [ ] Instalar certificado local de confianza en los móviles del piloto.
+- [ ] Probar apagado, reinicio y recuperación automática.
+- [ ] Ejecutar y restaurar la primera copia real.
+- [ ] Documentar IP, DNS y credenciales en sobre/custodia administrativa.
+
 ## Principios conservados
 
+- Coste de software y servicios: 0 € mensuales.
 - Uso rápido desde móvil.
 - Funcionamiento local cuando no existe conexión.
-- Movimientos inmutables y auditables.
+- El mini PC es la fuente central de verdad.
+- Movimientos inmutables, idempotentes y auditables.
 - Interfaz móvil clara, rápida y accesible.
 - Datos protegidos mediante validaciones, transacciones y copias.
 - Presencia física verificable sin depender únicamente de la contraseña Wi‑Fi.
 - Ausencia de evidencia no equivale automáticamente a fraude.
+- Ninguna clave de administrador se entrega al navegador.
 
-## RC30 — Recuperación y seguridad operativa
-
-Seguimiento histórico: PR #42.
-
-- [x] Motor único de movimientos para QR, NFC y selección manual.
-- [x] `operationId` compartido por lote.
-- [x] Bloqueo de confirmaciones dobles.
-- [x] Persistencia de `operationId` mediante SQLite v4.
-- [x] Cola secuencial de escrituras SQLite.
-- [x] Recuperación del estado local tras cierre durante un guardado.
-- [x] Confirmación persistente antes de mostrar éxito.
-- [x] Revisión final del lote.
-- [x] Estado individual por herramienta en devoluciones múltiples.
-- [x] Identificación empezando por técnico o herramienta.
-- [x] Confirmación al cancelar una operación preparada.
-
-## RC36–RC40 — Ruta multiusuario y presencial
+## Evolución de la arquitectura
 
 - RC36: perfiles locales y técnico vinculado.
-- RC37: sincronización transaccional, acceso Supabase y centro de conflictos.
+- RC37: cola, sincronización transaccional y centro de conflictos; su adaptador Supabase queda sustituido.
 - RC38: modal de herramienta centrado y barrera de QR firmado.
 - RC39: servicio real del mini PC, canje único y evidencia en movimientos.
 - RC40: auditoría visual, filtros presenciales y resumen por herramienta.
-- Bloqueo actual: validación PostgreSQL en una rama Supabase QA e instalación física del mini PC.
+- RC41: PocketBase y SQLite en el mini PC como arquitectura central definitiva.
 
 ## Núcleo profesional ya construido
 
 - [x] React, TypeScript, Vite y Motion.
 - [x] Directorio de técnicos.
-- [x] Inventario y estados.
+- [x] Inventario, fotografías y estados.
 - [x] Entregas y devoluciones múltiples.
-- [x] QR e impresión A4.
-- [x] Fotografías de herramientas.
+- [x] QR, impresión y escáner web.
 - [x] Excel, CSV y copias JSON.
-- [x] SQLite normalizado con migraciones.
-- [x] Restricciones, claves foráneas y transacciones.
-- [x] Movimientos inmutables.
+- [x] Persistencia offline y cola local.
+- [x] Restricciones, transacciones e idempotencia central.
 - [x] Accesorios y mantenimiento.
-- [x] Usuarios locales, PIN y auditoría.
+- [x] Usuarios, roles, PIN y auditoría.
 - [x] Historial avanzado, alertas y exportaciones.
 - [x] Servicio local independiente para el punto físico.
 

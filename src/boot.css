@@ -93,6 +93,38 @@
 .boot-spin { animation: boot-spin 1s linear infinite; }
 @keyframes boot-spin { to { transform: rotate(360deg); } }
 
+.web-mode-banner {
+  position: fixed;
+  top: calc(54px + env(safe-area-inset-top));
+  right: 14px;
+  z-index: 175;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  width: min(350px, calc(100vw - 28px));
+  padding: 9px 11px;
+  border: 1px solid rgba(94, 239, 188, .3);
+  border-radius: 14px;
+  color: #eafff7;
+  background: rgba(4, 28, 25, .9);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .34), inset 0 0 24px rgba(94, 239, 188, .05);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+}
+
+.web-mode-banner > svg { color: #6cefc1; }
+.web-mode-banner div { display: grid; gap: 1px; min-width: 0; }
+.web-mode-banner strong { font-size: .76rem; }
+.web-mode-banner span {
+  overflow: hidden;
+  color: rgba(225, 255, 245, .66);
+  font-size: .67rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .boot-degraded-banner {
   position: fixed;
   left: 10px;
@@ -121,6 +153,11 @@
   .boot-failure { padding: 14px; }
   .boot-screen section,
   .boot-failure section { padding: 21px 16px; }
+  .web-mode-banner {
+    top: calc(52px + env(safe-area-inset-top));
+    right: 10px;
+    width: min(300px, calc(100vw - 20px));
+  }
   .boot-degraded-banner { grid-template-columns: auto minmax(0,1fr); }
   .boot-degraded-banner button { grid-column: 1 / -1; width: 100%; }
 }

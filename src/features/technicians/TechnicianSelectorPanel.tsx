@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, Search, UserRound, Users } from 'lucide-react';
 import type { Technician, Tool } from '../../domain/types';
+import { getCurrentSecurityUser } from '../../security/session';
 import {
   buildLoanCountByTechnician,
   buildTechnicianCategories,
@@ -18,54 +19,68 @@ type Props = {
 export default function TechnicianSelectorPanel({ technicians, tools, onSelect, onBack }: Props) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('Todas');
-  const categories = useMemo(() => buildTechnicianCategories(technicians), [technicians]);
+  const currentUser = getCurrentSecurityUser();
+  const scopedTechnicians = useMemo(
+    () => currentUser?.role === 'technician'
+      ? technicians.filter((technician) => technician.id === currentUser.technicianId)
+      : technicians,
+    [technicians, currentUser?.role, currentUser?.technicianId],
+  );
+  const categories = useMemo(() => buildTechnicianCategories(scopedTechnicians), [scopedTechnicians]);
   const loanCounts = useMemo(() => buildLoanCountByTechnician(tools), [tools]);
   const filtered = useMemo(
-    () => filterSelectableTechnicians(technicians, query, category),
-    [technicians, query, category],
+    () => filterSelectableTechnicians(scopedTechnicians, query, category),
+    [scopedTechnicians, query, category],
   );
 
   const categoryCount = (item: string) => item === 'Todas'
-    ? technicians.filter((technician) => technician.active).length
-    : technicians.filter((technician) => technician.active && technician.specialty === item).length;
+    ? scopedTechnicians.filter((technician) => technician.active).length
+    : scopedTechnicians.filter((technician) => technician.active && technician.specialty === item).length;
 
   return (
     <section className="technician-selector-panel" aria-label="Seleccionar técnico manualmente">
       <header>
         <button type="button" onClick={onBack} aria-label="Volver al escáner"><ChevronLeft size={20} /></button>
-        <div><small>Identificación alternativa</small><h3>Seleccionar técnico</h3></div>
+        <div>
+          <small>{currentUser?.role === 'technician' ? 'Identidad vinculada' : 'Identificación alternativa'}</small>
+          <h3>{currentUser?.role === 'technician' ? 'Tu ficha técnica' : 'Seleccionar técnico'}</h3>
+        </div>
       </header>
 
-      <label className="technician-selector-search">
-        <Search size={18} />
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Nombre, código o especialidad…"
-          autoFocus
-        />
-      </label>
+      {currentUser?.role !== 'technician' && (
+        <>
+          <label className="technician-selector-search">
+            <Search size={18} />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Nombre, código o especialidad…"
+              autoFocus
+            />
+          </label>
 
-      <div className="technician-selector-categories" aria-label="Filtrar técnicos por categoría">
-        {['Todas', ...categories].map((item) => (
-          <button
-            type="button"
-            key={item}
-            className={category === item ? 'active' : ''}
-            onClick={() => setCategory(item)}
-          >
-            {item} · {categoryCount(item)}
-          </button>
-        ))}
-      </div>
+          <div className="technician-selector-categories" aria-label="Filtrar técnicos por categoría">
+            {['Todas', ...categories].map((item) => (
+              <button
+                type="button"
+                key={item}
+                className={category === item ? 'active' : ''}
+                onClick={() => setCategory(item)}
+              >
+                {item} · {categoryCount(item)}
+              </button>
+            ))}
+          </div>
 
-      <label className="technician-selector-category">
-        <Users size={18} />
-        <select value={category} onChange={(event) => setCategory(event.target.value)}>
-          <option value="Todas">Todas las categorías</option>
-          {categories.map((item) => <option value={item} key={item}>{item}</option>)}
-        </select>
-      </label>
+          <label className="technician-selector-category">
+            <Users size={18} />
+            <select value={category} onChange={(event) => setCategory(event.target.value)}>
+              <option value="Todas">Todas las categorías</option>
+              {categories.map((item) => <option value={item} key={item}>{item}</option>)}
+            </select>
+          </label>
+        </>
+      )}
 
       <div className="technician-selector-results">
         {filtered.map((technician) => (
@@ -83,8 +98,12 @@ export default function TechnicianSelectorPanel({ technicians, tools, onSelect, 
         {filtered.length === 0 && (
           <div className="technician-selector-empty">
             <Users size={30} />
-            <strong>No hay técnicos activos</strong>
-            <span>Cambia la búsqueda o selecciona otra categoría.</span>
+            <strong>{currentUser?.role === 'technician' ? 'Usuario sin ficha vinculada' : 'No hay técnicos activos'}</strong>
+            <span>
+              {currentUser?.role === 'technician'
+                ? 'Un administrador debe vincular este usuario a una ficha técnica activa.'
+                : 'Cambia la búsqueda o selecciona otra categoría.'}
+            </span>
           </div>
         )}
       </div>

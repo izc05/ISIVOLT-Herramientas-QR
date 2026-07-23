@@ -8,16 +8,11 @@ Publicar ISIVOLT Herramientas QR en GitHub Pages para validar la interfaz y las 
 
 `https://izc05.github.io/ISIVOLT-Herramientas-QR/`
 
-## Activación inicial del repositorio
+## Activación del repositorio
 
-GitHub puede requerir una única activación desde la interfaz:
+GitHub Pages está configurado con **GitHub Actions** como origen de publicación y HTTPS obligatorio.
 
-1. Abrir **Settings** del repositorio.
-2. Entrar en **Pages**.
-3. En **Build and deployment**, seleccionar **GitHub Actions** como origen.
-4. Volver a ejecutar `Publicar RC30 web` si el primer despliegue se produjo antes de activar Pages.
-
-Después de esta activación, cada actualización de `agent/rc31-web-preview` publicará automáticamente la web.
+Cada actualización de `agent/rc31-web-preview` valida y publica automáticamente la web RC30.
 
 ## Funcionamiento actual
 

@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react';
 import {
+  Barcode,
   Boxes,
   ChevronRight,
   CircleUserRound,
+  FileSpreadsheet,
+  Files,
+  Hammer,
   History,
   Home,
   MoreHorizontal,
+  Radio,
   RotateCcw,
   ScanLine,
+  Settings2,
   ShieldCheck,
+  Tags,
   Users,
+  Volume2,
   Wrench,
+  X,
 } from 'lucide-react';
 
 type ProfessionalRoute = 'dashboard' | 'inventory' | 'technicians' | 'history';
@@ -45,8 +54,22 @@ const triggerClick = (selector: string) => {
   document.querySelector<HTMLButtonElement>(selector)?.click();
 };
 
+const adminActions = [
+  { label: 'Gestión', detail: 'Herramientas y técnicos', selector: '.management-launcher', Icon: Settings2 },
+  { label: 'Informes', detail: 'Excel y copias de seguridad', selector: '.report-center-launcher', Icon: FileSpreadsheet },
+  { label: 'Tarjetas', detail: 'Código de barras personal', selector: '.technician-barcode-launcher', Icon: Barcode },
+  { label: 'NFC', detail: 'Tarjetas y etiquetas', selector: '.nfc-management-launcher', Icon: Radio },
+  { label: 'Etiquetas QR', detail: 'Impresión y exportación', selector: '.qr-label-launcher', Icon: Tags },
+  { label: 'Archivos', detail: 'Informes de gestión', selector: '.management-files-launcher', Icon: Files },
+  { label: 'Mantenimiento', detail: 'Actuaciones técnicas', selector: '.maintenance-board-launcher', Icon: Hammer },
+  { label: 'Rectificaciones', detail: 'Corregir movimientos', selector: '.rectification-launcher', Icon: History },
+  { label: 'Respuesta', detail: 'Sonido y vibración', selector: '.experience-settings-button', Icon: Volume2 },
+  { label: 'Diagnóstico', detail: 'Estado local y errores', selector: '.stability-badge', Icon: ShieldCheck },
+] as const;
+
 export default function ProfessionalShell() {
   const [route, setRoute] = useState<ProfessionalRoute>('dashboard');
+  const [moreOpen, setMoreOpen] = useState(false);
   const [syncCopy, setSyncCopy] = useState<SyncCopy>({
     title: 'Solo local',
     detail: 'Servidor central pendiente',
@@ -81,9 +104,19 @@ export default function ProfessionalShell() {
     };
   }, []);
 
+  useEffect(() => {
+    document.body.classList.toggle('professional-more-open', moreOpen);
+    return () => document.body.classList.remove('professional-more-open');
+  }, [moreOpen]);
+
   const navigate = (nextRoute: ProfessionalRoute) => {
     findLegacyNavigationButton(nextRoute)?.click();
     setRoute(nextRoute);
+  };
+
+  const launchAdmin = (selector: string) => {
+    setMoreOpen(false);
+    window.setTimeout(() => triggerClick(selector), 40);
   };
 
   const navigation = [
@@ -124,7 +157,7 @@ export default function ProfessionalShell() {
 
         <div className="professional-section-label">Administración</div>
         <nav className="professional-navigation professional-navigation-secondary">
-          <button type="button" onClick={() => triggerClick('.mobile-tools-launcher')}>
+          <button type="button" onClick={() => setMoreOpen(true)}>
             <span><MoreHorizontal size={19} /></span>
             <span><strong>Más</strong><small>Informes y configuración</small></span>
             <ChevronRight size={16} />
@@ -156,6 +189,26 @@ export default function ProfessionalShell() {
         <MoreHorizontal size={21} />
         <span>Más</span>
       </button>
+
+      {moreOpen && (
+        <div className="professional-more-backdrop" onClick={() => setMoreOpen(false)}>
+          <section className="professional-more-panel" role="dialog" aria-modal="true" aria-label="Más opciones" onClick={(event) => event.stopPropagation()}>
+            <header>
+              <div><span><MoreHorizontal size={20} /></span><div><small>Administración</small><h2>Más opciones</h2><p>Accesos agrupados sin botones flotantes.</p></div></div>
+              <button type="button" onClick={() => setMoreOpen(false)} aria-label="Cerrar"><X size={20} /></button>
+            </header>
+            <div className="professional-more-grid">
+              {adminActions.map(({ label, detail, selector, Icon }) => (
+                <button type="button" key={label} onClick={() => launchAdmin(selector)}>
+                  <span><Icon size={21} /></span>
+                  <span><strong>{label}</strong><small>{detail}</small></span>
+                  <ChevronRight size={16} />
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
     </>
   );
 }

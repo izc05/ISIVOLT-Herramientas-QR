@@ -108,10 +108,15 @@ describe('cola offline de sincronización', () => {
     expect(readSyncOutbox(storage)).toEqual([first]);
   });
 
-  it('solo genera el movimiento nuevo y la herramienta modificada', () => {
+  it('genera una sola operación transaccional para préstamo y estado de herramienta', () => {
     const previous = appData([tool()]);
     const next = appData(
-      [tool({ location: 'Taller', updatedAt: '2026-07-23T08:10:00.000Z' })],
+      [tool({
+        status: 'loaned',
+        holderTechnicianId: 'technician-1',
+        loanedAt: '2026-07-23T08:05:00.000Z',
+        updatedAt: '2026-07-23T08:05:00.000Z',
+      })],
       [movement()],
     );
 
@@ -122,10 +127,45 @@ describe('cola offline de sincronización', () => {
       '2026-07-23T08:11:00.000Z',
     );
 
-    expect(items.map((item) => `${item.entity}:${item.entityId}`)).toEqual([
-      'tools:tool-1',
-      'movements:movement-1',
-    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      entity: 'movements',
+      entityId: 'movement-1',
+      payload: {
+        toolId: 'tool-1',
+        toolState: {
+          id: 'tool-1',
+          status: 'loaned',
+          holderTechnicianId: 'technician-1',
+        },
+      },
+    });
+    expect(items[0].payload.toolState).not.toHaveProperty('imageDataUrl');
+  });
+
+  it('mantiene una edición administrativa independiente sin movimiento', () => {
+    const previous = appData([tool()]);
+    const next = appData([tool({ location: 'Taller', updatedAt: '2026-07-23T08:10:00.000Z' })]);
+
+    const items = buildAppDataSyncItems(previous, next, 'workspace-1');
+
+    expect(items.map((item) => `${item.entity}:${item.entityId}`)).toEqual(['tools:tool-1']);
+  });
+
+  it('sustituye el cambio pendiente de herramienta por el movimiento que contiene su estado final', () => {
+    const storage = new MemoryStorage();
+    enqueueSyncItems([queueItem()], storage);
+    enqueueSyncItems([
+      queueItem({
+        id: 'queue-movement',
+        entity: 'movements',
+        entityId: 'movement-1',
+        action: 'insert',
+        payload: { toolId: 'tool-1', toolState: { id: 'tool-1', status: 'loaned' } },
+      }),
+    ], storage);
+
+    expect(readSyncOutbox(storage).map((item) => item.entity)).toEqual(['movements']);
   });
 
   it('aplica espera exponencial después de un fallo', () => {

@@ -45,9 +45,9 @@ export const assertAuthorizedDataChange = (
   next: AppData,
   user: SecurityUser | null,
 ): void => {
-  if (!user?.active) return;
+  if (!user?.active || !previous) return;
 
-  const previousMovementIds = new Set(previous?.movements.map((movement) => movement.id) ?? []);
+  const previousMovementIds = new Set(previous.movements.map((movement) => movement.id));
   const newMovements = next.movements.filter((movement) => !previousMovementIds.has(movement.id));
   if (newMovements.length === 0) return;
 

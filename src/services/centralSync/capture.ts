@@ -1,4 +1,5 @@
 import type { AppData } from '../../domain/types';
+import { runTrustedRemoteChange } from '../../security/operationAuthorization';
 import { loadAppData, saveAppData } from '../storage';
 import { getCentralSyncConfig } from './config';
 import { queueAppDataChanges } from './outbox';
@@ -12,7 +13,7 @@ const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 export const saveRemoteAppData = (data: AppData) => {
   captureSuppressed = true;
   try {
-    saveAppData(data);
+    runTrustedRemoteChange(() => saveAppData(data));
     previousData = clone(data);
   } finally {
     captureSuppressed = false;

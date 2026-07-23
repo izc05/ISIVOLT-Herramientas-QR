@@ -18,6 +18,11 @@ import {
   formatOperationDateTime,
   type InventoryPreset,
 } from './inventoryOperations';
+import { resolveToolCategory } from './inventoryPresentation';
+import {
+  resolveToolLifecyclePresentation,
+  type ToolLifecycleKey,
+} from './toolLifecycle';
 
 const presetMeta: Array<{ id: InventoryPreset; label: string; icon: typeof Boxes }> = [
   { id: 'all', label: 'Todas', icon: Boxes },
@@ -26,8 +31,19 @@ const presetMeta: Array<{ id: InventoryPreset; label: string; icon: typeof Boxes
   { id: 'attention', label: 'Atención', icon: AlertTriangle },
 ];
 
-const findNavButton = (label: string) => [...document.querySelectorAll<HTMLButtonElement>('.bottom-nav button')]
-  .find((button) => button.textContent?.toLocaleLowerCase('es-ES').includes(label.toLocaleLowerCase('es-ES')));
+const lifecycleOptions: Array<{ value: 'all' | ToolLifecycleKey; label: string }> = [
+  { value: 'all', label: 'Todos los estados' },
+  { value: 'available', label: 'Disponible' },
+  { value: 'loaned', label: 'Prestada' },
+  { value: 'review', label: 'En revisión' },
+  { value: 'damaged', label: 'Averiada' },
+  { value: 'blocked', label: 'Bloqueada' },
+  { value: 'retired', label: 'Retirada' },
+];
+
+const findNavButton = (label: string) => [
+  ...document.querySelectorAll<HTMLButtonElement>('.bottom-nav button, .core-bottom-nav button'),
+].find((button) => button.textContent?.toLocaleLowerCase('es-ES').includes(label.toLocaleLowerCase('es-ES')));
 
 const findInventoryHost = () => {
   const sections = [...document.querySelectorAll<HTMLElement>('.page-section')];
@@ -47,15 +63,43 @@ export default function InventoryOperationalEnhancer() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [preset, setPreset] = useState<InventoryPreset>('all');
   const [category, setCategory] = useState('Todas');
+  const [presentationCategory, setPresentationCategory] = useState('all');
+  const [lifecycle, setLifecycle] = useState<'all' | ToolLifecycleKey>('all');
+  const [location, setLocation] = useState('all');
+  const [responsible, setResponsible] = useState('all');
   const [filtersOpen, setFiltersOpen] = useState(
     () => !window.matchMedia('(max-width: 820px)').matches,
   );
 
   const categories = useMemo(() => buildToolCategories(data.tools), [data.tools]);
-  const visibleTools = useMemo(
-    () => filterInventoryTools(data.tools, '', category, preset),
-    [data.tools, category, preset],
+  const locations = useMemo(
+    () => [...new Set(data.tools.map((tool) => tool.location).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')),
+    [data.tools],
   );
+  const responsibleTechnicians = useMemo(() => data.technicians
+    .filter((technician) => data.tools.some((tool) => tool.holderTechnicianId === technician.id))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+  [data.technicians, data.tools]);
+
+  const visibleTools = useMemo(() => filterInventoryTools(data.tools, '', category, preset)
+    .filter((tool) => presentationCategory === 'all' || resolveToolCategory(tool.category).key === presentationCategory)
+    .filter((tool) => lifecycle === 'all' || resolveToolLifecyclePresentation(tool).key === lifecycle)
+    .filter((tool) => location === 'all' || tool.location === location)
+    .filter((tool) => {
+      if (responsible === 'all') return true;
+      if (responsible === 'unassigned') return !tool.holderTechnicianId;
+      return tool.holderTechnicianId === responsible;
+    }), [data.tools, category, preset, presentationCategory, lifecycle, location, responsible]);
+
+  const activeFilterCount = [
+    preset !== 'all',
+    category !== 'Todas',
+    presentationCategory !== 'all',
+    lifecycle !== 'all',
+    location !== 'all',
+    responsible !== 'all',
+  ].filter(Boolean).length;
+
   const visibleIds = useMemo(() => new Set(visibleTools.map((tool) => tool.id)), [visibleTools]);
   const toolByCode = useMemo(() => new Map(data.tools.map((tool) => [tool.code.trim().toUpperCase(), tool])), [data.tools]);
 
@@ -67,7 +111,7 @@ export default function InventoryOperationalEnhancer() {
 
       card.classList.add('tool-card-compact');
       card.dataset.toolCategory = tool.category;
-      card.dataset.toolStatus = tool.status;
+      card.dataset.toolStatus = resolveToolLifecyclePresentation(tool).key;
       card.hidden = !visibleIds.has(tool.id);
 
       let meta = card.querySelector<HTMLElement>('.tool-operation-times');
@@ -115,18 +159,33 @@ export default function InventoryOperationalEnhancer() {
 
   useEffect(() => {
     const updateData = () => setData(loadAppData());
+    const updatePresentationCategory = (event: Event) => {
+      setPresentationCategory((event as CustomEvent<string>).detail || 'all');
+    };
     window.addEventListener('isivolt:data-updated', updateData);
     window.addEventListener('isivolt:management-refresh', updateData);
+    window.addEventListener('isivolt:presentation-category-filter', updatePresentationCategory);
     return () => {
       window.removeEventListener('isivolt:data-updated', updateData);
       window.removeEventListener('isivolt:management-refresh', updateData);
+      window.removeEventListener('isivolt:presentation-category-filter', updatePresentationCategory);
     };
   }, []);
 
+  const resetFilters = () => {
+    setPreset('all');
+    setCategory('Todas');
+    setPresentationCategory('all');
+    setLifecycle('all');
+    setLocation('all');
+    setResponsible('all');
+    window.dispatchEvent(new CustomEvent('isivolt:set-presentation-category', { detail: 'all' }));
+  };
+
   useEffect(() => {
     const openPreset = (nextPreset: InventoryPreset) => {
+      resetFilters();
       setPreset(nextPreset);
-      setCategory('Todas');
       setFiltersOpen(true);
       findNavButton('Inventario')?.click();
     };
@@ -168,7 +227,7 @@ export default function InventoryOperationalEnhancer() {
         aria-expanded={filtersOpen}
         onClick={() => setFiltersOpen((value) => !value)}
       >
-        <span><Filter size={18} /><strong>Filtrar herramientas</strong></span>
+        <span><Filter size={18} /><strong>Filtrar herramientas</strong>{activeFilterCount > 0 && <i className="inventory-active-filter-count">{activeFilterCount}</i>}</span>
         <span className="inventory-filter-summary"><b>{visibleTools.length} visibles</b><ChevronDown size={17} /></span>
       </button>
 
@@ -180,14 +239,40 @@ export default function InventoryOperationalEnhancer() {
             </button>
           ))}
         </div>
+
+        <div className="inventory-advanced-grid">
+          <label>
+            <span>Estado</span>
+            <select value={lifecycle} onChange={(event) => setLifecycle(event.target.value as 'all' | ToolLifecycleKey)}>
+              {lifecycleOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Ubicación</span>
+            <select value={location} onChange={(event) => setLocation(event.target.value)}>
+              <option value="all">Todas las ubicaciones</option>
+              {locations.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Responsable</span>
+            <select value={responsible} onChange={(event) => setResponsible(event.target.value)}>
+              <option value="all">Todos los responsables</option>
+              <option value="unassigned">Sin responsable</option>
+              {responsibleTechnicians.map((technician) => <option key={technician.id} value={technician.id}>{technician.name}</option>)}
+            </select>
+          </label>
+        </div>
+
         <label className="inventory-category-filter">
-          <span>Categoría</span>
+          <span>Categoría exacta</span>
           <select value={category} onChange={(event) => setCategory(event.target.value)}>
             {categories.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </label>
-        {(preset !== 'all' || category !== 'Todas') && (
-          <button className="inventory-reset-filter" type="button" onClick={() => { setPreset('all'); setCategory('Todas'); }}>
+
+        {activeFilterCount > 0 && (
+          <button className="inventory-reset-filter" type="button" onClick={resetFilters}>
             <RotateCcw size={16} /> Mostrar todo
           </button>
         )}

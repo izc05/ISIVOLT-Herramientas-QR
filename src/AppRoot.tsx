@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { Database, Globe2, LoaderCircle, RefreshCcw, ShieldCheck } from 'lucide-react';
 import AppStable from './AppStable';
 import BootErrorBoundary from './BootErrorBoundary';
+import AccountSettingsCenter from './components/AccountSettingsCenter';
 import CentralSyncCenter from './components/CentralSyncCenter';
 import MobileToolsMenu from './components/MobileToolsMenu';
 import ProfessionalShell from './components/ProfessionalShell';
@@ -14,8 +15,10 @@ import ToolEditManager from './features/inventory/ToolEditManager';
 import ToolLifecycleManager from './features/inventory/ToolLifecycleManager';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
 import NfcManagementCenter from './features/nfc/NfcManagementCenter';
+import AuthenticatedTechnicianBridge from './features/operations/AuthenticatedTechnicianBridge';
 import FastScanWorkflow from './features/operations/FastScanWorkflow';
 import StationPresenceController from './features/station/StationPresenceController';
+import TechnicianAccountManager from './features/technicians/TechnicianAccountManager';
 import CommissioningCenter from './production/CommissioningCenter';
 import RectificationCenter from './security/RectificationCenter';
 import RoleExperienceController from './security/RoleExperienceController';
@@ -34,6 +37,7 @@ const timeout = (milliseconds: number) => new Promise<never>((_, reject) => {
 
 export default function AppRoot() {
   const isWebMode = !Capacitor.isNativePlatform();
+  const [appRevision, setAppRevision] = useState(0);
   const [bootState, setBootState] = useState<BootState>(() => {
     if (isWebMode) return 'ready';
     return window.sessionStorage.getItem('isivolt:skip-native-hydration') === '1' ? 'degraded' : 'loading';
@@ -41,6 +45,12 @@ export default function AppRoot() {
   const [bootMessage, setBootMessage] = useState('Preparando la base de datos local…');
 
   useEffect(() => installModalStateObserver(), []);
+
+  useEffect(() => {
+    const refresh = () => setAppRevision((value) => value + 1);
+    window.addEventListener('isivolt:app-refresh', refresh);
+    return () => window.removeEventListener('isivolt:app-refresh', refresh);
+  }, []);
 
   useEffect(() => {
     if (!isWebMode) return undefined;
@@ -83,6 +93,8 @@ export default function AppRoot() {
   return (
     <BootErrorBoundary>
       <SecurityController />
+      <AccountSettingsCenter />
+      <TechnicianAccountManager />
 
       {bootState === 'loading' ? (
         <main className="boot-screen">
@@ -106,8 +118,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC42</strong>
-                  <span>Interfaz móvil depurada · offline protegido · sincronización preparada</span>
+                  <strong>Modo web RC43</strong>
+                  <span>Inventario móvil ordenado · cuentas técnicas · sincronización preparada</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
@@ -128,7 +140,8 @@ export default function AppRoot() {
           <RoleExperienceController />
           <StationPresenceController />
           {isWebMode && <FastScanWorkflow />}
-          <AppStable />
+          <AuthenticatedTechnicianBridge />
+          <AppStable key={appRevision} />
           <InventoryFilterBridge />
           <InventoryOperationalEnhancer />
           <ResponsiveInventoryEnhancer />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   Barcode,
   ClipboardCheck,
+  CloudCog,
   FileSpreadsheet,
   Files,
   Hammer,
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 
 const actions = [
-  { label: 'Historial', detail: 'Movimientos y auditoría', selector: '.core-bottom-nav > button:last-child', Icon: History },
+  { label: 'Sincronización', detail: 'Servidor y datos pendientes', selector: '.central-sync-open-button', Icon: CloudCog },
   { label: 'Gestión', detail: 'Herramientas y técnicos', selector: '.management-launcher', Icon: SlidersHorizontal },
   { label: 'Tarjetas', detail: 'Código de barras personal', selector: '.technician-barcode-launcher', Icon: Barcode },
   { label: 'NFC', detail: 'Tarjetas y etiquetas NFC', selector: '.nfc-management-launcher', Icon: ScanLine },
@@ -63,7 +64,7 @@ export default function MobileToolsMenu() {
     <div className={`mobile-tools-menu ${open ? 'open' : ''}`}>
       {open && (
         <div className="mobile-tools-sheet" role="menu" aria-label="Herramientas de administración">
-          <header><div><ClipboardCheck size={19} /><span><strong>Más opciones</strong><small>Historial y administración</small></span></div><button onClick={() => setOpen(false)} aria-label="Cerrar"><X size={19} /></button></header>
+          <header><div><ClipboardCheck size={19} /><span><strong>Más opciones</strong><small>Administración y configuración</small></span></div><button onClick={() => setOpen(false)} aria-label="Cerrar"><X size={19} /></button></header>
           <div>
             {actions.map(({ label, detail, selector, Icon }) => (
               <button type="button" role="menuitem" key={label} onClick={() => launch(selector)}>

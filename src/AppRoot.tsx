@@ -106,8 +106,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC38</strong>
-                  <span>Offline protegido · sincronización · punto de entrega</span>
+                  <strong>Modo web RC42</strong>
+                  <span>Interfaz móvil depurada · offline protegido · sincronización preparada</span>
                 </div>
               </aside>
               <SyncStatusIndicator />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Barcode,
   Boxes,
@@ -70,6 +71,7 @@ const adminActions = [
 export default function ProfessionalShell() {
   const [route, setRoute] = useState<ProfessionalRoute>('dashboard');
   const [moreOpen, setMoreOpen] = useState(false);
+  const [mobileNavTarget, setMobileNavTarget] = useState<HTMLElement | null>(null);
   const [syncCopy, setSyncCopy] = useState<SyncCopy>({
     title: 'Solo local',
     detail: 'Servidor central pendiente',
@@ -105,6 +107,18 @@ export default function ProfessionalShell() {
   }, []);
 
   useEffect(() => {
+    const synchronizeTarget = () => {
+      setMobileNavTarget(document.querySelector<HTMLElement>('.core-bottom-nav'));
+    };
+
+    const observer = new MutationObserver(synchronizeTarget);
+    observer.observe(document.body, { childList: true, subtree: true });
+    synchronizeTarget();
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     document.body.classList.toggle('professional-more-open', moreOpen);
     return () => document.body.classList.remove('professional-more-open');
   }, [moreOpen]);
@@ -125,6 +139,18 @@ export default function ProfessionalShell() {
     { id: 'technicians' as const, label: 'Técnicos', detail: 'Responsables y material', Icon: Users },
     { id: 'history' as const, label: 'Historial', detail: 'Movimientos y auditoría', Icon: History },
   ];
+
+  const mobileMoreButton = (
+    <button
+      className="professional-mobile-more"
+      type="button"
+      onClick={() => triggerClick('.mobile-tools-launcher')}
+      aria-label="Abrir más opciones"
+    >
+      <MoreHorizontal size={21} />
+      <span>Más</span>
+    </button>
+  );
 
   return (
     <>
@@ -180,15 +206,7 @@ export default function ProfessionalShell() {
         </footer>
       </aside>
 
-      <button
-        className="professional-mobile-more"
-        type="button"
-        onClick={() => triggerClick('.mobile-tools-launcher')}
-        aria-label="Abrir más opciones"
-      >
-        <MoreHorizontal size={21} />
-        <span>Más</span>
-      </button>
+      {mobileNavTarget ? createPortal(mobileMoreButton, mobileNavTarget) : mobileMoreButton}
 
       {moreOpen && (
         <div className="professional-more-backdrop" onClick={() => setMoreOpen(false)}>

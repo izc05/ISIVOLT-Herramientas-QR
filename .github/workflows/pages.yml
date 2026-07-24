@@ -8,7 +8,7 @@ on:
       - .github/workflows/pages.yml
   workflow_run:
     workflows:
-      - Publicar RC33 web
+      - Validar bloques web
     branches:
       - agent/rc31-web-preview
     types:
@@ -78,6 +78,6 @@ jobs:
         run: |
           gh issue comment 53 --repo "${{ github.repository }}" --body "🚀 **ISIVOLT publicada correctamente en GitHub Pages**
 
-Despliegue verificado por GitHub Actions: ${PAGE_URL}
+          Despliegue verificado por GitHub Actions: ${PAGE_URL}
 
-Commit web publicado: \`${WEB_SHA}\`."
+          Commit web publicado: \`${WEB_SHA}\`."

@@ -19,6 +19,7 @@ import './tool-detail-mobile.css';
 import './tool-detail-compat.css';
 import './stability.css';
 import './components/mobile-tools-menu.css';
+import './components/account-settings.css';
 import './features/history/movement-history.css';
 import './features/history/movement-history-rc30.css';
 import './features/history/presence-audit-rc40.css';
@@ -36,6 +37,7 @@ import './features/personalization/greeting-settings.css';
 import './features/technicians/technician-create.css';
 import './features/technicians/technician-barcode.css';
 import './features/technicians/technician-visual-rc29.css';
+import './features/technicians/technician-accounts.css';
 import './features/nfc/nfc-management.css';
 import './features/station/station-presence.css';
 import './security/security.css';
@@ -54,6 +56,7 @@ import './professional-tool-panel-rc35.css';
 import './rc36-lifecycle.css';
 import './rc36-edit-filters.css';
 import './rc42-visual-polish.css';
+import './rc43-mobile-layout.css';
 
 const root = document.getElementById('root');
 

@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, Search, UserRound, Users } from 'lucide-react';
 import type { Technician, Tool } from '../../domain/types';
-import { getCurrentSecurityUser } from '../../security/session';
+import { getEffectiveTechnicianIdentity } from '../../security/effectiveTechnician';
 import {
   buildLoanCountByTechnician,
   buildTechnicianCategories,
@@ -19,12 +19,13 @@ type Props = {
 export default function TechnicianSelectorPanel({ technicians, tools, onSelect, onBack }: Props) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('Todas');
-  const currentUser = getCurrentSecurityUser();
+  const automaticSelectionRef = useRef('');
+  const identity = getEffectiveTechnicianIdentity();
   const scopedTechnicians = useMemo(
-    () => currentUser?.role === 'technician'
-      ? technicians.filter((technician) => technician.id === currentUser.technicianId)
+    () => identity
+      ? technicians.filter((technician) => technician.id === identity.technicianId)
       : technicians,
-    [technicians, currentUser?.role, currentUser?.technicianId],
+    [technicians, identity?.technicianId],
   );
   const categories = useMemo(() => buildTechnicianCategories(scopedTechnicians), [scopedTechnicians]);
   const loanCounts = useMemo(() => buildLoanCountByTechnician(tools), [tools]);
@@ -32,6 +33,14 @@ export default function TechnicianSelectorPanel({ technicians, tools, onSelect, 
     () => filterSelectableTechnicians(scopedTechnicians, query, category),
     [scopedTechnicians, query, category],
   );
+
+  useEffect(() => {
+    if (!identity || automaticSelectionRef.current === identity.technicianId) return;
+    const technician = technicians.find((item) => item.id === identity.technicianId && item.active);
+    if (!technician) return;
+    automaticSelectionRef.current = identity.technicianId;
+    onSelect(technician.id);
+  }, [identity?.technicianId, onSelect, technicians]);
 
   const categoryCount = (item: string) => item === 'Todas'
     ? scopedTechnicians.filter((technician) => technician.active).length
@@ -42,12 +51,12 @@ export default function TechnicianSelectorPanel({ technicians, tools, onSelect, 
       <header>
         <button type="button" onClick={onBack} aria-label="Volver al escáner"><ChevronLeft size={20} /></button>
         <div>
-          <small>{currentUser?.role === 'technician' ? 'Identidad vinculada' : 'Identificación alternativa'}</small>
-          <h3>{currentUser?.role === 'technician' ? 'Tu ficha técnica' : 'Seleccionar técnico'}</h3>
+          <small>{identity ? 'Cuenta autenticada' : 'Identificación alternativa'}</small>
+          <h3>{identity ? 'Tu ficha técnica' : 'Seleccionar técnico'}</h3>
         </div>
       </header>
 
-      {currentUser?.role !== 'technician' && (
+      {!identity && (
         <>
           <label className="technician-selector-search">
             <Search size={18} />
@@ -98,10 +107,10 @@ export default function TechnicianSelectorPanel({ technicians, tools, onSelect, 
         {filtered.length === 0 && (
           <div className="technician-selector-empty">
             <Users size={30} />
-            <strong>{currentUser?.role === 'technician' ? 'Usuario sin ficha vinculada' : 'No hay técnicos activos'}</strong>
+            <strong>{identity ? 'Cuenta sin ficha técnica válida' : 'No hay técnicos activos'}</strong>
             <span>
-              {currentUser?.role === 'technician'
-                ? 'Un administrador debe vincular este usuario a una ficha técnica activa.'
+              {identity
+                ? 'Un administrador debe vincular esta cuenta a una ficha técnica activa.'
                 : 'Cambia la búsqueda o selecciona otra categoría.'}
             </span>
           </div>

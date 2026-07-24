@@ -51,12 +51,16 @@ jobs:
           ./pocketbase --dir=./pb_data_ci serve --dev --http=127.0.0.1:8090 > pocketbase-ci.log 2>&1 &
           echo $! > pocketbase-ci.pid
 
-      - name: Probar autenticación, movimiento y sincronización
+      - name: Probar autenticación, movimientos, cuentas y sincronización
         run: |
           set +e
           node tests/smoke.mjs > smoke-ci.log 2>&1
           status=$?
           cat smoke-ci.log
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          node tests/technician-accounts.mjs > technician-accounts-ci.log 2>&1
+          status=$?
+          cat technician-accounts-ci.log
           exit "$status"
 
       - name: Crear y restaurar una copia real
@@ -91,11 +95,12 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: pocketbase-rc41-diagnostic
+          name: pocketbase-rc43-diagnostic
           path: |
             pocketbase-server/pocketbase-ci.log
             pocketbase-server/pocketbase-restore-ci.log
             pocketbase-server/smoke-ci.log
+            pocketbase-server/technician-accounts-ci.log
             pocketbase-server/pocketbase-backup-ci.tar.gz
             pocketbase-server/pb_data_ci/logs.db
             pocketbase-server/pb_restore_ci/logs.db

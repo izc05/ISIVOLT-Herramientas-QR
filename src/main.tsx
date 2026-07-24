@@ -53,6 +53,7 @@ import './professional-more-rc35.css';
 import './professional-tool-panel-rc35.css';
 import './rc36-lifecycle.css';
 import './rc36-edit-filters.css';
+import './rc42-visual-polish.css';
 
 const root = document.getElementById('root');
 

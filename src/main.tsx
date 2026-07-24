@@ -58,6 +58,7 @@ import './rc36-edit-filters.css';
 import './rc42-visual-polish.css';
 import './rc43-mobile-layout.css';
 import './rc44-professional-system.css';
+import './rc44-screen-polish.css';
 
 const root = document.getElementById('root');
 

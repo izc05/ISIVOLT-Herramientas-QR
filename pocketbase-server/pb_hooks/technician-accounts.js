@@ -81,14 +81,6 @@ function save(e) {
     throw new BadRequestError("Técnico, nombre y correo son obligatorios.");
   }
 
-  var technicianEntity = findOptional(
-    e.app,
-    "isivolt_entities",
-    "workspace = {:workspace} && entity = 'technicians' && external_id = {:technicianId}",
-    { workspace: workspace, technicianId: technicianId }
-  );
-  if (!technicianEntity) throw new BadRequestError("La ficha del técnico todavía no existe en el servidor central.");
-
   var byTechnician = findOptional(
     e.app,
     "isivolt_users",

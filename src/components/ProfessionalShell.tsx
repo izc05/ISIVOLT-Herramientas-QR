@@ -17,6 +17,7 @@ import {
   Settings2,
   ShieldCheck,
   Tags,
+  UserCog,
   Users,
   Volume2,
   Wrench,
@@ -56,7 +57,9 @@ const triggerClick = (selector: string) => {
 };
 
 const adminActions = [
-  { label: 'Gestión', detail: 'Herramientas y técnicos', selector: '.management-launcher', Icon: Settings2 },
+  { label: 'Cuenta y seguridad', detail: 'Perfil, sesiones y acceso', selector: '.security-account-launcher', Icon: UserCog },
+  { label: 'Técnicos y cuentas', detail: 'Editar datos y crear accesos', selector: '.technician-account-manager-launcher', Icon: Users },
+  { label: 'Gestión', detail: 'Herramientas y alertas', selector: '.management-launcher', Icon: Settings2 },
   { label: 'Informes', detail: 'Excel y copias de seguridad', selector: '.report-center-launcher', Icon: FileSpreadsheet },
   { label: 'Tarjetas', detail: 'Código de barras personal', selector: '.technician-barcode-launcher', Icon: Barcode },
   { label: 'NFC', detail: 'Tarjetas y etiquetas', selector: '.nfc-management-launcher', Icon: Radio },
@@ -185,7 +188,7 @@ export default function ProfessionalShell() {
         <nav className="professional-navigation professional-navigation-secondary">
           <button type="button" onClick={() => setMoreOpen(true)}>
             <span><MoreHorizontal size={19} /></span>
-            <span><strong>Más</strong><small>Informes y configuración</small></span>
+            <span><strong>Más</strong><small>Cuenta e informes</small></span>
             <ChevronRight size={16} />
           </button>
           <button type="button" onClick={() => triggerClick('.demo-reset')}>
@@ -200,10 +203,10 @@ export default function ProfessionalShell() {
           <div><strong>{syncCopy.title}</strong><small>{syncCopy.detail}</small></div>
         </section>
 
-        <footer className="professional-user-card">
+        <button className="professional-user-card" type="button" onClick={() => triggerClick('.security-account-launcher')}>
           <span><CircleUserRound size={24} /></span>
-          <div><strong>Isi</strong><small>Administrador</small></div>
-        </footer>
+          <div><strong>Cuenta y seguridad</strong><small>Perfil, PIN y sesiones</small></div>
+        </button>
       </aside>
 
       {mobileNavTarget ? createPortal(mobileMoreButton, mobileNavTarget) : mobileMoreButton}
@@ -212,7 +215,7 @@ export default function ProfessionalShell() {
         <div className="professional-more-backdrop" onClick={() => setMoreOpen(false)}>
           <section className="professional-more-panel" role="dialog" aria-modal="true" aria-label="Más opciones" onClick={(event) => event.stopPropagation()}>
             <header>
-              <div><span><MoreHorizontal size={20} /></span><div><small>Administración</small><h2>Más opciones</h2><p>Accesos agrupados sin botones flotantes.</p></div></div>
+              <div><span><MoreHorizontal size={20} /></span><div><small>Administración</small><h2>Más opciones</h2><p>Cuenta, técnicos, informes y configuración.</p></div></div>
               <button type="button" onClick={() => setMoreOpen(false)} aria-label="Cerrar"><X size={20} /></button>
             </header>
             <div className="professional-more-grid">

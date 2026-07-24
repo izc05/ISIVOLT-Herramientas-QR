@@ -13,12 +13,19 @@ import {
   PackageCheck,
   RotateCcw,
   Search,
+  ShieldCheck,
   UserRound,
   Wrench,
   X,
 } from 'lucide-react';
 import type { AppData, Movement } from '../../domain/types';
 import { loadAppData } from '../../services/storage';
+import {
+  getMovementPresenceState,
+  matchesPresenceFilter,
+  presenceLabel,
+  type PresenceFilter,
+} from './presenceAudit';
 
 type TimePreset = 'all' | 'today' | 'yesterday' | '7days' | '30days' | 'month' | 'range';
 
@@ -119,6 +126,10 @@ const exportAuditCsv = (data: AppData, movements: Movement[]) => {
     'Devolución prevista',
     'Accesorios comprobados',
     'Observaciones',
+    'Presencia física',
+    'Punto de entrega',
+    'Validada el',
+    'Nonce estación',
     'ID operación',
     'ID movimiento',
   ];
@@ -142,6 +153,10 @@ const exportAuditCsv = (data: AppData, movements: Movement[]) => {
       movement.expectedReturnAt ? formatFullDateTime(movement.expectedReturnAt) : '',
       accessorySummary(data, movement).join(' | '),
       movement.notes ?? '',
+      presenceLabel(movement),
+      movement.stationId ?? '',
+      movement.stationVerifiedAt ? formatFullDateTime(movement.stationVerifiedAt) : '',
+      movement.stationNonce ?? '',
       movement.operationId ?? '',
       movement.id,
     ];
@@ -160,11 +175,26 @@ const exportAuditCsv = (data: AppData, movements: Movement[]) => {
   window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 };
 
+const presenceDetail = (movement: Movement) => {
+  const state = getMovementPresenceState(movement);
+  if (state === 'verified') {
+    return `${movement.stationId} · ${formatFullDateTime(movement.stationVerifiedAt!)}`;
+  }
+  if (state === 'partial') {
+    return 'Revisar integridad: falta parte de la evidencia del punto físico.';
+  }
+  if (state === 'missing') {
+    return 'Puede ser un registro anterior a la activación del punto presencial.';
+  }
+  return 'Ajuste administrativo: no requiere presencia física.';
+};
+
 export default function MovementHistoryCenter() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<AppData>(() => loadAppData());
   const [query, setQuery] = useState('');
   const [preset, setPreset] = useState<TimePreset>('all');
+  const [presenceFilter, setPresenceFilter] = useState<PresenceFilter>('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [exported, setExported] = useState(false);
@@ -201,6 +231,7 @@ export default function MovementHistoryCenter() {
         const date = new Date(movement.occurredAt);
         if (start && date < start) return false;
         if (end && date > end) return false;
+        if (!matchesPresenceFilter(movement, presenceFilter)) return false;
 
         const tool = data.tools.find((item) => item.id === movement.toolId);
         const technician = data.technicians.find((item) => item.id === movement.technicianId);
@@ -213,18 +244,26 @@ export default function MovementHistoryCenter() {
           movement.notes ?? '',
           movement.workOrder ?? '',
           movement.workLocation ?? '',
+          movement.stationId ?? '',
+          movement.stationNonce ?? '',
+          presenceLabel(movement),
           accessorySummary(data, movement).join(' '),
           movementPresentation[movement.type].label,
           movement.operationId ?? '',
         ].some((value) => value.toLocaleLowerCase('es-ES').includes(needle));
       });
-  }, [data, query, preset, customStart, customEnd]);
+  }, [data, query, preset, presenceFilter, customStart, customEnd]);
 
   const counts = useMemo(() => ({
     delivery: filtered.filter((movement) => movement.type === 'delivery').length,
     return: filtered.filter((movement) => movement.type === 'return').length,
     incident: filtered.filter((movement) => movement.type === 'incident').length,
     adjustment: filtered.filter((movement) => movement.type === 'adjustment').length,
+    verified: filtered.filter((movement) => getMovementPresenceState(movement) === 'verified').length,
+    withoutProof: filtered.filter((movement) => {
+      const state = getMovementPresenceState(movement);
+      return state === 'missing' || state === 'partial';
+    }).length,
   }), [filtered]);
 
   const exportFiltered = () => {
@@ -250,7 +289,7 @@ export default function MovementHistoryCenter() {
             <div>
               <small>Auditoría local</small>
               <h2>Historial de movimientos</h2>
-              <p>Fecha, OT, ubicación, accesorios y descarga.</p>
+              <p>Fecha, OT, ubicación, accesorios, presencia y descarga.</p>
             </div>
           </div>
           <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={21} /></button>
@@ -262,7 +301,7 @@ export default function MovementHistoryCenter() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Herramienta, técnico, OT, ubicación o accesorio…"
+              placeholder="Herramienta, técnico, OT, ubicación, punto o accesorio…"
             />
           </label>
           <button type="button" onClick={exportFiltered} disabled={filtered.length === 0}>
@@ -292,6 +331,25 @@ export default function MovementHistoryCenter() {
           ))}
         </div>
 
+        <div className="advanced-history-presence-filters" aria-label="Filtrar por evidencia presencial">
+          <span><ShieldCheck size={16} /> Presencia</span>
+          {([
+            ['all', 'Todas'],
+            ['verified', 'Validadas'],
+            ['without-proof', 'Sin evidencia'],
+            ['not-applicable', 'No aplica'],
+          ] as Array<[PresenceFilter, string]>).map(([value, label]) => (
+            <button
+              type="button"
+              key={value}
+              className={presenceFilter === value ? 'active' : ''}
+              onClick={() => setPresenceFilter(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {preset === 'range' && (
           <div className="advanced-history-range">
             <label><CalendarDays size={16} /> Desde<input type="date" value={customStart} onChange={(event) => setCustomStart(event.target.value)} /></label>
@@ -304,6 +362,10 @@ export default function MovementHistoryCenter() {
           <span className="tone-return"><ArrowDownToLine size={15} /><strong>{counts.return}</strong> entradas</span>
           <span className="tone-incident"><AlertTriangle size={15} /><strong>{counts.incident}</strong> incidencias</span>
           <span className="tone-adjustment"><RotateCcw size={15} /><strong>{counts.adjustment}</strong> ajustes</span>
+          <span className="tone-presence"><ShieldCheck size={15} /><strong>{counts.verified}</strong> validadas</span>
+          {counts.withoutProof > 0 && (
+            <span className="tone-without-proof"><History size={15} /><strong>{counts.withoutProof}</strong> sin evidencia</span>
+          )}
         </div>
 
         <div className="advanced-history-list">
@@ -311,10 +373,14 @@ export default function MovementHistoryCenter() {
             const tool = data.tools.find((item) => item.id === movement.toolId);
             const technician = data.technicians.find((item) => item.id === movement.technicianId);
             const presentation = movementPresentation[movement.type];
+            const presenceState = getMovementPresenceState(movement);
             const Icon = presentation.Icon;
             const accessories = accessorySummary(data, movement);
             return (
-              <article key={movement.id} className={`history-${presentation.tone}`}>
+              <article
+                key={movement.id}
+                className={`history-${presentation.tone} history-presence-${presenceState}`}
+              >
                 <span className="advanced-history-icon"><Icon size={19} /></span>
                 <div className="advanced-history-main">
                   <div><strong>{tool?.name ?? 'Herramienta eliminada'}</strong><em>{presentation.label}</em></div>
@@ -323,6 +389,13 @@ export default function MovementHistoryCenter() {
                   {movement.workOrder && <small><ClipboardList size={13} /> {movement.workOrder}</small>}
                   {movement.workLocation && <small><MapPin size={13} /> {movement.workLocation}</small>}
                   {movement.expectedReturnAt && <small><CalendarClock size={13} /> Prevista: {formatFullDateTime(movement.expectedReturnAt)}</small>}
+                  <div className={`advanced-history-presence presence-${presenceState}`}>
+                    {presenceState === 'verified' ? <ShieldCheck size={15} /> : <History size={15} />}
+                    <span>
+                      <strong>{presenceLabel(movement)}</strong>
+                      <small>{presenceDetail(movement)}</small>
+                    </span>
+                  </div>
                   {accessories.length > 0 && (
                     <div className="advanced-history-accessories">
                       <PackageCheck size={14} />
@@ -334,6 +407,9 @@ export default function MovementHistoryCenter() {
                 <div className="advanced-history-meta">
                   <time>{formatFullDateTime(movement.occurredAt)}</time>
                   <span>{movement.operatorName}</span>
+                  {movement.stationNonce && (
+                    <code title={`Nonce estación: ${movement.stationNonce}`}>Pase {movement.stationNonce.slice(0, 10)}…</code>
+                  )}
                   {movement.operationId && <code title={movement.operationId}>{movement.operationId.slice(0, 18)}…</code>}
                 </div>
               </article>
@@ -344,13 +420,13 @@ export default function MovementHistoryCenter() {
             <div className="advanced-history-empty">
               <History size={34} />
               <strong>No hay movimientos en este filtro</strong>
-              <span>Cambia la fecha o la búsqueda.</span>
+              <span>Cambia la fecha, la búsqueda o el filtro presencial.</span>
             </div>
           )}
         </div>
 
         <footer>
-          <span>{filtered.length} registro{filtered.length === 1 ? '' : 's'} visible{filtered.length === 1 ? '' : 's'}</span>
+          <span>{filtered.length} registro{filtered.length === 1 ? '' : 's'} visible{filtered.length === 1 ? '' : 's'} · {counts.verified} con presencia validada</span>
           <button type="button" onClick={() => setOpen(false)}>Cerrar historial</button>
         </footer>
       </section>

@@ -1,0 +1,203 @@
+.web-barcode-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 16000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(1, 6, 14, 0.86);
+  backdrop-filter: blur(18px);
+}
+
+.web-barcode-panel {
+  width: min(540px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(89, 225, 255, 0.3);
+  border-radius: 24px;
+  color: #ecfbff;
+  background: linear-gradient(160deg, rgba(7, 24, 43, 0.99), rgba(4, 9, 20, 0.99));
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.7), 0 0 42px rgba(36, 205, 255, 0.1);
+}
+
+.web-barcode-panel header {
+  display: grid;
+  gap: 7px;
+}
+
+.web-barcode-kicker {
+  color: #79eaff;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.web-barcode-panel h2,
+.web-barcode-panel p {
+  margin: 0;
+}
+
+.web-barcode-panel h2 {
+  font-size: clamp(1.25rem, 4vw, 1.7rem);
+}
+
+.web-barcode-panel header p,
+.web-barcode-status {
+  color: rgba(226, 247, 255, 0.7);
+  line-height: 1.5;
+}
+
+.web-barcode-preview {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid rgba(114, 235, 255, 0.24);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at center, rgba(47, 199, 255, 0.1), transparent 55%),
+    #020711;
+}
+
+.web-barcode-preview video {
+  width: 100%;
+  height: min(56vh, 440px);
+  min-height: 260px;
+  display: block;
+  object-fit: cover;
+  opacity: 0.18;
+  transition: opacity 0.2s ease;
+}
+
+.web-barcode-backdrop.camera-active video {
+  opacity: 1;
+}
+
+.web-barcode-frame {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(78%, 390px);
+  height: min(46%, 190px);
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(113, 239, 255, 0.88);
+  border-radius: 18px;
+  box-shadow: 0 0 0 999px rgba(0, 7, 16, 0.2), 0 0 28px rgba(71, 218, 255, 0.32);
+  pointer-events: none;
+}
+
+.web-barcode-frame::before,
+.web-barcode-frame::after {
+  content: '';
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-color: #7bf0ff;
+}
+
+.web-barcode-frame::before {
+  left: -3px;
+  top: -3px;
+  border-left: 4px solid;
+  border-top: 4px solid;
+  border-radius: 14px 0 0;
+}
+
+.web-barcode-frame::after {
+  right: -3px;
+  bottom: -3px;
+  border-right: 4px solid;
+  border-bottom: 4px solid;
+  border-radius: 0 0 14px;
+}
+
+.web-barcode-sweep {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 50%;
+  height: 2px;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, #74efff, transparent);
+  box-shadow: 0 0 14px rgba(82, 225, 255, 0.8);
+  pointer-events: none;
+}
+
+.web-barcode-backdrop.camera-active .web-barcode-sweep {
+  opacity: 1;
+  animation: web-barcode-sweep 2.1s ease-in-out infinite;
+}
+
+.web-barcode-status {
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid rgba(99, 228, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(50, 189, 226, 0.06);
+  font-size: 0.86rem;
+}
+
+.web-barcode-panel footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.web-barcode-panel button {
+  min-height: 46px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.web-barcode-cancel {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e9f9ff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.web-barcode-start {
+  border: 1px solid rgba(92, 236, 255, 0.4);
+  color: #04131c;
+  background: linear-gradient(135deg, #76ebff, #67efbb);
+}
+
+.web-barcode-panel button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@keyframes web-barcode-sweep {
+  0%, 100% { transform: translateY(-70px); opacity: 0.35; }
+  50% { transform: translateY(70px); opacity: 1; }
+}
+
+@media (max-width: 560px) {
+  .web-barcode-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .web-barcode-panel {
+    width: 100%;
+    max-height: calc(100dvh - env(safe-area-inset-top));
+    padding: 18px 14px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 24px 24px 0 0;
+  }
+
+  .web-barcode-preview,
+  .web-barcode-preview video {
+    min-height: 300px;
+  }
+
+  .web-barcode-panel footer {
+    position: sticky;
+    bottom: 0;
+    padding-top: 4px;
+    background: linear-gradient(180deg, transparent, rgba(4, 9, 20, 0.98) 30%);
+  }
+}

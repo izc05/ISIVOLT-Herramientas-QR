@@ -1,0 +1,73 @@
+name: Desplegar ISIVOLT web
+
+on:
+  push:
+    branches:
+      - agent/rc31-web-preview
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  issues: write
+
+concurrency:
+  group: pages-isivolt-web
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Validar y preparar web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Ejecutar pruebas
+        run: npm test
+
+      - name: Compilar aplicación web
+        run: npm run build
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir sitio web
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./dist
+
+  deploy:
+    name: Publicar en GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Registrar despliegue verificado
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          cat > deployment-comment.md <<EOF
+          🚀 **ISIVOLT publicada correctamente en GitHub Pages**
+
+          Despliegue verificado por GitHub Actions: ${PAGE_URL}
+
+          Commit web publicado: \`${GITHUB_SHA}\`.
+          EOF
+          gh issue comment 53 --repo "${{ github.repository }}" --body-file deployment-comment.md

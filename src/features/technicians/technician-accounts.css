@@ -1,0 +1,123 @@
+.technician-account-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 34500;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 7, 17, .86);
+  backdrop-filter: blur(14px);
+}
+
+.technician-account-center {
+  width: min(1120px, 100%);
+  height: min(820px, calc(100dvh - 36px));
+  display: grid;
+  grid-template-rows: auto minmax(0,1fr);
+  overflow: hidden;
+  border: 1px solid rgba(69, 223, 255, .28);
+  border-radius: 26px;
+  color: #effbff;
+  background: linear-gradient(155deg, rgba(8, 29, 51, .99), rgba(7, 9, 25, .99));
+  box-shadow: 0 34px 100px rgba(0,0,0,.65);
+}
+
+.technician-account-center > header,
+.technician-account-center > header > div,
+.technician-account-section-heading,
+.technician-account-section-heading > div {
+  display: flex;
+  align-items: center;
+}
+
+.technician-account-center > header {
+  justify-content: space-between;
+  gap: 14px;
+  padding: 17px 19px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.technician-account-center > header > div { gap: 12px; }
+.technician-account-center > header > div > span {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  color: #70ecff;
+  background: rgba(48,199,241,.12);
+}
+.technician-account-center h2 { margin: 2px 0; }
+.technician-account-center p { margin: 0; color: rgba(225,244,255,.62); }
+.technician-account-center small { color: rgba(225,244,255,.5); }
+.technician-account-center > header > button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 13px;
+  color: #fff;
+  background: rgba(255,255,255,.04);
+}
+
+.technician-account-layout { min-height: 0; display: grid; grid-template-columns: minmax(270px, .34fr) minmax(0, .66fr); }
+.technician-account-layout > aside { min-height: 0; display: grid; grid-template-rows: auto auto minmax(0,1fr); gap: 10px; padding: 13px; border-right: 1px solid rgba(255,255,255,.07); background: rgba(2,10,22,.34); }
+.technician-account-layout > aside > label { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: rgba(255,255,255,.025); }
+.technician-account-layout input,
+.technician-account-layout select { width: 100%; border: 0; outline: 0; color: #fff; background: transparent; font: inherit; }
+.technician-account-new { min-height: 42px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(74,226,255,.22); border-radius: 12px; color: #dffaff; background: rgba(48,199,241,.09); font-weight: 800; }
+.technician-account-list { min-height: 0; display: grid; align-content: start; gap: 7px; overflow: auto; scrollbar-width: none; }
+.technician-account-list::-webkit-scrollbar { display: none; }
+.technician-account-list > button { display: grid; grid-template-columns: 42px minmax(0,1fr) auto; align-items: center; gap: 9px; min-height: 72px; padding: 9px; border: 1px solid rgba(255,255,255,.06); border-radius: 13px; color: #eefaff; background: rgba(255,255,255,.022); text-align: left; }
+.technician-account-list > button.active { border-color: rgba(75,228,255,.42); background: rgba(48,199,241,.1); }
+.technician-account-list > button > span { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; color: #fff; background: linear-gradient(145deg, rgba(37,126,217,.8), rgba(32,211,203,.45)); font-weight: 900; }
+.technician-account-list > button > div { min-width: 0; display: grid; gap: 2px; }
+.technician-account-list strong,
+.technician-account-list small,
+.technician-account-list em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.technician-account-list em { color: rgba(93,238,177,.68); font-size: .65rem; font-style: normal; }
+
+.technician-account-layout > main { min-height: 0; display: grid; align-content: start; gap: 12px; overflow: auto; padding: 16px; scrollbar-width: none; }
+.technician-account-layout > main::-webkit-scrollbar { display: none; }
+.technician-account-empty { min-height: 300px; display: grid; place-items: center; align-content: center; gap: 9px; color: rgba(225,244,255,.62); text-align: center; }
+.technician-account-form,
+.technician-account-remote { display: grid; gap: 13px; padding: 15px; border: 1px solid rgba(255,255,255,.08); border-radius: 17px; background: rgba(255,255,255,.025); }
+.technician-account-remote { border-color: rgba(81,237,179,.17); background: rgba(36,195,136,.04); }
+.technician-account-section-heading { justify-content: space-between; gap: 10px; }
+.technician-account-section-heading > div { gap: 9px; }
+.technician-account-section-heading > div > span { display: grid; gap: 2px; }
+.technician-account-section-heading i { padding: 5px 8px; border-radius: 999px; color: rgba(225,244,255,.62); background: rgba(255,255,255,.06); font-size: .65rem; font-style: normal; font-weight: 800; }
+.technician-account-section-heading i.active { color: #77f0b8; background: rgba(40,210,139,.12); }
+.technician-account-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.technician-account-grid label { display: grid; gap: 5px; min-width: 0; color: rgba(225,244,255,.6); font-size: .72rem; font-weight: 760; }
+.technician-account-grid label.wide,
+.technician-account-grid .wide { grid-column: 1 / -1; }
+.technician-account-grid label > input,
+.technician-account-grid label > select { min-height: 44px; padding: 9px 11px; border: 1px solid rgba(255,255,255,.09); border-radius: 11px; color: #fff; background: rgba(1,8,18,.68); }
+.technician-account-toggle { display: flex !important; grid-template-columns: auto 1fr; align-items: center; gap: 9px !important; min-height: 42px; padding: 9px 11px; border: 1px solid rgba(255,255,255,.07); border-radius: 11px; background: rgba(255,255,255,.025); }
+.technician-account-toggle input { width: 18px; height: 18px; }
+.technician-account-primary { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 15px; border: 1px solid rgba(75,228,255,.28); border-radius: 12px; color: #fff; background: linear-gradient(135deg, #167fd8, #18aaa9); font-weight: 850; }
+.technician-account-primary:disabled { opacity: .5; }
+.technician-account-info,
+.technician-account-error,
+.technician-account-notice { display: flex; align-items: flex-start; gap: 8px; padding: 11px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: rgba(255,255,255,.025); font-size: .78rem; }
+.technician-account-error { border-color: rgba(255,92,132,.28); color: #ffd5df !important; background: rgba(255,65,113,.07); }
+.technician-account-notice { border-color: rgba(82,236,175,.28); color: #ddfff0 !important; background: rgba(39,205,139,.07); }
+.technician-account-explanation { font-size: .75rem; line-height: 1.45; }
+
+.rc43-technician-edit { position: absolute; right: 13px; bottom: 13px; z-index: 5; min-height: 31px; padding: 0 10px; border: 1px solid rgba(75,228,255,.24); border-radius: 10px; color: #dffaff; background: rgba(5,25,42,.9); font-size: .66rem; font-weight: 850; }
+.technician-card { position: relative; }
+
+@media (max-width: 760px) {
+  .technician-account-backdrop { align-items: end; padding: 0; }
+  .technician-account-center { width: 100%; height: 96dvh; border-radius: 24px 24px 0 0; }
+  .technician-account-center > header { padding: 13px; }
+  .technician-account-layout { grid-template-columns: 1fr; grid-template-rows: minmax(160px, .36fr) minmax(0, .64fr); }
+  .technician-account-layout > aside { grid-template-rows: auto auto minmax(0,1fr); border-right: 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .technician-account-list > button { min-height: 62px; }
+  .technician-account-layout > main { padding: 12px; }
+  .technician-account-grid { grid-template-columns: 1fr; }
+  .technician-account-grid label.wide,
+  .technician-account-grid .wide { grid-column: auto; }
+  .rc43-technician-edit { right: 11px; bottom: 11px; }
+}

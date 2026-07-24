@@ -1,0 +1,68 @@
+name: Validar punto de entrega
+
+on:
+  pull_request:
+    branches:
+      - agent/rc38-station-presence-ux
+      - agent/rc31-web-preview
+  push:
+    branches:
+      - agent/rc39-mini-pc-station-service
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  station:
+    name: Probar servicio de estación
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: station-service
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependencias
+        run: npm install
+      - name: Ejecutar pruebas del mini PC
+        run: npm test
+
+  web-integration:
+    name: Probar integración presencial web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependencias
+        run: npm install
+      - name: Ejecutar pruebas web y guardar resultado
+        id: tests
+        shell: bash
+        run: |
+          set +e
+          npm test > station-web-tests.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -ne 0 ]; then
+            tail -n 120 station-web-tests.log
+          fi
+          exit 0
+      - name: Guardar diagnóstico si falla
+        if: steps.tests.outputs.status != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: station-web-tests-log
+          path: station-web-tests.log
+          retention-days: 2
+      - name: Marcar fallo de integración
+        if: steps.tests.outputs.status != '0'
+        run: exit 1

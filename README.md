@@ -1,92 +1,90 @@
 # ISIVOLT Herramientas QR
 
-Aplicación Android y web para el control local de préstamos, devoluciones, técnicos, inventario, mantenimiento y trazabilidad de herramientas.
+Aplicación web para el control de préstamos, devoluciones, técnicos, inventario, mantenimiento y trazabilidad de herramientas. La configuración Android se conserva, pero el desarrollo principal es actualmente **web-first** mediante GitHub Pages.
 
 ## Candidata actual
 
 - Aplicación: `1.0.0-rc.30`.
-- SQLite normalizado: versión 6.
-- Rama de trabajo: `agent/rc24-storage-safety`.
-- PR de consolidación: #42, mantenida en borrador hasta completar las pruebas físicas.
+- Modo principal: web RC30.
+- Rama de publicación: `agent/rc31-web-preview`.
+- PR web: #44.
+- Dirección: `https://izc05.github.io/ISIVOLT-Herramientas-QR/`.
+- Base consolidada RC30: `agent/rc24-storage-safety`, PR #42.
 
-El nombre histórico de la rama se conserva para no romper el PR abierto, pero la única candidata que representa actualmente es RC30.
+## Funciones web actuales
 
-## Operaciones consolidadas
-
-- Préstamo y devolución mediante QR, código de barras, NFC o búsqueda manual.
+- Inventario y fichas de herramientas.
+- Técnicos y tarjetas corporativas asociadas.
+- Préstamo y devolución mediante QR, código de barras o búsqueda manual.
+- Escaneo desde cámara web con preferencia por la cámara trasera.
 - Recorrido **Primero técnico** o **Primero herramienta**.
 - Revisión final del lote antes de guardar.
 - Condición individual por herramienta en devoluciones múltiples.
 - OT, ubicación de trabajo y fecha prevista de devolución.
 - Checklist de accesorios por herramienta.
 - Observación obligatoria para revisión, avería o accesorio con incidencia.
-- Bloqueo de doble pulsación y estado visible `Guardando…`.
-- `operationId` persistido para impedir duplicados incluso después de reiniciar.
-- Cola secuencial de escrituras SQLite.
-- Recuperación de escrituras pendientes conservando `deviceId`, `syncStatus` y `operationId` ya confirmados por SQLite.
+- `operationId` persistido para impedir duplicados.
+- Historial avanzado, alertas y auditoría CSV.
+- Copias JSON y exportaciones compatibles con navegador.
 
-## Tarjetas corporativas
+## Cámara web
 
-La aplicación admite códigos lineales, incluido CODE 39, como alternativa cuando el NFC no funciona.
+El visor web:
 
-- Asociación desde **Herramientas > Tarjetas**.
-- Lectura por cámara o entrada manual.
-- Un código solo puede pertenecer a un técnico.
-- El valor se guarda en la ficha, SQLite v5 y copia JSON.
-- Las tarjetas registradas identifican automáticamente al técnico durante préstamo o devolución.
+- Se activa únicamente por acción expresa del usuario.
+- Explica el uso de la cámara antes de solicitar permiso.
+- Procesa la imagen dentro del dispositivo, sin grabar ni subir vídeo.
+- Usa `BarcodeDetector` cuando está disponible.
+- Utiliza ZXing como alternativa para QR y códigos lineales.
+- Detiene el stream al detectar, cancelar, cerrar o abandonar la página.
+- Mantiene siempre la selección manual como respaldo.
 
-## Interfaz recuperada frente a RC29
+Formatos prioritarios: QR, CODE 39, CODE 93, CODE 128, Codabar, EAN, ITF, UPC, Data Matrix, PDF417 y Aztec.
 
-- Inventario y técnicos en dos columnas en móvil.
-- Tarjetas compactas.
-- Colores estables por especialidad.
-- Cortinas plegables de filtros.
-- Historial avanzado con fecha y hora completas.
-- Filtros Hoy, Ayer, 7 días, 30 días, mes y rango.
-- Auditoría CSV compatible con Excel.
-- Salida verde, entrada roja, incidencia ámbar y rectificación violeta.
-- Saludo configurable.
-- Radar luminoso en el logotipo.
-- Botón Atrás: cerrar modal, volver a Inicio y doble pulsación para salir.
-- Safe areas Android.
-- Herramientas administrativas agrupadas en un único menú móvil.
+## Persistencia web actual
+
+Hasta incorporar el servidor central, la información se guarda en `localStorage`.
+
+- Cada navegador mantiene una copia independiente.
+- Todavía no existe sincronización entre técnicos o dispositivos.
+- Borrar los datos del navegador puede eliminar la copia local.
+- Durante el piloto deben generarse copias JSON periódicas.
 
 ## Desarrollo
 
 ```bash
 npm install
 npm test
-python3 scripts/validate_sqlite_schema.py
 npm run build
 ```
 
-## Android
+## GitHub Pages
 
-```bash
-npm run android:prepare
-cd android
-./gradlew assembleDebug
-```
+El workflow `.github/workflows/deploy-pages.yml` valida y publica automáticamente cada actualización de `agent/rc31-web-preview`.
 
-La automatización de GitHub genera una APK paralela denominada **ISIVOLT RC30 Pruebas**, con application ID distinto, para instalarla junto a la versión existente sin compartir su base de datos.
+La validación incluye:
+
+- Pruebas de dominio y regresión.
+- Pruebas del lector web.
+- TypeScript y Vite.
+- Generación y publicación de `dist`.
+
+## Android en pausa
+
+Se conservan SQLite nativo, NFC, ML Kit, impresión Android, configuración Capacitor y workflows históricos. No forman parte del flujo principal durante la fase web multiusuario.
 
 ## Documentación
 
+- `docs/WEB_MODE.md`: funcionamiento y publicación web.
 - `docs/USER_MANUAL.md`: manual de uso.
-- `docs/RC29_PARITY.md`: matriz de recuperación respecto a la APK instalada.
-- `docs/PRODUCTION.md`: preparación y checklist de producción.
-- `docs/RECOVERY.md`: persistencia y recuperación de datos.
+- `docs/RC29_PARITY.md`: matriz de recuperación respecto a RC29.
+- `docs/RECOVERY.md`: persistencia y recuperación.
 - `docs/ROADMAP.md`: planificación restante.
 
-## Estado de validación
+## Próximos bloques
 
-La validación automatizada comprueba:
-
-- Pruebas de dominio y regresión de recuperación.
-- Migraciones SQLite reales v1-v6.
-- Coherencia de producción.
-- TypeScript y Vite.
-- Configuración de plugins Android.
-- Compilación de APK Android principal y RC30 paralela.
-
-La fusión con `main` queda bloqueada hasta completar las pruebas físicas de cámara, tarjeta corporativa, guardado con cierre inmediato, botón Atrás, safe areas, impresión QR, restauración y comparación pantalla por pantalla con RC29.
+1. Validación física del escáner web en Android Chrome.
+2. Limpieza de workflows heredados.
+3. Base de datos central y cola de sincronización.
+4. Autenticación y permisos por técnico.
+5. Panel central de coordinación.

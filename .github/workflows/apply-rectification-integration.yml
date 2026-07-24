@@ -1,20 +1,17 @@
-name: Aplicar integración de rectificaciones
+name: Aplicar integración de rectificaciones (histórico · manual)
 
 on:
-  push:
-    branches:
-      - feature/security-0.9
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: rectification-integration-${{ github.ref }}
+  group: rectification-integration-manual
   cancel-in-progress: true
 
 jobs:
   patch:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: aplicar integración de rectificaciones') }}
     runs-on: ubuntu-latest
     steps:
       - name: Descargar código

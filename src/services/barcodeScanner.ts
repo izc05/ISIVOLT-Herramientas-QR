@@ -6,14 +6,28 @@ import {
 } from '@capacitor-mlkit/barcode-scanning';
 import { resolveTechnicianBarcode, loadTechnicianBarcodeRegistry } from './barcodeRegistry';
 import { loadAppData } from './storage';
+import {
+  scanBarcodeWithWebCamera,
+  type WebBarcodeDetectionDecision,
+  type WebBarcodeScannerOptions,
+} from './webBarcodeScanner';
 
 export type NativeScanResult =
-  | { status: 'success'; value: string; format?: BarcodeFormat }
+  | { status: 'success'; value: string; format?: BarcodeFormat | string }
+  | { status: 'completed'; message: string }
+  | { status: 'manual-requested'; message: string }
   | { status: 'cancelled' }
   | { status: 'permission-denied'; message: string }
   | { status: 'unsupported'; message: string }
   | { status: 'module-installing'; message: string }
   | { status: 'error'; message: string };
+
+export type ScanQrCodeOptions = Omit<WebBarcodeScannerOptions, 'onDetected'> & {
+  onDetected?: (
+    value: string,
+    format?: string,
+  ) => WebBarcodeDetectionDecision | Promise<WebBarcodeDetectionDecision>;
+};
 
 export type IsivoltQrPayload =
   | { type: 'technician'; code: string; raw: string }
@@ -36,7 +50,10 @@ const IDENTIFICATION_FORMATS: BarcodeFormat[] = [
   BarcodeFormat.Aztec,
 ];
 
-export const isNativeScannerAvailable = () => Capacitor.isNativePlatform();
+// El flujo de identificación está disponible tanto en APK como en navegador.
+// En web la cámara puede caer de forma segura a la introducción manual.
+export const isNativeScannerAvailable = () =>
+  Capacitor.isNativePlatform() || typeof window !== 'undefined';
 
 export const openScannerSettings = async (): Promise<void> => {
   if (!Capacitor.isNativePlatform()) return;
@@ -169,15 +186,47 @@ const resolveRegisteredBarcode = async (rawValue: string): Promise<string> => {
   return technician ? `ISIVOLT:TECH:${technician.code}` : rawValue;
 };
 
+const scanWebBarcode = async (
+  resolveKnownTechnician: boolean,
+  manualFallback: (reason?: string) => NativeScanResult,
+  options: ScanQrCodeOptions = {},
+): Promise<NativeScanResult> => {
+  const onDetected = options.onDetected
+    ? async (rawValue: string, format?: string) => {
+      const value = resolveKnownTechnician
+        ? await resolveRegisteredBarcode(rawValue)
+        : rawValue;
+      return options.onDetected?.(value, format) ?? { action: 'continue' as const };
+    }
+    : undefined;
+
+  const result = await scanBarcodeWithWebCamera({ ...options, onDetected });
+  if (result.status === 'unsupported' && !options.onDetected) return manualFallback(result.message);
+  if (result.status === 'completed') {
+    return { status: 'completed', message: 'Cámara cerrada. La operación preparada se mantiene.' };
+  }
+  if (result.status === 'manual-requested') {
+    return { status: 'manual-requested', message: 'Selección manual solicitada.' };
+  }
+  if (result.status !== 'success') return result;
+
+  const value = resolveKnownTechnician
+    ? await resolveRegisteredBarcode(result.value)
+    : result.value;
+
+  return { status: 'success', value, format: result.format };
+};
+
 const scanSupportedBarcode = async (
   resolveKnownTechnician: boolean,
+  options: ScanQrCodeOptions = {},
 ): Promise<NativeScanResult> => {
   const manualFallback = (reason?: string) => resolveKnownTechnician
     ? requestManualQrValue(reason)
     : requestManualRawBarcodeValue(reason);
 
   if (!Capacitor.isNativePlatform()) {
-    return manualFallback('La cámara real solo está disponible dentro de la APK.');
+    return scanWebBarcode(resolveKnownTechnician, manualFallback, options);
   }
 
   try {
@@ -229,8 +278,9 @@ const scanSupportedBarcode = async (
   }
 };
 
-export const scanQrCode = async (): Promise<NativeScanResult> =>
-  scanSupportedBarcode(true);
+export const scanQrCode = async (
+  options: ScanQrCodeOptions = {},
+): Promise<NativeScanResult> => scanSupportedBarcode(true, options);
 
 export const scanRawBarcode = async (): Promise<NativeScanResult> =>
   scanSupportedBarcode(false);

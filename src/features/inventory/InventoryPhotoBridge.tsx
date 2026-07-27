@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { Tool } from '../../domain/types';
 import { DEMO_TOOL_IMAGES } from '../../data/demoToolImages';
-import { loadAppData } from '../../services/storage';
+import { loadAppData, saveAppData } from '../../services/storage';
 
 const normalize = (value: string) => value.trim().toLocaleUpperCase('es-ES');
 
@@ -16,14 +16,37 @@ const uniqueSources = (values: Array<string | undefined>) => {
     });
 };
 
-const getImageCandidates = (tool: Tool) => {
-  const demoImage = DEMO_TOOL_IMAGES[tool.code];
-  const imageIsDemo = Boolean(demoImage && tool.imageDataUrl === demoImage);
+const getLegacyImage = (tool: Tool) => tool.thumbnailUri?.trim() || tool.photoUri?.trim() || '';
 
-  return imageIsDemo
-    ? uniqueSources([tool.thumbnailUri, tool.photoUri, tool.imageDataUrl])
-    : uniqueSources([tool.imageDataUrl, tool.thumbnailUri, tool.photoUri]);
+const normalizeLegacyToolImages = () => {
+  const data = loadAppData();
+  let changed = false;
+  const timestamp = new Date().toISOString();
+
+  const tools = data.tools.map((tool) => {
+    const legacyImage = getLegacyImage(tool);
+    const demoImage = DEMO_TOOL_IMAGES[tool.code];
+    const currentIsDemo = Boolean(demoImage && tool.imageDataUrl === demoImage);
+    if (!legacyImage || (tool.imageDataUrl && !currentIsDemo)) return tool;
+
+    changed = true;
+    return {
+      ...tool,
+      imageDataUrl: legacyImage,
+      imageUpdatedAt: tool.imageUpdatedAt ?? timestamp,
+      updatedAt: tool.updatedAt || timestamp,
+    };
+  });
+
+  if (changed) saveAppData({ ...data, tools });
 };
+
+const getImageCandidates = (tool: Tool) => uniqueSources([
+  tool.imageDataUrl,
+  tool.thumbnailUri,
+  tool.photoUri,
+  DEMO_TOOL_IMAGES[tool.code],
+]);
 
 const sourceSignature = (sources: string[]) => sources
   .map((source) => `${source.length}:${source.slice(0, 48)}`)
@@ -100,6 +123,7 @@ const ensureCardMedia = (card: HTMLElement, tool: Tool) => {
   media.classList.add('rc34-tool-media');
   media.dataset.toolPhotoAction = 'open';
   media.dataset.toolCode = tool.code;
+  media.dataset.rc45ImageManaged = 'true';
   media.setAttribute('aria-label', `Gestionar imagen de ${tool.name}`);
 
   const hasImage = syncImage(media, tool);
@@ -123,6 +147,8 @@ export default function InventoryPhotoBridge() {
     let disposed = false;
     let frame: number | null = null;
     let delayed: number | null = null;
+
+    normalizeLegacyToolImages();
 
     const schedule = () => {
       if (disposed || frame !== null) return;

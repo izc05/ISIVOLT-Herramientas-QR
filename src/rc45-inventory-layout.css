@@ -1,0 +1,168 @@
+/* RC45 · fotografías fiables y densidad de inventario adaptada a cada pantalla */
+
+.page-heading {
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.page-heading .primary-button {
+  max-width: 100%;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.tool-card.rc34-tool-card .tool-media-trigger,
+.tool-card.rc34-tool-card .rc34-tool-media {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.tool-card.rc34-tool-card .tool-media-trigger {
+  display: block !important;
+  padding: 0 !important;
+  color: inherit;
+  appearance: none;
+}
+
+.tool-card.rc34-tool-card .tool-media-trigger > img,
+.tool-card.rc34-tool-card .rc34-tool-media > img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 7px;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+.tool-card.rc34-tool-card .tool-media-placeholder {
+  display: grid !important;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+}
+
+@media (min-width: 761px) {
+  .tool-card.rc34-tool-card {
+    min-width: 0;
+  }
+
+  .tool-card.rc34-tool-card .tool-media-trigger,
+  .tool-card.rc34-tool-card .rc34-tool-media {
+    width: 100% !important;
+    height: 164px !important;
+    min-height: 164px !important;
+    margin: 0 !important;
+    border-radius: 15px !important;
+  }
+
+  .tool-card.rc34-tool-card .tool-card-body h3 {
+    font-size: 1rem !important;
+  }
+
+  .tool-card.rc34-tool-card .tool-card-body p,
+  .tool-card.rc34-tool-card .tool-details dt,
+  .tool-card.rc34-tool-card .tool-details dd,
+  .tool-card.rc34-tool-card .tool-operation-times strong {
+    font-size: .72rem !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 899px) {
+  .tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1099px) {
+  .tool-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (min-width: 1100px) and (max-width: 1559px) {
+  .tool-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  .inventory-filter-curtain {
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+  }
+
+  .inventory-preset-grid,
+  .inventory-advanced-grid,
+  .inventory-category-filter,
+  .inventory-reset-filter {
+    grid-column: 1 !important;
+  }
+
+  .inventory-advanced-grid {
+    margin-top: 0 !important;
+  }
+}
+
+@media (min-width: 1400px) {
+  .inventory-filter-curtain {
+    grid-template-columns: minmax(400px, .9fr) minmax(510px, 1.1fr) !important;
+    align-items: end !important;
+  }
+
+  .inventory-preset-grid {
+    grid-row: 1 / span 2;
+    align-self: stretch;
+  }
+
+  .inventory-advanced-grid,
+  .inventory-category-filter,
+  .inventory-reset-filter {
+    grid-column: 2 !important;
+  }
+
+  .inventory-advanced-grid {
+    margin-top: 0 !important;
+  }
+}
+
+@media (min-width: 1560px) and (max-width: 2199px) {
+  .tool-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 17px !important;
+  }
+
+  .technician-grid.game-technician-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 2200px) {
+  .tool-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+
+  .technician-grid.game-technician-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .tool-card.rc34-tool-card .tool-media-trigger,
+  .tool-card.rc34-tool-card .rc34-tool-media {
+    height: 176px !important;
+    min-height: 176px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-heading .primary-button {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .tool-card.rc34-tool-card .tool-media-trigger > img,
+  .tool-card.rc34-tool-card .rc34-tool-media > img {
+    padding: 4px;
+  }
+}

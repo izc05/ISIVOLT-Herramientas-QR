@@ -29,6 +29,10 @@ const firstNameFromIdentity = (value: string) => {
   return name;
 };
 
+const setText = (element: HTMLElement | null, value: string) => {
+  if (element && element.textContent !== value) element.textContent = value;
+};
+
 const resolveIdentity = () => {
   const client = getCentralSyncClient();
   const remote = client?.authStore.isValid ? client.authStore.record : null;
@@ -50,28 +54,30 @@ const presentIdentity = () => {
   const displayName = identity?.name ?? 'Isi';
   const roleText = identity?.roleText ?? 'Cuenta y seguridad';
   const greeting = greetingForHour(new Date().getHours());
+  const greetingText = `${greeting}, ${firstNameFromIdentity(displayName)}`;
+  const initials = initialsFromName(displayName);
 
   document.querySelectorAll<HTMLElement>('.command-hero h1').forEach((heading) => {
-    heading.textContent = `${greeting}, ${firstNameFromIdentity(displayName)}`;
+    setText(heading, greetingText);
   });
 
   document.querySelectorAll<HTMLElement>('.profile-button span').forEach((badge) => {
-    badge.textContent = initialsFromName(displayName);
+    setText(badge, initials);
   });
 
   document.querySelectorAll<HTMLButtonElement>('.profile-button').forEach((button) => {
-    button.setAttribute('aria-label', identity ? `Cuenta de ${displayName}` : 'Abrir cuenta y seguridad');
+    const label = identity ? `Cuenta de ${displayName}` : 'Abrir cuenta y seguridad';
+    if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
     button.onclick = () => document.querySelector<HTMLButtonElement>('.security-account-launcher')?.click();
   });
 
   document.querySelectorAll<HTMLElement>('.professional-user-card').forEach((card) => {
-    const title = card.querySelector<HTMLElement>('strong');
-    const detail = card.querySelector<HTMLElement>('small');
-    if (title) title.textContent = identity?.name ?? 'Cuenta y seguridad';
-    if (detail) detail.textContent = identity ? `${roleText} · sesión activa` : 'Perfil, PIN y sesiones';
+    setText(card.querySelector<HTMLElement>('strong'), identity?.name ?? 'Cuenta y seguridad');
+    setText(card.querySelector<HTMLElement>('small'), identity ? `${roleText} · sesión activa` : 'Perfil, PIN y sesiones');
   });
 
-  document.body.dataset.identityReady = identity ? 'true' : 'false';
+  const ready = identity ? 'true' : 'false';
+  if (document.body.dataset.identityReady !== ready) document.body.dataset.identityReady = ready;
 };
 
 export default function AuthenticatedIdentityPresenter() {

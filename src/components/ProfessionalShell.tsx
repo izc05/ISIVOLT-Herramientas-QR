@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Barcode,
   Boxes,
   ChevronRight,
   CircleUserRound,
+  CloudCog,
   FileSpreadsheet,
   Files,
   Hammer,
@@ -23,6 +24,8 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
+import { getCurrentSecurityUser } from '../security/session';
+import type { UserRole } from '../security/types';
 
 type ProfessionalRoute = 'dashboard' | 'inventory' | 'technicians' | 'history';
 
@@ -31,11 +34,26 @@ type SyncCopy = {
   detail: string;
 };
 
+type NavigationEntry = {
+  id: ProfessionalRoute;
+  label: string;
+  detail: string;
+  Icon: typeof Home;
+};
+
+type AdminAction = {
+  label: string;
+  detail: string;
+  selector: string;
+  Icon: typeof UserCog;
+  roles: readonly UserRole[];
+};
+
 const normalize = (value: string) => value.trim().toLocaleLowerCase('es-ES');
 
 export const resolveProfessionalRoute = (label: string): ProfessionalRoute | null => {
   const normalized = normalize(label);
-  if (normalized.includes('inicio')) return 'dashboard';
+  if (normalized.includes('inicio') || normalized.includes('panel')) return 'dashboard';
   if (normalized.includes('inventario') || normalized.includes('herramientas')) return 'inventory';
   if (normalized.includes('técnicos') || normalized.includes('tecnicos')) return 'technicians';
   if (normalized.includes('historial') || normalized.includes('movimientos')) return 'history';
@@ -56,29 +74,67 @@ const triggerClick = (selector: string) => {
   document.querySelector<HTMLButtonElement>(selector)?.click();
 };
 
-const adminActions = [
-  { label: 'Cuenta y seguridad', detail: 'Perfil, sesiones y acceso', selector: '.security-account-launcher', Icon: UserCog },
-  { label: 'Técnicos y cuentas', detail: 'Editar datos y crear accesos', selector: '.technician-account-manager-launcher', Icon: Users },
-  { label: 'Gestión', detail: 'Herramientas y alertas', selector: '.management-launcher', Icon: Settings2 },
-  { label: 'Informes', detail: 'Excel y copias de seguridad', selector: '.report-center-launcher', Icon: FileSpreadsheet },
-  { label: 'Tarjetas', detail: 'Código de barras personal', selector: '.technician-barcode-launcher', Icon: Barcode },
-  { label: 'NFC', detail: 'Tarjetas y etiquetas', selector: '.nfc-management-launcher', Icon: Radio },
-  { label: 'Etiquetas QR', detail: 'Impresión y exportación', selector: '.qr-label-launcher', Icon: Tags },
-  { label: 'Archivos', detail: 'Informes de gestión', selector: '.management-files-launcher', Icon: Files },
-  { label: 'Mantenimiento', detail: 'Actuaciones técnicas', selector: '.maintenance-board-launcher', Icon: Hammer },
-  { label: 'Rectificaciones', detail: 'Corregir movimientos', selector: '.rectification-launcher', Icon: History },
-  { label: 'Respuesta', detail: 'Sonido y vibración', selector: '.experience-settings-button', Icon: Volume2 },
-  { label: 'Diagnóstico', detail: 'Estado local y errores', selector: '.stability-badge', Icon: ShieldCheck },
-] as const;
+const generalNavigation: NavigationEntry[] = [
+  { id: 'dashboard', label: 'Inicio', detail: 'Panel operativo', Icon: Home },
+  { id: 'inventory', label: 'Herramientas', detail: 'Inventario y estados', Icon: Boxes },
+  { id: 'technicians', label: 'Técnicos', detail: 'Responsables y material', Icon: Users },
+  { id: 'history', label: 'Historial', detail: 'Movimientos y auditoría', Icon: History },
+];
+
+const technicianNavigation: NavigationEntry[] = [
+  { id: 'dashboard', label: 'Mi panel', detail: 'Resumen personal', Icon: Home },
+  { id: 'inventory', label: 'Mis herramientas', detail: 'Asignadas y disponibles', Icon: Boxes },
+  { id: 'history', label: 'Mi historial', detail: 'Mis movimientos', Icon: History },
+];
+
+const adminActions: AdminAction[] = [
+  { label: 'Cuenta y seguridad', detail: 'Perfil, sesiones y acceso', selector: '.security-account-launcher', Icon: UserCog, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },
+  { label: 'Solicitudes de acceso', detail: 'Aprobar nuevas cuentas', selector: '.registration-request-manager-launcher', Icon: Users, roles: ['admin'] },
+  { label: 'Técnicos y cuentas', detail: 'Editar datos y accesos', selector: '.technician-account-manager-launcher', Icon: Users, roles: ['admin'] },
+  { label: 'Sincronización', detail: 'Servidor, cola y conflictos', selector: '.central-sync-open-button', Icon: CloudCog, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },
+  { label: 'Gestión', detail: 'Herramientas y alertas', selector: '.management-launcher', Icon: Settings2, roles: ['admin', 'warehouse'] },
+  { label: 'Informes', detail: 'Excel y copias de seguridad', selector: '.report-center-launcher', Icon: FileSpreadsheet, roles: ['admin', 'warehouse', 'coordinator'] },
+  { label: 'Tarjetas', detail: 'Código de barras personal', selector: '.technician-barcode-launcher', Icon: Barcode, roles: ['admin', 'warehouse', 'technician'] },
+  { label: 'NFC', detail: 'Tarjetas y etiquetas', selector: '.nfc-management-launcher', Icon: Radio, roles: ['admin', 'warehouse'] },
+  { label: 'Etiquetas QR', detail: 'Impresión y exportación', selector: '.qr-label-launcher', Icon: Tags, roles: ['admin', 'warehouse'] },
+  { label: 'Archivos', detail: 'Informes de gestión', selector: '.management-files-launcher', Icon: Files, roles: ['admin', 'warehouse', 'coordinator'] },
+  { label: 'Mantenimiento', detail: 'Actuaciones técnicas', selector: '.maintenance-board-launcher', Icon: Hammer, roles: ['admin', 'warehouse'] },
+  { label: 'Rectificaciones', detail: 'Corregir movimientos', selector: '.rectification-launcher', Icon: History, roles: ['admin'] },
+  { label: 'Respuesta', detail: 'Sonido y vibración', selector: '.experience-settings-button', Icon: Volume2, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },
+  { label: 'Diagnóstico', detail: 'Estado local y errores', selector: '.stability-badge', Icon: ShieldCheck, roles: ['admin'] },
+];
 
 export default function ProfessionalShell() {
   const [route, setRoute] = useState<ProfessionalRoute>('dashboard');
   const [moreOpen, setMoreOpen] = useState(false);
   const [mobileNavTarget, setMobileNavTarget] = useState<HTMLElement | null>(null);
+  const [role, setRole] = useState<UserRole>(() => getCurrentSecurityUser()?.role ?? 'admin');
   const [syncCopy, setSyncCopy] = useState<SyncCopy>({
     title: 'Solo local',
     detail: 'Servidor central pendiente',
   });
+
+  const navigation = useMemo(() => role === 'technician' ? technicianNavigation : generalNavigation, [role]);
+  const visibleAdminActions = useMemo(() => adminActions.filter((action) => action.roles.includes(role)), [role]);
+  const canScan = role !== 'coordinator';
+  const canRestoreDemo = role === 'admin';
+
+  useEffect(() => {
+    const refreshRole = () => {
+      const nextRole = getCurrentSecurityUser()?.role ?? 'admin';
+      setRole(nextRole);
+      if (nextRole === 'technician' && readActiveRoute() === 'technicians') {
+        findLegacyNavigationButton('dashboard')?.click();
+        setRoute('dashboard');
+      }
+    };
+    window.addEventListener('isivolt:security-session', refreshRole);
+    window.addEventListener('isivolt:central-account-changed', refreshRole);
+    return () => {
+      window.removeEventListener('isivolt:security-session', refreshRole);
+      window.removeEventListener('isivolt:central-account-changed', refreshRole);
+    };
+  }, []);
 
   useEffect(() => {
     let frame: number | null = null;
@@ -136,13 +192,6 @@ export default function ProfessionalShell() {
     window.setTimeout(() => triggerClick(selector), 40);
   };
 
-  const navigation = [
-    { id: 'dashboard' as const, label: 'Inicio', detail: 'Panel operativo', Icon: Home },
-    { id: 'inventory' as const, label: 'Herramientas', detail: 'Inventario y estados', Icon: Boxes },
-    { id: 'technicians' as const, label: 'Técnicos', detail: 'Responsables y material', Icon: Users },
-    { id: 'history' as const, label: 'Historial', detail: 'Movimientos y auditoría', Icon: History },
-  ];
-
   const mobileMoreButton = (
     <button
       className="professional-mobile-more"
@@ -163,7 +212,7 @@ export default function ProfessionalShell() {
           <div><strong>ISIVOLT</strong><small>Herramientas QR</small></div>
         </header>
 
-        <div className="professional-section-label">Menú principal</div>
+        <div className="professional-section-label">{role === 'technician' ? 'Espacio personal' : 'Menú principal'}</div>
         <nav className="professional-navigation">
           {navigation.map(({ id, label, detail, Icon }) => (
             <button
@@ -177,25 +226,29 @@ export default function ProfessionalShell() {
               <ChevronRight size={16} />
             </button>
           ))}
-          <button type="button" className="professional-scan" onClick={() => triggerClick('.nav-scan-button, .scan-main-button')}>
-            <span><ScanLine size={20} /></span>
-            <span><strong>Escanear</strong><small>Técnico y herramientas</small></span>
-            <ChevronRight size={16} />
-          </button>
+          {canScan && (
+            <button type="button" className="professional-scan" onClick={() => triggerClick('.nav-scan-button, .scan-main-button')}>
+              <span><ScanLine size={20} /></span>
+              <span><strong>{role === 'technician' ? 'Escanear herramienta' : 'Escanear'}</strong><small>{role === 'technician' ? 'Retirar o devolver' : 'Técnico y herramientas'}</small></span>
+              <ChevronRight size={16} />
+            </button>
+          )}
         </nav>
 
-        <div className="professional-section-label">Administración</div>
+        <div className="professional-section-label">{role === 'technician' ? 'Mi cuenta' : 'Administración'}</div>
         <nav className="professional-navigation professional-navigation-secondary">
           <button type="button" onClick={() => setMoreOpen(true)}>
             <span><MoreHorizontal size={19} /></span>
-            <span><strong>Más</strong><small>Cuenta e informes</small></span>
+            <span><strong>Más</strong><small>{role === 'technician' ? 'Cuenta y sincronización' : 'Cuenta e informes'}</small></span>
             <ChevronRight size={16} />
           </button>
-          <button type="button" onClick={() => triggerClick('.demo-reset')}>
-            <span><RotateCcw size={19} /></span>
-            <span><strong>Restaurar demo</strong><small>Recuperar datos iniciales</small></span>
-            <ChevronRight size={16} />
-          </button>
+          {canRestoreDemo && (
+            <button type="button" onClick={() => triggerClick('.demo-reset')}>
+              <span><RotateCcw size={19} /></span>
+              <span><strong>Restaurar demo</strong><small>Recuperar datos iniciales</small></span>
+              <ChevronRight size={16} />
+            </button>
+          )}
         </nav>
 
         <section className="professional-sync-card">
@@ -215,11 +268,11 @@ export default function ProfessionalShell() {
         <div className="professional-more-backdrop" onClick={() => setMoreOpen(false)}>
           <section className="professional-more-panel" role="dialog" aria-modal="true" aria-label="Más opciones" onClick={(event) => event.stopPropagation()}>
             <header>
-              <div><span><MoreHorizontal size={20} /></span><div><small>Administración</small><h2>Más opciones</h2><p>Cuenta, técnicos, informes y configuración.</p></div></div>
+              <div><span><MoreHorizontal size={20} /></span><div><small>{role === 'technician' ? 'Espacio personal' : 'Administración'}</small><h2>Más opciones</h2><p>{role === 'technician' ? 'Cuenta, sincronización y preferencias.' : 'Cuenta, técnicos, informes y configuración.'}</p></div></div>
               <button type="button" onClick={() => setMoreOpen(false)} aria-label="Cerrar"><X size={20} /></button>
             </header>
             <div className="professional-more-grid">
-              {adminActions.map(({ label, detail, selector, Icon }) => (
+              {visibleAdminActions.map(({ label, detail, selector, Icon }) => (
                 <button type="button" key={label} onClick={() => launchAdmin(selector)}>
                   <span><Icon size={21} /></span>
                   <span><strong>{label}</strong><small>{detail}</small></span>

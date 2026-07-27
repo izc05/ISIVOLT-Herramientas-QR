@@ -120,6 +120,7 @@ function save(e) {
   record.set("workspace", workspace);
   record.set("technician_id", technicianId);
   record.set("active", active);
+  record.set("registration_status", active ? "approved" : "rejected");
   if (password) record.setPassword(password);
   e.app.save(record);
 

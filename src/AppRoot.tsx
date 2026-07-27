@@ -8,6 +8,9 @@ import CentralSyncCenter from './components/CentralSyncCenter';
 import MobileToolsMenu from './components/MobileToolsMenu';
 import ProfessionalShell from './components/ProfessionalShell';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
+import CentralAccessGateway from './features/auth/CentralAccessGateway';
+import CentralIdentitySessionBridge from './features/auth/CentralIdentitySessionBridge';
+import RegistrationRequestManager from './features/auth/RegistrationRequestManager';
 import AuthenticatedIdentityPresenter from './features/identity/AuthenticatedIdentityPresenter';
 import InventoryFilterBridge from './features/inventory/InventoryFilterBridge';
 import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
@@ -19,6 +22,7 @@ import MaintenanceBoard from './features/management/MaintenanceBoard';
 import NfcManagementCenter from './features/nfc/NfcManagementCenter';
 import AuthenticatedTechnicianBridge from './features/operations/AuthenticatedTechnicianBridge';
 import FastScanWorkflow from './features/operations/FastScanWorkflow';
+import RoleWorkspacePresenter from './features/roles/RoleWorkspacePresenter';
 import StationPresenceController from './features/station/StationPresenceController';
 import TechnicianAccountManager from './features/technicians/TechnicianAccountManager';
 import CommissioningCenter from './production/CommissioningCenter';
@@ -94,9 +98,12 @@ export default function AppRoot() {
 
   return (
     <BootErrorBoundary>
+      <CentralIdentitySessionBridge />
       <SecurityController />
+      <CentralAccessGateway />
       <AccountSettingsCenter />
       <TechnicianAccountManager />
+      <RegistrationRequestManager />
       <AuthenticatedIdentityPresenter />
 
       {bootState === 'loading' ? (
@@ -121,8 +128,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC46</strong>
-                  <span>Cabecera limpia · escáner proporcionado · identidad de sesión visible</span>
+                  <strong>Modo web RC47</strong>
+                  <span>Acceso personal · solicitudes aprobadas · espacios distintos por rol</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
@@ -141,6 +148,7 @@ export default function AppRoot() {
             </aside>
           )}
           <RoleExperienceController />
+          <RoleWorkspacePresenter />
           <StationPresenceController />
           {isWebMode && <FastScanWorkflow />}
           <AuthenticatedTechnicianBridge />

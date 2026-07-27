@@ -1,4 +1,4 @@
-name: Validar servidor PocketBase RC41
+name: Validar servidor PocketBase RC47
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   pocketbase:
-    name: Migraciones, API, permisos y restauración
+    name: Migraciones, API, accesos y restauración
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
@@ -51,7 +51,7 @@ jobs:
           ./pocketbase --dir=./pb_data_ci serve --dev --http=127.0.0.1:8090 > pocketbase-ci.log 2>&1 &
           echo $! > pocketbase-ci.pid
 
-      - name: Probar autenticación, movimientos, cuentas y sincronización
+      - name: Probar autenticación, movimientos, registro y sincronización
         run: |
           set +e
           node tests/smoke.mjs > smoke-ci.log 2>&1
@@ -61,6 +61,10 @@ jobs:
           node tests/technician-accounts.mjs > technician-accounts-ci.log 2>&1
           status=$?
           cat technician-accounts-ci.log
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          node tests/registration-requests.mjs > registration-requests-ci.log 2>&1
+          status=$?
+          cat registration-requests-ci.log
           exit "$status"
 
       - name: Crear y restaurar una copia real
@@ -95,12 +99,13 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: pocketbase-rc43-diagnostic
+          name: pocketbase-rc47-diagnostic
           path: |
             pocketbase-server/pocketbase-ci.log
             pocketbase-server/pocketbase-restore-ci.log
             pocketbase-server/smoke-ci.log
             pocketbase-server/technician-accounts-ci.log
+            pocketbase-server/registration-requests-ci.log
             pocketbase-server/pocketbase-backup-ci.tar.gz
             pocketbase-server/pb_data_ci/logs.db
             pocketbase-server/pb_restore_ci/logs.db

@@ -8,6 +8,7 @@ import CentralSyncCenter from './components/CentralSyncCenter';
 import MobileToolsMenu from './components/MobileToolsMenu';
 import ProfessionalShell from './components/ProfessionalShell';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
+import AuthenticatedIdentityPresenter from './features/identity/AuthenticatedIdentityPresenter';
 import InventoryFilterBridge from './features/inventory/InventoryFilterBridge';
 import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
 import InventoryPhotoBridge from './features/inventory/InventoryPhotoBridge';
@@ -96,6 +97,7 @@ export default function AppRoot() {
       <SecurityController />
       <AccountSettingsCenter />
       <TechnicianAccountManager />
+      <AuthenticatedIdentityPresenter />
 
       {bootState === 'loading' ? (
         <main className="boot-screen">
@@ -119,8 +121,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC45</strong>
-                  <span>Fotografías recuperadas · tarjetas equilibradas · cuentas técnicas preparadas</span>
+                  <strong>Modo web RC46</strong>
+                  <span>Cabecera limpia · escáner proporcionado · identidad de sesión visible</span>
                 </div>
               </aside>
               <SyncStatusIndicator />

@@ -60,6 +60,7 @@ import './rc43-mobile-layout.css';
 import './rc44-professional-system.css';
 import './rc44-screen-polish.css';
 import './rc45-inventory-layout.css';
+import './rc46-dashboard-identity.css';
 
 const root = document.getElementById('root');
 

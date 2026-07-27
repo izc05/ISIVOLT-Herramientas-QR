@@ -101,7 +101,8 @@ function submit(e) {
   }
 
   var existingUser = findAuthByEmail(e.app, email);
-  if (existingUser && existingUser.get("active") === true) {
+  var existingStatus = existingUser ? asText(existingUser.get("registration_status")) : "";
+  if (existingUser && existingUser.get("active") === true && existingStatus !== "pending" && existingStatus !== "rejected") {
     throw new BadRequestError("Ya existe una cuenta activa con este correo.");
   }
   if (existingUser && asText(existingUser.get("workspace")) !== workspace) {
@@ -129,7 +130,8 @@ function submit(e) {
   user.set("role", "technician");
   user.set("workspace", workspace);
   user.set("technician_id", "");
-  user.set("active", false);
+  user.set("active", true);
+  user.set("registration_status", "pending");
   e.app.save(user);
 
   request = request || new Record(e.app.findCollectionByNameOrId("isivolt_registration_requests"));
@@ -237,6 +239,7 @@ function approve(e) {
   user.set("workspace", workspace);
   user.set("technician_id", technicianId);
   user.set("active", true);
+  user.set("registration_status", "approved");
   user.setVerified(true);
   e.app.save(user);
 
@@ -268,9 +271,10 @@ function reject(e) {
   }
 
   var user = e.app.findRecordById("isivolt_users", asText(request.get("user_id")));
-  user.set("active", false);
+  user.set("active", true);
   user.setVerified(false);
   user.set("technician_id", "");
+  user.set("registration_status", "rejected");
   e.app.save(user);
 
   request.set("status", "rejected");

@@ -1,0 +1,124 @@
+/* RC46 · cabecera limpia, identidad visible y escáner proporcionado */
+
+@media (min-width: 1100px) {
+  /* Los lanzadores técnicos son puentes internos. Nunca deben ocupar espacio visual. */
+  #root > button[class*="launcher"],
+  #root > [class$="-launcher"],
+  #root > .security-session-bar,
+  #root > .central-sync-indicator,
+  #root > .web-mode-banner,
+  #root > .mobile-tools-menu,
+  .security-session-bar,
+  .security-account-launcher,
+  .technician-account-manager-launcher,
+  .report-center-launcher,
+  .management-launcher,
+  .management-files-launcher,
+  .maintenance-board-launcher,
+  .rectification-launcher,
+  .commissioning-launcher,
+  .qr-label-launcher,
+  .nfc-management-launcher,
+  .technician-barcode-launcher,
+  .experience-settings-button,
+  .stability-badge {
+    display: none !important;
+  }
+
+  .core-topbar {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .core-topbar .header-search {
+    position: relative;
+    z-index: 2;
+    flex: 0 1 680px;
+    max-width: min(680px, calc(100% - 86px));
+  }
+
+  .core-topbar .profile-button {
+    position: relative;
+    z-index: 2;
+    flex: 0 0 auto;
+  }
+
+  .command-hero {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px) !important;
+    gap: clamp(22px, 3vw, 42px) !important;
+    align-items: center !important;
+    overflow: visible;
+  }
+
+  .command-hero > div {
+    min-width: 0;
+  }
+
+  .command-hero .scan-main-button {
+    width: 100% !important;
+    max-width: 380px;
+    min-width: 0;
+    min-height: 112px !important;
+    justify-self: end;
+    gap: 13px !important;
+    margin: 0 !important;
+    padding: 16px 18px !important;
+    border-radius: 18px !important;
+  }
+
+  .command-hero .scan-main-button > svg:first-of-type {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    flex: 0 0 auto;
+  }
+
+  .command-hero .scan-main-button > span:not(.button-aura) {
+    min-width: 0;
+  }
+
+  .command-hero .scan-main-button strong,
+  .command-hero .scan-main-button small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status-line,
+  .core-stats,
+  .core-content-grid {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 1100px) and (max-width: 1399px) {
+  .command-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 330px) !important;
+    gap: 24px !important;
+  }
+
+  .command-hero .scan-main-button {
+    max-width: 330px;
+    min-height: 104px !important;
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 1799px) {
+  .command-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px) !important;
+  }
+
+  .command-hero .scan-main-button {
+    max-width: 360px;
+  }
+}
+
+@media (max-width: 1099px) {
+  .command-hero .scan-main-button {
+    max-width: 100%;
+  }
+}

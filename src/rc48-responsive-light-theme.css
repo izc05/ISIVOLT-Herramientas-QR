@@ -1,0 +1,1101 @@
+/* RC48 · responsive fluido, tema claro y selector de apariencia */
+
+:root {
+  --rc48-gutter: clamp(12px, 2vw, 30px);
+  --rc48-radius: clamp(14px, 1.3vw, 22px);
+  --rc48-content-max: 1880px;
+}
+
+html,
+body,
+#root,
+.core-app-shell,
+.app-shell {
+  min-width: 320px;
+}
+
+.core-app-shell > main,
+.app-shell > main,
+.page-section,
+.command-hero,
+.content-grid,
+.tool-grid,
+.technician-grid,
+.stats-grid,
+.inventory-filter-curtain {
+  min-width: 0;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+.appearance-launcher {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.appearance-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 44000;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 18px;
+  background: rgba(1, 7, 16, .78);
+  backdrop-filter: blur(16px);
+}
+
+.appearance-panel {
+  width: min(620px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid rgba(84, 220, 255, .23);
+  border-radius: 26px;
+  color: #eefaff;
+  background: linear-gradient(155deg, #0a2239, #050c18 68%, #081d24);
+  box-shadow: 0 34px 100px rgba(0, 0, 0, .62);
+}
+
+.appearance-panel > header,
+.appearance-panel > header > div,
+.appearance-options button,
+.professional-appearance-shortcut {
+  display: flex;
+  align-items: center;
+}
+
+.appearance-panel > header {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.appearance-panel > header > div {
+  gap: 12px;
+  min-width: 0;
+}
+
+.appearance-panel > header > div > span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 15px;
+  color: #6fe9ff;
+  background: rgba(42, 189, 230, .12);
+}
+
+.appearance-panel h2,
+.appearance-panel p {
+  margin: 0;
+}
+
+.appearance-panel h2 {
+  margin-top: 3px;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+}
+
+.appearance-panel header small {
+  color: #65e5f7;
+  font-size: .68rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.appearance-panel header p,
+.appearance-panel footer {
+  color: rgba(220, 243, 253, .58);
+  line-height: 1.45;
+}
+
+.appearance-panel > header > button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 12px;
+  color: inherit;
+  background: rgba(255, 255, 255, .035);
+}
+
+.appearance-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.appearance-options button {
+  position: relative;
+  min-width: 0;
+  min-height: 126px;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 18px;
+  color: rgba(232, 248, 255, .78);
+  background: rgba(255, 255, 255, .028);
+  text-align: left;
+}
+
+.appearance-options button.active {
+  border-color: rgba(72, 219, 255, .34);
+  color: #f5fdff;
+  background: linear-gradient(145deg, rgba(35, 147, 218, .2), rgba(32, 198, 156, .09));
+  box-shadow: inset 0 0 0 1px rgba(66, 219, 255, .08);
+}
+
+.appearance-options button > span:first-child {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 13px;
+  color: #6ce8ff;
+  background: rgba(53, 198, 236, .09);
+}
+
+.appearance-options button > span:nth-child(2) {
+  display: grid;
+  gap: 4px;
+}
+
+.appearance-options button small {
+  color: rgba(220, 243, 253, .55);
+  line-height: 1.35;
+}
+
+.appearance-options button > svg {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  color: #57efb3;
+}
+
+.appearance-panel footer {
+  padding-top: 2px;
+  font-size: .75rem;
+}
+
+.professional-appearance-shortcut {
+  gap: 10px;
+  width: 100%;
+  padding: 11px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 14px;
+  color: rgba(232, 248, 255, .78);
+  background: rgba(255, 255, 255, .025);
+  text-align: left;
+}
+
+.professional-appearance-shortcut > span {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 11px;
+  color: #ffd56b;
+  background: rgba(255, 197, 66, .09);
+}
+
+.professional-appearance-shortcut > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.professional-appearance-shortcut small {
+  color: rgba(217, 240, 250, .56);
+  font-size: .68rem;
+  line-height: 1.25;
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --professional-sidebar-width: 250px;
+  }
+
+  .core-app-shell > main {
+    width: min(calc(100vw - var(--professional-sidebar-width) - 56px), var(--rc48-content-max));
+    margin-left: calc(var(--professional-sidebar-width) + 28px);
+    margin-right: 28px;
+  }
+
+  .core-topbar {
+    width: calc(100% - var(--professional-sidebar-width));
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .content-grid,
+  .core-content-grid {
+    grid-template-columns: minmax(420px, .9fr) minmax(580px, 1.1fr);
+  }
+
+  .tool-grid,
+  .technician-grid.game-technician-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1599px) {
+  :root {
+    --professional-sidebar-width: 218px;
+  }
+
+  .professional-sidebar {
+    gap: 10px;
+    padding: 14px 11px;
+  }
+
+  .professional-navigation button {
+    min-height: 49px;
+    grid-template-columns: 35px minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 6px 7px;
+  }
+
+  .professional-navigation button > span:first-child {
+    width: 33px;
+    height: 33px;
+  }
+
+  .core-topbar {
+    width: calc(100% - var(--professional-sidebar-width));
+    margin-left: var(--professional-sidebar-width);
+    padding-inline: 22px;
+  }
+
+  .core-app-shell > main {
+    width: auto;
+    margin-left: calc(var(--professional-sidebar-width) + 22px);
+    margin-right: 22px;
+  }
+
+  .command-hero,
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    gap: 22px;
+  }
+
+  .content-grid,
+  .core-content-grid {
+    grid-template-columns: minmax(360px, .92fr) minmax(460px, 1.08fr);
+    gap: 14px;
+  }
+
+  .tool-grid,
+  .technician-grid.game-technician-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .inventory-filter-curtain {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (min-width: 960px) and (max-width: 1199px) {
+  :root {
+    --professional-sidebar-width: 82px;
+  }
+
+  .professional-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1200;
+    width: var(--professional-sidebar-width);
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 9px;
+    overflow-y: auto;
+    border-right: 1px solid rgba(112, 211, 255, .13);
+    color: #edfaff;
+    background: linear-gradient(180deg, rgba(5, 18, 34, .99), rgba(3, 10, 21, .99));
+    box-shadow: 14px 0 42px rgba(0, 0, 0, .2);
+  }
+
+  .professional-brand {
+    display: grid;
+    place-items: center;
+    min-height: 58px;
+    padding: 7px 0 13px;
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+  }
+
+  .professional-brand > span {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid rgba(66, 226, 255, .34);
+    border-radius: 13px;
+    color: #7bf2ff;
+    background: rgba(26, 151, 210, .17);
+  }
+
+  .professional-brand > div,
+  .professional-section-label,
+  .professional-navigation button > span:nth-child(2),
+  .professional-navigation button > svg,
+  .professional-sync-card > div,
+  .professional-user-card > div,
+  .professional-appearance-shortcut > div {
+    display: none !important;
+  }
+
+  .professional-navigation {
+    display: grid;
+    gap: 5px;
+  }
+
+  .professional-navigation button {
+    display: grid;
+    width: 100%;
+    min-height: 52px;
+    place-items: center;
+    padding: 6px;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    color: rgba(231, 247, 255, .78);
+    background: transparent;
+  }
+
+  .professional-navigation button.active,
+  .professional-navigation .professional-scan {
+    border-color: rgba(55, 191, 255, .27);
+    background: rgba(32, 142, 205, .15);
+  }
+
+  .professional-navigation button > span:first-child {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 11px;
+    color: #68e8ff;
+    background: rgba(61, 210, 244, .08);
+  }
+
+  .professional-sync-card,
+  .professional-user-card,
+  .professional-appearance-shortcut {
+    display: grid;
+    min-height: 52px;
+    place-items: center;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, .07);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, .025);
+  }
+
+  .professional-sync-card {
+    margin-top: auto;
+  }
+
+  .professional-sync-card > span,
+  .professional-user-card > span,
+  .professional-appearance-shortcut > span {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 11px;
+  }
+
+  .professional-mobile-more,
+  .core-bottom-nav,
+  .web-mode-banner,
+  .central-sync-indicator,
+  .mobile-tools-menu,
+  .demo-reset {
+    display: none !important;
+  }
+
+  .core-topbar {
+    width: calc(100% - var(--professional-sidebar-width));
+    margin-left: var(--professional-sidebar-width);
+    padding-inline: 18px;
+  }
+
+  .core-topbar .brand {
+    display: none !important;
+  }
+
+  .core-topbar .header-search {
+    width: min(620px, 72vw);
+    margin-left: 0;
+  }
+
+  .core-app-shell > main {
+    width: auto;
+    margin-left: calc(var(--professional-sidebar-width) + 18px);
+    margin-right: 18px;
+  }
+
+  .command-hero,
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(235px, 290px);
+    gap: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .content-grid,
+  .core-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-grid,
+  .technician-grid.game-technician-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .inventory-filter-curtain,
+  .inventory-advanced-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 959px) {
+  .professional-sidebar {
+    display: none !important;
+  }
+
+  .core-app-shell {
+    padding-inline: var(--rc48-gutter) !important;
+    padding-bottom: calc(116px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .core-app-shell > main,
+  .app-shell > main {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .core-topbar,
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    width: calc(100% + (var(--rc48-gutter) * 2));
+    min-height: 74px;
+    height: auto;
+    margin: 0 calc(var(--rc48-gutter) * -1);
+    padding: 12px var(--rc48-gutter);
+    border-bottom: 1px solid var(--line);
+    background: rgba(4, 13, 25, .9);
+    backdrop-filter: blur(18px);
+  }
+
+  body[data-user-id]:not(.modal-open) .topbar {
+    margin-top: 0;
+  }
+
+  .core-topbar .header-search {
+    width: min(100%, 620px);
+    margin-left: auto;
+  }
+
+  .command-hero,
+  .hero {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 16px;
+    padding-top: 26px;
+  }
+
+  .scan-main-button,
+  .game-scan-main {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 96px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .content-grid,
+  .core-content-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .tool-grid,
+  .technician-grid.game-technician-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .inventory-filter-curtain,
+  .inventory-preset-grid,
+  .inventory-advanced-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .inventory-advanced-grid {
+    gap: 9px !important;
+  }
+
+  .page-section {
+    padding-top: 28px;
+  }
+
+  .page-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .page-heading .primary-button {
+    width: 100%;
+  }
+
+  .professional-mobile-more {
+    z-index: 9600;
+  }
+
+  .professional-more-panel,
+  .registration-manager,
+  .management-center,
+  .maintenance-board,
+  .commissioning-center,
+  .rectification-center {
+    width: min(100%, 760px) !important;
+  }
+}
+
+@media (max-width: 680px) {
+  :root {
+    --rc48-gutter: 12px;
+  }
+
+  .core-topbar,
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .core-topbar .brand {
+    min-width: 0;
+  }
+
+  .core-topbar .brand > span:last-child {
+    min-width: 0;
+  }
+
+  .core-topbar .brand strong,
+  .core-topbar .brand small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .core-topbar .header-search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    min-height: 46px;
+    margin: 0;
+  }
+
+  .core-topbar .profile-button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .hero h1,
+  .page-heading h1 {
+    font-size: clamp(1.85rem, 10vw, 2.7rem);
+  }
+
+  .hero-date {
+    font-size: .82rem;
+    line-height: 1.45;
+  }
+
+  .status-line {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 10px 12px;
+  }
+
+  .status-line .status-divider {
+    display: none;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .core-stats .stat-card,
+  .stat-card {
+    min-height: 132px;
+    padding: 15px;
+  }
+
+  .core-stats .stat-card > strong {
+    margin-top: 12px;
+    font-size: 1.9rem;
+  }
+
+  .tool-grid,
+  .technician-grid.game-technician-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tool-card,
+  .technician-card,
+  .panel,
+  .stat-card,
+  .inventory-filter-curtain {
+    border-radius: 17px !important;
+  }
+
+  .quick-action {
+    min-height: 68px;
+    padding: 11px;
+  }
+
+  .movement {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .movement time {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .appearance-options {
+    grid-template-columns: 1fr;
+  }
+
+  .appearance-options button {
+    min-height: 82px;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .appearance-options button > svg {
+    position: static;
+    margin-left: auto;
+  }
+
+  .appearance-panel {
+    padding: 17px;
+    border-radius: 21px;
+  }
+
+  .professional-more-backdrop,
+  .appearance-backdrop,
+  .registration-manager-backdrop,
+  .management-backdrop,
+  .maintenance-board-backdrop,
+  .commissioning-backdrop,
+  .rectification-backdrop,
+  .security-admin-backdrop {
+    align-items: stretch;
+    padding: 0 !important;
+  }
+
+  .professional-more-panel,
+  .appearance-panel,
+  .registration-manager,
+  .management-center,
+  .maintenance-board,
+  .commissioning-center,
+  .rectification-center,
+  .security-admin-panel {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 100dvh;
+    max-height: 100dvh !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    overflow-y: auto;
+  }
+
+  .professional-more-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .core-app-shell {
+    padding-inline: 9px !important;
+  }
+
+  .core-topbar,
+  .topbar {
+    width: calc(100% + 18px);
+    margin-inline: -9px;
+    padding-inline: 10px;
+  }
+
+  .brand-mark,
+  .game-brand-mark {
+    width: 39px;
+    height: 39px;
+  }
+
+  .profile-button {
+    width: 39px;
+    height: 39px;
+  }
+
+  .scan-main-button,
+  .game-scan-main {
+    min-height: 84px;
+    padding: 13px;
+  }
+
+  .scan-main-button svg:last-child,
+  .game-scan-main svg:last-child {
+    display: none;
+  }
+}
+
+/* Tema claro */
+html[data-theme='light'] {
+  color: #16253a;
+  background: #eef3f8;
+  --bg: #eef3f8;
+  --panel: rgba(255, 255, 255, .92);
+  --panel-strong: #ffffff;
+  --line: rgba(30, 63, 95, .14);
+  --muted: #60758a;
+  --cyan: #087ca6;
+  --blue: #2266d5;
+  --green: #087c56;
+  --orange: #a96100;
+  --red: #c3324b;
+  --violet: #6845c7;
+  --shadow: 0 18px 54px rgba(41, 67, 91, .13);
+}
+
+html[data-theme='light'] body,
+html[data-theme='light'] #root,
+html[data-theme='light'] .app-shell,
+html[data-theme='light'] .core-app-shell {
+  color: #16253a;
+  background: #eef3f8;
+}
+
+html[data-theme='light'] .ambient,
+html[data-theme='light'] .game-ambient {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(24, 132, 210, .11), transparent 34%),
+    radial-gradient(circle at 88% 5%, rgba(31, 187, 157, .09), transparent 30%),
+    linear-gradient(145deg, #f8fbfe 0%, #eef4f9 48%, #edf4f6 100%);
+}
+
+html[data-theme='light'] .orb {
+  opacity: .09;
+}
+
+html[data-theme='light'] .grid-glow {
+  opacity: .18;
+  background-image:
+    linear-gradient(rgba(43, 91, 130, .08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(43, 91, 130, .08) 1px, transparent 1px);
+}
+
+html[data-theme='light'] .professional-sidebar,
+html[data-theme='light'] .core-topbar,
+html[data-theme='light'] .topbar,
+html[data-theme='light'] .web-mode-banner,
+html[data-theme='light'] .central-sync-indicator,
+html[data-theme='light'] .core-bottom-nav,
+html[data-theme='light'] .bottom-nav,
+html[data-theme='light'] .professional-mobile-more {
+  color: #17283b;
+  border-color: rgba(35, 70, 101, .14);
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 12px 34px rgba(44, 70, 94, .1);
+}
+
+html[data-theme='light'] .professional-brand,
+html[data-theme='light'] .professional-sidebar {
+  border-color: rgba(35, 70, 101, .13);
+}
+
+html[data-theme='light'] .professional-brand small,
+html[data-theme='light'] .professional-navigation small,
+html[data-theme='light'] .professional-sync-card small,
+html[data-theme='light'] .professional-user-card small,
+html[data-theme='light'] .professional-appearance-shortcut small,
+html[data-theme='light'] .professional-section-label {
+  color: #6a7f92;
+}
+
+html[data-theme='light'] .professional-navigation button,
+html[data-theme='light'] .professional-user-card,
+html[data-theme='light'] .professional-sync-card,
+html[data-theme='light'] .professional-appearance-shortcut {
+  color: #26394b;
+  border-color: rgba(35, 70, 101, .11);
+  background: rgba(245, 249, 252, .84);
+}
+
+html[data-theme='light'] .professional-navigation button:hover,
+html[data-theme='light'] .professional-navigation button.active,
+html[data-theme='light'] .professional-navigation .professional-scan {
+  color: #10263a;
+  border-color: rgba(18, 136, 190, .26);
+  background: linear-gradient(120deg, rgba(31, 132, 218, .13), rgba(31, 194, 160, .08));
+  box-shadow: inset 3px 0 #1da6d1, 0 8px 22px rgba(33, 77, 110, .08);
+}
+
+html[data-theme='light'] .header-search,
+html[data-theme='light'] input,
+html[data-theme='light'] select,
+html[data-theme='light'] textarea,
+html[data-theme='light'] .technician-selector-search,
+html[data-theme='light'] .technician-selector-category {
+  color: #15283b;
+  border-color: rgba(34, 72, 105, .16);
+  background: rgba(255, 255, 255, .94);
+}
+
+html[data-theme='light'] .header-search input,
+html[data-theme='light'] .central-access-form input,
+html[data-theme='light'] .technician-selector-search input,
+html[data-theme='light'] .technician-selector-category select {
+  color: #15283b;
+}
+
+html[data-theme='light'] input::placeholder,
+html[data-theme='light'] textarea::placeholder,
+html[data-theme='light'] .header-search input::placeholder {
+  color: #8293a3;
+}
+
+html[data-theme='light'] select option {
+  color: #17283b;
+  background: #fff;
+}
+
+html[data-theme='light'] .status-line,
+html[data-theme='light'] .stat-card,
+html[data-theme='light'] .panel,
+html[data-theme='light'] .game-panel,
+html[data-theme='light'] .tool-card,
+html[data-theme='light'] .technician-card,
+html[data-theme='light'] .movement,
+html[data-theme='light'] .inventory-filter-curtain,
+html[data-theme='light'] .inventory-filter-panel,
+html[data-theme='light'] .inventory-preset-grid button,
+html[data-theme='light'] .inventory-category-filter button,
+html[data-theme='light'] .tool-operation-times span,
+html[data-theme='light'] .quick-action,
+html[data-theme='light'] .assigned-summary,
+html[data-theme='light'] .technician-selector-results > button {
+  color: #17283b;
+  border-color: rgba(34, 72, 105, .13);
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 12px 34px rgba(46, 74, 98, .09);
+}
+
+html[data-theme='light'] .stat-card p,
+html[data-theme='light'] .panel p,
+html[data-theme='light'] .tool-card p,
+html[data-theme='light'] .technician-card p,
+html[data-theme='light'] .tool-details dt,
+html[data-theme='light'] .tool-operation-times small,
+html[data-theme='light'] .movement-main span,
+html[data-theme='light'] .movement time,
+html[data-theme='light'] .quick-action small,
+html[data-theme='light'] .hero-date,
+html[data-theme='light'] .page-heading p {
+  color: #65798c;
+}
+
+html[data-theme='light'] .tool-details dd,
+html[data-theme='light'] .tool-card h3,
+html[data-theme='light'] .technician-card h3,
+html[data-theme='light'] .movement-main strong,
+html[data-theme='light'] .section-heading h2,
+html[data-theme='light'] .page-heading h1,
+html[data-theme='light'] .hero h1 {
+  color: #14263a;
+}
+
+html[data-theme='light'] .tool-details,
+html[data-theme='light'] .movement,
+html[data-theme='light'] .status-line,
+html[data-theme='light'] .section-heading,
+html[data-theme='light'] .page-heading {
+  border-color: rgba(34, 72, 105, .13);
+}
+
+html[data-theme='light'] .tool-card-actions button,
+html[data-theme='light'] .inventory-filter-curtain button,
+html[data-theme='light'] .segmented-control button,
+html[data-theme='light'] .text-button,
+html[data-theme='light'] .icon-button {
+  color: #1c435d;
+  border-color: rgba(23, 113, 157, .18);
+  background: rgba(235, 245, 250, .9);
+}
+
+html[data-theme='light'] .primary-button,
+html[data-theme='light'] .scan-main-button,
+html[data-theme='light'] .game-scan-main {
+  color: #fff;
+}
+
+html[data-theme='light'] .professional-more-backdrop,
+html[data-theme='light'] .appearance-backdrop,
+html[data-theme='light'] .registration-manager-backdrop,
+html[data-theme='light'] .management-backdrop,
+html[data-theme='light'] .maintenance-board-backdrop,
+html[data-theme='light'] .commissioning-backdrop,
+html[data-theme='light'] .rectification-backdrop,
+html[data-theme='light'] .security-admin-backdrop,
+html[data-theme='light'] .modal-backdrop,
+html[data-theme='light'] .native-scan-backdrop {
+  background: rgba(56, 72, 87, .38);
+}
+
+html[data-theme='light'] .professional-more-panel,
+html[data-theme='light'] .appearance-panel,
+html[data-theme='light'] .registration-manager,
+html[data-theme='light'] .management-center,
+html[data-theme='light'] .maintenance-board,
+html[data-theme='light'] .commissioning-center,
+html[data-theme='light'] .rectification-center,
+html[data-theme='light'] .security-admin-panel,
+html[data-theme='light'] .core-modal,
+html[data-theme='light'] .native-scan-console,
+html[data-theme='light'] .central-access-card,
+html[data-theme='light'] .central-access-preparing,
+html[data-theme='light'] .mobile-tools-menu {
+  color: #17283b;
+  border-color: rgba(34, 72, 105, .16);
+  background: #fff;
+  box-shadow: 0 28px 90px rgba(44, 65, 84, .2);
+}
+
+html[data-theme='light'] .professional-more-panel header,
+html[data-theme='light'] .registration-manager > header,
+html[data-theme='light'] .management-center > header,
+html[data-theme='light'] .appearance-panel > header {
+  border-color: rgba(34, 72, 105, .13);
+  background: rgba(245, 249, 252, .88);
+}
+
+html[data-theme='light'] .professional-more-panel p,
+html[data-theme='light'] .professional-more-panel small,
+html[data-theme='light'] .appearance-panel p,
+html[data-theme='light'] .appearance-panel footer,
+html[data-theme='light'] .appearance-options button small,
+html[data-theme='light'] .registration-manager p,
+html[data-theme='light'] .registration-manager small,
+html[data-theme='light'] .central-access-card p,
+html[data-theme='light'] .central-access-explanation {
+  color: #667b8e;
+}
+
+html[data-theme='light'] .professional-more-grid button,
+html[data-theme='light'] .appearance-options button,
+html[data-theme='light'] .registration-request-card,
+html[data-theme='light'] .central-access-form,
+html[data-theme='light'] .central-access-card > nav,
+html[data-theme='light'] .central-access-status {
+  color: #17283b;
+  border-color: rgba(34, 72, 105, .13);
+  background: rgba(246, 249, 252, .95);
+}
+
+html[data-theme='light'] .appearance-options button.active,
+html[data-theme='light'] .central-access-card > nav button.active {
+  color: #10263a;
+  border-color: rgba(22, 135, 188, .28);
+  background: linear-gradient(145deg, rgba(34, 144, 216, .13), rgba(30, 190, 154, .08));
+}
+
+html[data-theme='light'] .central-access-gate {
+  color: #17283b;
+  background:
+    radial-gradient(circle at 18% 4%, rgba(18, 135, 225, .13), transparent 34rem),
+    radial-gradient(circle at 88% 8%, rgba(18, 211, 174, .1), transparent 30rem),
+    linear-gradient(150deg, #f7fbfe, #edf3f8 64%, #eef7f5);
+}
+
+html[data-theme='light'] .central-access-form label,
+html[data-theme='light'] .central-access-heading small,
+html[data-theme='light'] .central-access-status span,
+html[data-theme='light'] .central-access-status small {
+  color: #62788b;
+}
+
+html[data-theme='light'] .central-access-heading > span,
+html[data-theme='light'] .central-access-card h1,
+html[data-theme='light'] .appearance-panel h2,
+html[data-theme='light'] .professional-more-panel h2,
+html[data-theme='light'] .registration-manager h2,
+html[data-theme='light'] .registration-manager h3 {
+  color: #14263a;
+}
+
+html[data-theme='light'] .central-access-form label > div {
+  border-color: rgba(34, 72, 105, .14);
+  background: #fff;
+}
+
+html[data-theme='light'] .native-scan-footer {
+  border-color: rgba(34, 72, 105, .13);
+  background: rgba(255, 255, 255, .96);
+}
+
+html[data-theme='light'] .role-scope-bar,
+html[data-theme='light'] .security-session-bar,
+html[data-theme='light'] .boot-degraded-banner {
+  color: #17283b;
+  border-color: rgba(34, 72, 105, .15);
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 12px 32px rgba(44, 69, 91, .12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appearance-panel,
+  .professional-sidebar,
+  .core-topbar,
+  .tool-card,
+  .stat-card,
+  .panel {
+    transition: none !important;
+  }
+}

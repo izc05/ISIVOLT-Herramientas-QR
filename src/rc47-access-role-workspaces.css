@@ -1,0 +1,814 @@
+/* RC47 · acceso central obligatorio y experiencias específicas por rol */
+
+.registration-request-manager-launcher {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.central-access-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 50000;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 24px;
+  color: #eefbff;
+  background:
+    radial-gradient(circle at 18% 4%, rgba(18, 135, 225, .22), transparent 34rem),
+    radial-gradient(circle at 88% 8%, rgba(18, 211, 174, .14), transparent 30rem),
+    linear-gradient(150deg, #06182b, #020812 64%, #071825);
+}
+
+.central-access-card {
+  width: min(720px, 100%);
+  display: grid;
+  gap: 15px;
+  padding: 24px;
+  border: 1px solid rgba(87, 222, 255, .26);
+  border-radius: 28px;
+  background: linear-gradient(155deg, rgba(10, 34, 57, .985), rgba(4, 12, 25, .99) 64%, rgba(6, 27, 34, .98));
+  box-shadow: 0 38px 110px rgba(0, 0, 0, .68), inset 0 1px rgba(255, 255, 255, .05);
+}
+
+.central-access-card > header,
+.central-access-heading,
+.central-access-card > footer,
+.central-access-message,
+.central-access-status {
+  display: flex;
+  align-items: center;
+}
+
+.central-access-card > header {
+  gap: 15px;
+}
+
+.central-access-logo {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(72, 224, 255, .3);
+  border-radius: 21px;
+  color: #75ecff;
+  background: rgba(31, 177, 223, .12);
+  box-shadow: 0 0 34px rgba(39, 197, 238, .12);
+}
+
+.central-access-card header div {
+  min-width: 0;
+}
+
+.central-access-card header small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #70e7f8;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+
+.central-access-card h1 {
+  margin: 4px 0 3px;
+  font-size: clamp(1.55rem, 4vw, 2.25rem);
+}
+
+.central-access-card header p,
+.central-access-explanation {
+  margin: 0;
+  color: rgba(222, 244, 255, .64);
+  line-height: 1.5;
+}
+
+.central-access-card > nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 16px;
+  background: rgba(0, 7, 17, .48);
+}
+
+.central-access-card > nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: rgba(230, 247, 255, .58);
+  background: transparent;
+  font-weight: 800;
+}
+
+.central-access-card > nav button.active {
+  border-color: rgba(76, 222, 255, .26);
+  color: #f2fcff;
+  background: linear-gradient(140deg, rgba(26, 146, 205, .2), rgba(30, 194, 151, .09));
+}
+
+.central-access-form {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, .075);
+  border-radius: 20px;
+  background: rgba(2, 12, 24, .58);
+}
+
+.central-access-heading {
+  gap: 10px;
+  margin-bottom: 2px;
+  color: #71e8fa;
+}
+
+.central-access-heading > span {
+  display: grid;
+  gap: 2px;
+  color: #f2fbff;
+}
+
+.central-access-heading small {
+  color: rgba(222, 244, 255, .52);
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.central-access-form label {
+  display: grid;
+  gap: 6px;
+  color: rgba(225, 245, 255, .68);
+  font-size: .77rem;
+  font-weight: 780;
+}
+
+.central-access-form label > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 13px;
+  background: rgba(0, 7, 17, .72);
+}
+
+.central-access-form label > div:focus-within {
+  border-color: rgba(78, 223, 255, .42);
+  box-shadow: 0 0 0 3px rgba(61, 204, 244, .08);
+}
+
+.central-access-form label svg {
+  color: rgba(112, 231, 250, .72);
+}
+
+.central-access-form input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: #fff;
+  background: transparent;
+}
+
+.central-access-two-columns {
+  display: grid;
+  grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr);
+  gap: 10px;
+}
+
+.central-access-primary,
+.central-access-status-button,
+.central-access-status button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border-radius: 13px;
+  font-weight: 850;
+}
+
+.central-access-primary {
+  border: 1px solid rgba(77, 229, 255, .38);
+  color: #03131b;
+  background: linear-gradient(135deg, #62e5ff, #55eab0);
+  box-shadow: 0 13px 28px rgba(18, 180, 202, .2);
+}
+
+.central-access-primary:disabled,
+.central-access-status-button:disabled {
+  opacity: .42;
+  cursor: default;
+}
+
+.central-access-status-button {
+  border: 1px solid rgba(255, 255, 255, .08);
+  color: rgba(232, 248, 255, .78);
+  background: rgba(255, 255, 255, .035);
+}
+
+.central-access-message {
+  gap: 8px;
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 13px;
+  line-height: 1.45;
+}
+
+.central-access-message.error {
+  border: 1px solid rgba(255, 88, 102, .23);
+  color: #ffc4ca;
+  background: rgba(255, 56, 73, .07);
+}
+
+.central-access-message.notice {
+  border: 1px solid rgba(74, 232, 170, .2);
+  color: #c8ffec;
+  background: rgba(41, 198, 137, .07);
+}
+
+.central-access-status {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.central-access-status.status-approved {
+  border-color: rgba(63, 229, 167, .24);
+}
+
+.central-access-status.status-rejected {
+  border-color: rgba(255, 91, 107, .24);
+}
+
+.central-access-status span,
+.central-access-status small {
+  color: rgba(222, 244, 255, .62);
+}
+
+.central-access-status button {
+  margin-top: 5px;
+  padding: 0 14px;
+  border: 1px solid rgba(78, 224, 255, .23);
+  color: #eefdff;
+  background: rgba(33, 164, 210, .13);
+}
+
+.central-access-card > footer {
+  gap: 7px;
+  color: rgba(219, 242, 252, .46);
+  font-size: .72rem;
+}
+
+.central-access-preparing {
+  width: min(420px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px;
+  border: 1px solid rgba(81, 226, 255, .22);
+  border-radius: 24px;
+  color: #effbff;
+  background: rgba(4, 20, 35, .96);
+  text-align: center;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .58);
+}
+
+.central-access-preparing span {
+  color: rgba(222, 244, 255, .58);
+}
+
+.central-access-spinner,
+.registration-spinner {
+  animation: rc47-spin 900ms linear infinite;
+}
+
+@keyframes rc47-spin {
+  to { transform: rotate(360deg); }
+}
+
+.registration-manager-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 37000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(1, 6, 14, .82);
+  backdrop-filter: blur(16px);
+}
+
+.registration-manager {
+  width: min(1120px, 100%);
+  max-height: calc(100dvh - 36px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid rgba(80, 222, 255, .24);
+  border-radius: 26px;
+  color: #effbff;
+  background: linear-gradient(155deg, #0a233b, #050c19 66%, #081d25);
+  box-shadow: 0 36px 110px rgba(0, 0, 0, .68);
+}
+
+.registration-manager > header,
+.registration-manager > header > div,
+.registration-manager-toolbar,
+.registration-manager-summary,
+.registration-request-profile,
+.registration-feedback,
+.registration-warning,
+.registration-reviewed {
+  display: flex;
+  align-items: center;
+}
+
+.registration-manager > header {
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, .075);
+  background: rgba(2, 12, 24, .42);
+}
+
+.registration-manager > header > div {
+  gap: 12px;
+}
+
+.registration-manager > header > div > span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 15px;
+  color: #75ebff;
+  background: rgba(45, 183, 225, .12);
+}
+
+.registration-manager h2,
+.registration-manager h3 {
+  margin: 2px 0;
+}
+
+.registration-manager header p,
+.registration-manager header small {
+  margin: 0;
+  color: rgba(220, 243, 253, .56);
+}
+
+.registration-manager > header > button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 12px;
+  color: #fff;
+  background: rgba(255, 255, 255, .035);
+}
+
+.registration-manager-layout {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(310px, .78fr) minmax(0, 1.42fr);
+}
+
+.registration-manager-layout > aside {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px;
+  border-right: 1px solid rgba(255, 255, 255, .065);
+  background: rgba(1, 10, 21, .42);
+}
+
+.registration-manager-toolbar {
+  gap: 8px;
+}
+
+.registration-manager-toolbar label {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 43px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 12px;
+  color: #73e7f7;
+  background: rgba(0, 8, 17, .68);
+}
+
+.registration-manager-toolbar input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #fff;
+  background: transparent;
+}
+
+.registration-manager-toolbar > button {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 12px;
+  color: #bcefff;
+  background: rgba(255, 255, 255, .035);
+}
+
+.registration-manager-summary {
+  justify-content: space-between;
+  gap: 8px;
+  color: rgba(222, 244, 255, .55);
+  font-size: .72rem;
+}
+
+.registration-manager-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #f0c774;
+}
+
+.registration-request-list {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.registration-request-list > button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 14px;
+  color: #eefaff;
+  background: rgba(255, 255, 255, .025);
+  text-align: left;
+}
+
+.registration-request-list > button.active {
+  border-color: rgba(72, 221, 255, .34);
+  background: rgba(32, 155, 199, .11);
+}
+
+.registration-request-list > button > span,
+.registration-request-avatar {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border-radius: 14px;
+  color: #ddf9ff;
+  background: rgba(39, 177, 220, .14);
+  font-weight: 900;
+}
+
+.registration-request-list > button > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.registration-request-list small {
+  overflow: hidden;
+  color: rgba(220, 243, 253, .55);
+  font-size: .68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.registration-request-list em {
+  color: #efc670;
+  font-size: .67rem;
+  font-style: normal;
+}
+
+.registration-request-list .status-approved em {
+  color: #72e8b5;
+}
+
+.registration-request-list .status-rejected em {
+  color: #ff9faa;
+}
+
+.registration-manager-layout > main {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 13px;
+  overflow: auto;
+  padding: 18px;
+}
+
+.registration-request-profile {
+  align-items: flex-start;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, .075);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.registration-request-profile > div:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.registration-request-profile p,
+.registration-request-profile time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: rgba(220, 243, 253, .6);
+}
+
+.registration-review-form,
+.registration-reject-block {
+  display: grid;
+  gap: 10px;
+}
+
+.registration-review-form {
+  padding: 15px;
+  border: 1px solid rgba(71, 225, 176, .15);
+  border-radius: 17px;
+  background: rgba(34, 184, 129, .04);
+}
+
+.registration-review-form label,
+.registration-reject-block label {
+  display: grid;
+  gap: 6px;
+  color: rgba(222, 244, 255, .66);
+  font-size: .75rem;
+  font-weight: 780;
+}
+
+.registration-review-form select,
+.registration-reject-block textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 12px;
+  outline: 0;
+  color: #fff;
+  background: rgba(0, 8, 17, .72);
+}
+
+.registration-warning,
+.registration-feedback {
+  gap: 7px;
+  margin: 0;
+  padding: 10px 11px;
+  border-radius: 12px;
+  line-height: 1.4;
+}
+
+.registration-warning {
+  border: 1px solid rgba(255, 187, 67, .2);
+  color: #ffe2a7;
+  background: rgba(255, 171, 28, .06);
+}
+
+.registration-approve,
+.registration-reject-block > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border-radius: 12px;
+  font-weight: 850;
+}
+
+.registration-approve {
+  border: 1px solid rgba(72, 232, 174, .3);
+  color: #031a13;
+  background: linear-gradient(135deg, #62e6bd, #72e7f7);
+}
+
+.registration-reject-block {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .065);
+}
+
+.registration-reject-block > button {
+  border: 1px solid rgba(255, 90, 105, .22);
+  color: #ffc4ca;
+  background: rgba(255, 57, 74, .075);
+}
+
+.registration-approve:disabled,
+.registration-reject-block > button:disabled {
+  opacity: .42;
+}
+
+.registration-reviewed {
+  align-items: flex-start;
+  gap: 11px;
+  padding: 15px;
+  border: 1px solid rgba(73, 229, 170, .18);
+  border-radius: 16px;
+  color: #caffea;
+  background: rgba(40, 194, 137, .055);
+}
+
+.registration-reviewed.status-rejected {
+  border-color: rgba(255, 86, 102, .2);
+  color: #ffc3ca;
+  background: rgba(255, 55, 72, .055);
+}
+
+.registration-reviewed > div {
+  display: grid;
+  gap: 4px;
+}
+
+.registration-reviewed span,
+.registration-reviewed p {
+  margin: 0;
+  color: rgba(222, 244, 255, .58);
+}
+
+.registration-feedback.error {
+  border: 1px solid rgba(255, 87, 102, .22);
+  color: #ffc3ca;
+  background: rgba(255, 55, 72, .055);
+}
+
+.registration-feedback.notice {
+  border: 1px solid rgba(66, 228, 167, .2);
+  color: #c9ffea;
+  background: rgba(38, 194, 137, .055);
+}
+
+.registration-manager-empty {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 24px;
+  color: rgba(222, 244, 255, .6);
+  text-align: center;
+}
+
+.registration-manager-empty strong {
+  color: #f0fbff;
+}
+
+.rc47-role-hidden {
+  display: none !important;
+}
+
+body[data-role="technician"] .scan-main-button {
+  display: flex !important;
+}
+
+body[data-role="technician"] .quick-actions button {
+  display: flex !important;
+}
+
+body[data-role="technician"] .actions-panel.rc47-personal-actions {
+  display: block !important;
+}
+
+body[data-role="technician"] .core-stats .stat-card:nth-child(4) {
+  display: block !important;
+}
+
+body[data-role="technician"] .professional-navigation-secondary + .professional-sync-card {
+  margin-top: auto;
+}
+
+body[data-role="coordinator"] .scan-main-button,
+body[data-role="coordinator"] .nav-scan-button,
+body[data-role="coordinator"] .actions-panel.rc47-coordinator-readonly {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .central-access-gate {
+    align-items: end;
+    padding: 0;
+  }
+
+  .central-access-card {
+    width: 100%;
+    max-height: 96dvh;
+    overflow: auto;
+    padding: 18px 14px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 25px 25px 0 0;
+  }
+
+  .central-access-card > header {
+    align-items: flex-start;
+  }
+
+  .central-access-logo {
+    width: 54px;
+    height: 54px;
+    border-radius: 17px;
+  }
+
+  .central-access-card header p {
+    display: none;
+  }
+
+  .central-access-form {
+    padding: 14px;
+  }
+
+  .central-access-two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-manager-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .registration-manager {
+    width: 100%;
+    max-height: 96dvh;
+    border-radius: 25px 25px 0 0;
+  }
+
+  .registration-manager > header {
+    padding: 14px;
+  }
+
+  .registration-manager header p {
+    display: none;
+  }
+
+  .registration-manager-layout {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .registration-manager-layout > aside {
+    min-height: 300px;
+    max-height: 42dvh;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .065);
+  }
+
+  .registration-manager-layout > main {
+    overflow: visible;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
+  body[data-role="technician"] .core-bottom-nav {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .central-access-card > nav button {
+    padding-inline: 7px;
+    font-size: .76rem;
+  }
+
+  .central-access-card h1 {
+    font-size: 1.45rem;
+  }
+
+  .registration-request-profile {
+    flex-direction: column;
+  }
+}

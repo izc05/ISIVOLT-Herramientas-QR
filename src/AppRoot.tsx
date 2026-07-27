@@ -10,6 +10,7 @@ import ProfessionalShell from './components/ProfessionalShell';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
 import InventoryFilterBridge from './features/inventory/InventoryFilterBridge';
 import InventoryOperationalEnhancer from './features/inventory/InventoryOperationalEnhancer';
+import InventoryPhotoBridge from './features/inventory/InventoryPhotoBridge';
 import ResponsiveInventoryEnhancer from './features/inventory/ResponsiveInventoryEnhancer';
 import ToolEditManager from './features/inventory/ToolEditManager';
 import ToolLifecycleManager from './features/inventory/ToolLifecycleManager';
@@ -118,8 +119,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC43</strong>
-                  <span>Inventario móvil ordenado · cuentas técnicas · sincronización preparada</span>
+                  <strong>Modo web RC45</strong>
+                  <span>Fotografías recuperadas · tarjetas equilibradas · cuentas técnicas preparadas</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
@@ -144,6 +145,7 @@ export default function AppRoot() {
           <AppStable key={appRevision} />
           <InventoryFilterBridge />
           <InventoryOperationalEnhancer />
+          <InventoryPhotoBridge />
           <ResponsiveInventoryEnhancer />
           <ToolEditManager />
           <ToolLifecycleManager />

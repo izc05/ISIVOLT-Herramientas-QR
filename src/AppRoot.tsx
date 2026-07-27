@@ -22,6 +22,7 @@ import MaintenanceBoard from './features/management/MaintenanceBoard';
 import NfcManagementCenter from './features/nfc/NfcManagementCenter';
 import AuthenticatedTechnicianBridge from './features/operations/AuthenticatedTechnicianBridge';
 import FastScanWorkflow from './features/operations/FastScanWorkflow';
+import AppearanceController from './features/personalization/AppearanceController';
 import RoleWorkspacePresenter from './features/roles/RoleWorkspacePresenter';
 import StationPresenceController from './features/station/StationPresenceController';
 import TechnicianAccountManager from './features/technicians/TechnicianAccountManager';
@@ -98,6 +99,7 @@ export default function AppRoot() {
 
   return (
     <BootErrorBoundary>
+      <AppearanceController />
       <CentralIdentitySessionBridge />
       <SecurityController />
       <CentralAccessGateway />
@@ -128,8 +130,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC47</strong>
-                  <span>Acceso personal · solicitudes aprobadas · espacios distintos por rol</span>
+                  <strong>Modo web RC48</strong>
+                  <span>Responsive automático · tema claro u oscuro · publicación continua</span>
                 </div>
               </aside>
               <SyncStatusIndicator />

@@ -1,0 +1,135 @@
+/* RC49.4 · estado operativo real y acabado de márgenes */
+
+.status-line .system-level,
+.game-status-line .system-level {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  max-width: min(260px, 42%);
+  margin-left: auto;
+  padding: 3px 9px;
+  overflow: hidden;
+  border: 1px solid rgba(74, 219, 255, .16);
+  border-radius: 999px;
+  color: #68eaff;
+  background: rgba(37, 175, 210, .07);
+  font-size: .61rem;
+  font-weight: 850;
+  letter-spacing: .055em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-line[data-sync-mode='local'] .system-level,
+.game-status-line[data-sync-mode='local'] .system-level,
+.status-line[data-sync-mode='offline'] .system-level,
+.game-status-line[data-sync-mode='offline'] .system-level {
+  border-color: rgba(255, 181, 71, .2);
+  color: #ffc46b;
+  background: rgba(255, 172, 52, .08);
+}
+
+.status-line[data-sync-mode='synced'] .system-level,
+.game-status-line[data-sync-mode='synced'] .system-level {
+  border-color: rgba(62, 224, 164, .2);
+  color: #6ff2bd;
+  background: rgba(42, 204, 143, .08);
+}
+
+.status-line[data-sync-mode='conflict'] .system-level,
+.game-status-line[data-sync-mode='conflict'] .system-level,
+.status-line[data-sync-mode='error'] .system-level,
+.game-status-line[data-sync-mode='error'] .system-level {
+  border-color: rgba(255, 98, 119, .22);
+  color: #ff9cab;
+  background: rgba(255, 64, 91, .08);
+}
+
+html[data-theme='light'] .status-line .system-level,
+html[data-theme='light'] .game-status-line .system-level {
+  color: #087b9e !important;
+  border-color: #bfdae3 !important;
+  background: #edf7f9 !important;
+}
+
+html[data-theme='light'] .status-line[data-sync-mode='local'] .system-level,
+html[data-theme='light'] .game-status-line[data-sync-mode='local'] .system-level,
+html[data-theme='light'] .status-line[data-sync-mode='offline'] .system-level,
+html[data-theme='light'] .game-status-line[data-sync-mode='offline'] .system-level {
+  color: #8c5200 !important;
+  border-color: #ead3a8 !important;
+  background: #fff7e8 !important;
+}
+
+html[data-theme='light'] .status-line[data-sync-mode='synced'] .system-level,
+html[data-theme='light'] .game-status-line[data-sync-mode='synced'] .system-level {
+  color: #08704d !important;
+  border-color: #bcdccd !important;
+  background: #edf8f2 !important;
+}
+
+html[data-theme='light'] .status-line[data-sync-mode='conflict'] .system-level,
+html[data-theme='light'] .game-status-line[data-sync-mode='conflict'] .system-level,
+html[data-theme='light'] .status-line[data-sync-mode='error'] .system-level,
+html[data-theme='light'] .game-status-line[data-sync-mode='error'] .system-level {
+  color: #b12f44 !important;
+  border-color: #e9c2c9 !important;
+  background: #fff1f3 !important;
+}
+
+/* Margen de seguridad final para listas, botones y barra de navegación. */
+.core-app-shell > main,
+.app-shell > main {
+  padding-bottom: clamp(32px, 4vw, 64px);
+}
+
+.core-content-grid,
+.content-grid,
+.tool-grid,
+.technician-grid,
+.movement-history,
+.page-section {
+  scroll-margin-bottom: 110px;
+}
+
+.core-movement-list,
+.movement-list,
+.movement-history-list {
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+
+.core-movement-list .movement:last-child,
+.movement-list .movement:last-child,
+.movement-history-list > :last-child {
+  margin-bottom: 2px;
+}
+
+@media (max-width: 959px) {
+  .core-app-shell,
+  .app-shell {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .core-app-shell > main,
+  .app-shell > main {
+    padding-bottom: 26px;
+  }
+}
+
+@media (max-width: 680px) {
+  .status-line .system-level,
+  .game-status-line .system-level {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .status-line,
+  .game-status-line {
+    align-items: flex-start;
+  }
+}

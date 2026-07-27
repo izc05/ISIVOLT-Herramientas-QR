@@ -25,6 +25,7 @@ import FastScanWorkflow from './features/operations/FastScanWorkflow';
 import AppearanceController from './features/personalization/AppearanceController';
 import RoleWorkspacePresenter from './features/roles/RoleWorkspacePresenter';
 import StationPresenceController from './features/station/StationPresenceController';
+import OperationalStatusPresenter from './features/status/OperationalStatusPresenter';
 import TechnicianAccountManager from './features/technicians/TechnicianAccountManager';
 import CommissioningCenter from './production/CommissioningCenter';
 import RectificationCenter from './security/RectificationCenter';
@@ -107,6 +108,7 @@ export default function AppRoot() {
       <TechnicianAccountManager />
       <RegistrationRequestManager />
       <AuthenticatedIdentityPresenter />
+      <OperationalStatusPresenter />
 
       {bootState === 'loading' ? (
         <main className="boot-screen">
@@ -130,8 +132,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC49.3</strong>
-                  <span>Tema claro coherente · contraste reforzado · sombras suaves</span>
+                  <strong>Modo web RC49.4</strong>
+                  <span>Estado real · textos coherentes · acabado responsive</span>
                 </div>
               </aside>
               <SyncStatusIndicator />

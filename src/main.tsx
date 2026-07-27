@@ -65,6 +65,7 @@ import './rc47-access-role-workspaces.css';
 import './rc48-responsive-light-theme.css';
 import './rc49-1-responsive-structure.css';
 import './rc49-2-layer-cleanup.css';
+import './rc49-3-light-theme-finish.css';
 
 const root = document.getElementById('root');
 

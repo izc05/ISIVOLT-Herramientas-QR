@@ -130,8 +130,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC49.1</strong>
-                  <span>Ancho estable · cabecera adaptable · cuadrículas sin recortes</span>
+                  <strong>Modo web RC49.2</strong>
+                  <span>Sin capas fantasma · navegación única · escáner como acción</span>
                 </div>
               </aside>
               <SyncStatusIndicator />

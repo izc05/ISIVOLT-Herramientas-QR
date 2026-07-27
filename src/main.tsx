@@ -61,6 +61,7 @@ import './rc44-professional-system.css';
 import './rc44-screen-polish.css';
 import './rc45-inventory-layout.css';
 import './rc46-dashboard-identity.css';
+import './rc47-access-role-workspaces.css';
 
 const root = document.getElementById('root');
 

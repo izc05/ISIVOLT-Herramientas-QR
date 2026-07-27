@@ -10,6 +10,7 @@ import {
   ScanLine,
   ShieldCheck,
   SlidersHorizontal,
+  SunMoon,
   Tags,
   TestTube2,
   UserCheck,
@@ -31,6 +32,7 @@ type MobileAction = {
 
 const actions: MobileAction[] = [
   { label: 'Cuenta y seguridad', detail: 'Perfil, sesiones y acceso', selector: '.security-account-launcher', Icon: UserCog, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },
+  { label: 'Apariencia', detail: 'Claro, oscuro o automático', selector: '.appearance-launcher', Icon: SunMoon, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },
   { label: 'Solicitudes de acceso', detail: 'Aprobar cuentas nuevas', selector: '.registration-request-manager-launcher', Icon: UserCheck, roles: ['admin'] },
   { label: 'Técnicos y cuentas', detail: 'Editar datos y crear accesos', selector: '.technician-account-manager-launcher', Icon: Users, roles: ['admin'] },
   { label: 'Sincronización', detail: 'Servidor y datos pendientes', selector: '.central-sync-open-button', Icon: CloudCog, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },

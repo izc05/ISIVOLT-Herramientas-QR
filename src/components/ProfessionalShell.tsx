@@ -17,6 +17,7 @@ import {
   ScanLine,
   Settings2,
   ShieldCheck,
+  SunMoon,
   Tags,
   UserCog,
   Users,
@@ -89,6 +90,7 @@ const technicianNavigation: NavigationEntry[] = [
 
 const adminActions: AdminAction[] = [
   { label: 'Cuenta y seguridad', detail: 'Perfil, sesiones y acceso', selector: '.security-account-launcher', Icon: UserCog, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },
+  { label: 'Apariencia', detail: 'Claro, oscuro o automático', selector: '.appearance-launcher', Icon: SunMoon, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },
   { label: 'Solicitudes de acceso', detail: 'Aprobar nuevas cuentas', selector: '.registration-request-manager-launcher', Icon: Users, roles: ['admin'] },
   { label: 'Técnicos y cuentas', detail: 'Editar datos y accesos', selector: '.technician-account-manager-launcher', Icon: Users, roles: ['admin'] },
   { label: 'Sincronización', detail: 'Servidor, cola y conflictos', selector: '.central-sync-open-button', Icon: CloudCog, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },
@@ -220,6 +222,7 @@ export default function ProfessionalShell() {
               type="button"
               className={route === id ? 'active' : ''}
               onClick={() => navigate(id)}
+              title={label}
             >
               <span><Icon size={19} /></span>
               <span><strong>{label}</strong><small>{detail}</small></span>
@@ -227,7 +230,7 @@ export default function ProfessionalShell() {
             </button>
           ))}
           {canScan && (
-            <button type="button" className="professional-scan" onClick={() => triggerClick('.nav-scan-button, .scan-main-button')}>
+            <button type="button" className="professional-scan" onClick={() => triggerClick('.nav-scan-button, .scan-main-button')} title="Escanear">
               <span><ScanLine size={20} /></span>
               <span><strong>{role === 'technician' ? 'Escanear herramienta' : 'Escanear'}</strong><small>{role === 'technician' ? 'Retirar o devolver' : 'Técnico y herramientas'}</small></span>
               <ChevronRight size={16} />
@@ -237,13 +240,13 @@ export default function ProfessionalShell() {
 
         <div className="professional-section-label">{role === 'technician' ? 'Mi cuenta' : 'Administración'}</div>
         <nav className="professional-navigation professional-navigation-secondary">
-          <button type="button" onClick={() => setMoreOpen(true)}>
+          <button type="button" onClick={() => setMoreOpen(true)} title="Más opciones">
             <span><MoreHorizontal size={19} /></span>
             <span><strong>Más</strong><small>{role === 'technician' ? 'Cuenta y sincronización' : 'Cuenta e informes'}</small></span>
             <ChevronRight size={16} />
           </button>
           {canRestoreDemo && (
-            <button type="button" onClick={() => triggerClick('.demo-reset')}>
+            <button type="button" onClick={() => triggerClick('.demo-reset')} title="Restaurar demo">
               <span><RotateCcw size={19} /></span>
               <span><strong>Restaurar demo</strong><small>Recuperar datos iniciales</small></span>
               <ChevronRight size={16} />
@@ -251,12 +254,17 @@ export default function ProfessionalShell() {
           )}
         </nav>
 
-        <section className="professional-sync-card">
+        <section className="professional-sync-card" title={`${syncCopy.title}: ${syncCopy.detail}`}>
           <span><ShieldCheck size={19} /></span>
           <div><strong>{syncCopy.title}</strong><small>{syncCopy.detail}</small></div>
         </section>
 
-        <button className="professional-user-card" type="button" onClick={() => triggerClick('.security-account-launcher')}>
+        <button className="professional-appearance-shortcut" type="button" onClick={() => triggerClick('.appearance-launcher')} title="Cambiar apariencia">
+          <span><SunMoon size={21} /></span>
+          <div><strong>Apariencia</strong><small>Claro, oscuro o automático</small></div>
+        </button>
+
+        <button className="professional-user-card" type="button" onClick={() => triggerClick('.security-account-launcher')} title="Cuenta y seguridad">
           <span><CircleUserRound size={24} /></span>
           <div><strong>Cuenta y seguridad</strong><small>Perfil, PIN y sesiones</small></div>
         </button>

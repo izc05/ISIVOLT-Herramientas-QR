@@ -1,0 +1,156 @@
+/* RC49.2 · una sola capa de navegación y estados visuales inequívocos */
+
+/*
+ * La barra profesional ya representa la identidad, el rol, la sincronización
+ * y los accesos administrativos. Los controles originales siguen montados
+ * como puentes funcionales, pero no deben ocupar ni un píxel de interfaz.
+ */
+body:has(.professional-sidebar) .role-scope-bar,
+body:has(.professional-sidebar) .security-session-bar,
+body:has(.professional-sidebar) .web-mode-banner,
+body:has(.professional-sidebar) .central-sync-indicator,
+body:has(.professional-sidebar) .stability-badge,
+body:has(.professional-sidebar) #root > .security-account-launcher,
+body:has(.professional-sidebar) #root > .technician-account-manager-launcher,
+body:has(.professional-sidebar) #root > .registration-request-manager-launcher,
+body:has(.professional-sidebar) #root > .report-center-launcher,
+body:has(.professional-sidebar) #root > .management-launcher,
+body:has(.professional-sidebar) #root > .management-files-launcher,
+body:has(.professional-sidebar) #root > .maintenance-board-launcher,
+body:has(.professional-sidebar) #root > .rectification-launcher,
+body:has(.professional-sidebar) #root > .commissioning-launcher,
+body:has(.professional-sidebar) #root > .qr-label-launcher,
+body:has(.professional-sidebar) #root > .nfc-management-launcher,
+body:has(.professional-sidebar) #root > .technician-barcode-launcher,
+body:has(.professional-sidebar) #root > .experience-settings-button,
+body:has(.professional-sidebar) #root > .appearance-launcher,
+body:has(.professional-sidebar) #root > button[class*='launcher'],
+body:has(.professional-sidebar) #root > [class$='-launcher'] {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Nunca reservar espacio por una barra de sesión ya sustituida. */
+body:has(.professional-sidebar)[data-user-id]:not(.modal-open) .topbar,
+body:has(.professional-sidebar)[data-user-id]:not(.modal-open) .core-topbar {
+  margin-top: 0 !important;
+}
+
+/* En escritorio existe exclusivamente la navegación lateral profesional. */
+@media (min-width: 960px) {
+  body:has(.professional-sidebar) .core-bottom-nav,
+  body:has(.professional-sidebar) .bottom-nav,
+  body:has(.professional-sidebar) .bottom-navigation,
+  body:has(.professional-sidebar) .nav-shell,
+  body:has(.professional-sidebar) .professional-mobile-more,
+  body:has(.professional-sidebar) .mobile-tools-menu {
+    display: none !important;
+  }
+}
+
+/* En tablet y móvil se conserva solo la navegación inferior. */
+@media (max-width: 959px) {
+  body:has(.professional-sidebar) .professional-sidebar {
+    display: none !important;
+  }
+
+  body:has(.professional-sidebar) .core-bottom-nav {
+    display: flex !important;
+  }
+}
+
+/*
+ * Una sección activa representa la pantalla actual.
+ * Escanear es una acción destacada, no una segunda sección seleccionada.
+ */
+.professional-navigation button.active {
+  border-color: rgba(55, 191, 255, .34) !important;
+  color: #fff !important;
+  background: linear-gradient(120deg, rgba(34, 119, 210, .29), rgba(34, 211, 181, .08)) !important;
+  box-shadow: inset 3px 0 #3bd7ff, 0 10px 26px rgba(0, 0, 0, .14) !important;
+}
+
+.professional-navigation .professional-scan,
+.professional-navigation .professional-scan:hover,
+.professional-navigation .professional-scan:focus-visible {
+  border-color: rgba(42, 220, 255, .24) !important;
+  color: rgba(235, 251, 255, .9) !important;
+  background: linear-gradient(125deg, rgba(18, 117, 202, .2), rgba(15, 206, 174, .1)) !important;
+  box-shadow: 0 8px 20px rgba(5, 22, 38, .12) !important;
+}
+
+.professional-navigation .professional-scan::before {
+  content: '';
+  position: absolute;
+  inset: 7px auto 7px 0;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, rgba(76, 227, 255, .68), transparent);
+  opacity: .7;
+}
+
+.professional-navigation .professional-scan {
+  position: relative;
+}
+
+.professional-navigation .professional-scan > span:first-child {
+  color: #72efff !important;
+  background: rgba(48, 212, 237, .11) !important;
+}
+
+/* El resaltado de Escanear nunca debe reutilizar la línea de selección. */
+.professional-navigation .professional-scan.active,
+.professional-navigation .professional-scan[aria-current='page'] {
+  box-shadow: 0 8px 20px rgba(5, 22, 38, .12) !important;
+}
+
+/* Barra compacta: icono activo y acción de escaneo claramente distintos. */
+@media (min-width: 960px) and (max-width: 1199px) {
+  .professional-navigation button.active {
+    border-color: rgba(55, 191, 255, .34) !important;
+    background: rgba(32, 142, 205, .18) !important;
+    box-shadow: inset 3px 0 #3bd7ff !important;
+  }
+
+  .professional-navigation .professional-scan {
+    border-color: rgba(42, 220, 255, .2) !important;
+    background: rgba(24, 157, 172, .1) !important;
+    box-shadow: none !important;
+  }
+
+  .professional-navigation .professional-scan::before {
+    display: none;
+  }
+}
+
+/* Equivalencia en tema claro: selección nítida y acción secundaria. */
+html[data-theme='light'] .professional-navigation button.active {
+  border-color: rgba(20, 139, 195, .32) !important;
+  color: #12324a !important;
+  background: linear-gradient(120deg, rgba(41, 149, 217, .14), rgba(31, 187, 153, .07)) !important;
+  box-shadow: inset 3px 0 #159dca, 0 7px 18px rgba(45, 75, 98, .08) !important;
+}
+
+html[data-theme='light'] .professional-navigation .professional-scan,
+html[data-theme='light'] .professional-navigation .professional-scan:hover,
+html[data-theme='light'] .professional-navigation .professional-scan:focus-visible {
+  border-color: rgba(23, 151, 179, .2) !important;
+  color: #17425a !important;
+  background: linear-gradient(125deg, rgba(33, 156, 211, .09), rgba(22, 182, 145, .07)) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='light'] .professional-navigation .professional-scan > span:first-child {
+  color: #087b9e !important;
+  background: rgba(24, 151, 184, .09) !important;
+}

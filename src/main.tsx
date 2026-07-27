@@ -63,6 +63,7 @@ import './rc45-inventory-layout.css';
 import './rc46-dashboard-identity.css';
 import './rc47-access-role-workspaces.css';
 import './rc48-responsive-light-theme.css';
+import './rc49-1-responsive-structure.css';
 
 const root = document.getElementById('root');
 

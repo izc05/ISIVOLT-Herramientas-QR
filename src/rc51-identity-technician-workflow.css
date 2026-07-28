@@ -1,0 +1,618 @@
+/* RC51 · identidad personal, edición técnica, solicitudes y fotografías fiables */
+
+/* Fotografías: siempre completas, sin convertir una captura demo en un recorte ampliado. */
+.tool-photo-preview,
+.tool-sheet-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.tool-photo-preview > img,
+.tool-sheet-image > img,
+.tool-detail-photo-panel > img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: clamp(8px, 1.2vw, 16px);
+  object-fit: contain !important;
+  object-position: center !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+.tool-photo-preview > span:not(.rc51-photo-quality-badge) {
+  display: none !important;
+}
+
+.tool-photo-preview.rc51-demo-photo,
+.tool-sheet-image.rc51-demo-photo {
+  background:
+    linear-gradient(135deg, rgba(11, 31, 50, .96), rgba(9, 18, 40, .96)),
+    repeating-linear-gradient(90deg, transparent 0 34px, rgba(88, 213, 241, .045) 35px 36px) !important;
+}
+
+.tool-photo-preview.rc51-real-photo,
+.tool-sheet-image.rc51-real-photo {
+  background: rgba(3, 13, 25, .72) !important;
+}
+
+.rc51-photo-quality-badge,
+.rc51-tool-demo-note {
+  position: absolute;
+  z-index: 4;
+  right: 12px;
+  bottom: 12px;
+  max-width: calc(100% - 24px);
+  padding: 7px 10px;
+  border: 1px solid rgba(250, 204, 21, .34);
+  border-radius: 999px;
+  color: #fde68a;
+  background: rgba(54, 34, 5, .9);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
+  font-size: .68rem;
+  font-weight: 850;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.rc51-tool-demo-note {
+  right: 9px;
+  bottom: 52px;
+  left: 9px;
+  max-width: none;
+  border-radius: 11px;
+}
+
+.tool-photo-modal {
+  width: min(620px, calc(100% - 28px));
+}
+
+.tool-photo-preview {
+  min-height: 330px;
+  max-height: min(52dvh, 520px);
+  border-radius: 21px;
+}
+
+.tool-photo-actions {
+  gap: 10px;
+}
+
+.tool-photo-remove {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(251, 113, 133, .25) !important;
+  border-radius: 13px;
+  color: #fda4af !important;
+  background: rgba(127, 29, 29, .12) !important;
+}
+
+/* Acciones administrativas dentro de la ficha del técnico. */
+.technician-admin-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.technician-admin-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 47px;
+  padding: 0 15px;
+  border: 1px solid rgba(67, 206, 240, .28);
+  border-radius: 14px;
+  color: #e9fbff;
+  background: linear-gradient(135deg, rgba(18, 122, 187, .25), rgba(15, 144, 136, .14));
+  font-weight: 850;
+}
+
+.technician-admin-actions button:first-child {
+  border-color: rgba(99, 102, 241, .34);
+  background: linear-gradient(135deg, rgba(79, 70, 229, .28), rgba(37, 99, 235, .17));
+}
+
+/* Editor de técnico. */
+.technician-edit-backdrop {
+  position: fixed;
+  z-index: 32700;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 7, 16, .82);
+  backdrop-filter: blur(16px);
+}
+
+.technician-edit-modal {
+  width: min(760px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  border: 1px solid rgba(67, 206, 240, .25);
+  border-radius: 25px;
+  color: #eaf5ff;
+  background:
+    radial-gradient(circle at 4% 0%, rgba(37, 99, 235, .18), transparent 26rem),
+    linear-gradient(150deg, rgba(7, 21, 37, .995), rgba(3, 11, 22, .995));
+  box-shadow: 0 32px 100px rgba(0, 0, 0, .62);
+}
+
+.technician-edit-modal > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(153, 211, 235, .13);
+}
+
+.technician-edit-modal > header > div,
+.technician-edit-modal > header > div > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.technician-edit-modal > header > div > span {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 14px;
+  color: #6ee7f9;
+  background: rgba(8, 145, 178, .14);
+}
+
+.technician-edit-modal header small,
+.technician-edit-modal header h2,
+.technician-edit-modal header p {
+  display: block;
+  margin: 0;
+}
+
+.technician-edit-modal header small {
+  color: #67e8f9;
+  font-size: .66rem;
+  font-weight: 850;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.technician-edit-modal header h2 {
+  margin-top: 2px;
+  font-size: 1.35rem;
+}
+
+.technician-edit-modal header p {
+  color: #91a7bd;
+  font-size: .78rem;
+}
+
+.technician-edit-modal > header > button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 13px;
+  color: #dbeafe;
+  background: rgba(15, 23, 42, .65);
+}
+
+.technician-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 20px;
+}
+
+.technician-edit-grid label:not(.technician-active-toggle) {
+  display: grid;
+  gap: 6px;
+  color: #a9bdcf;
+  font-size: .76rem;
+  font-weight: 750;
+}
+
+.technician-edit-grid label.wide {
+  grid-column: 1 / -1;
+}
+
+.technician-edit-grid input:not([type='checkbox']) {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid rgba(148, 163, 184, .17);
+  border-radius: 13px;
+  outline: 0;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, .62);
+}
+
+.technician-edit-grid input:focus {
+  border-color: rgba(34, 211, 238, .48);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .08);
+}
+
+.technician-active-toggle {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 62px;
+  padding: 11px 13px;
+  border: 1px solid rgba(45, 212, 191, .22);
+  border-radius: 15px;
+  color: #d8fffb;
+  background: rgba(13, 148, 136, .08);
+}
+
+.technician-active-toggle input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.technician-active-toggle span,
+.technician-active-toggle strong,
+.technician-active-toggle small {
+  display: block;
+}
+
+.technician-active-toggle small {
+  margin-top: 3px;
+  color: #8fb7b3;
+  font-size: .7rem;
+}
+
+.technician-edit-error {
+  margin: 0 20px 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(244, 63, 94, .28);
+  border-radius: 12px;
+  color: #fecdd3;
+  background: rgba(127, 29, 29, .15);
+}
+
+.technician-edit-modal > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 15px 20px calc(15px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(153, 211, 235, .13);
+  background: rgba(3, 13, 25, .76);
+}
+
+.technician-edit-modal > footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 45px;
+  padding: 0 17px;
+  border: 1px solid rgba(148, 163, 184, .2);
+  border-radius: 13px;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, .6);
+  font-weight: 850;
+}
+
+.technician-edit-modal > footer button.primary {
+  border-color: rgba(45, 212, 191, .33);
+  color: #04131a;
+  background: linear-gradient(135deg, #5eead4, #38bdf8);
+}
+
+/* Solicitudes de acceso: filtros y lectura del contacto. */
+.registration-filter-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  padding: 9px 0 3px;
+}
+
+.registration-filter-tabs button {
+  min-height: 36px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 10px;
+  color: #9fb2c5;
+  background: rgba(15, 23, 42, .45);
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.registration-filter-tabs button b {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, .13);
+}
+
+.registration-filter-tabs button.active {
+  border-color: rgba(45, 212, 191, .34);
+  color: #d8fffb;
+  background: rgba(13, 148, 136, .17);
+}
+
+.registration-request-profile p {
+  overflow-wrap: anywhere;
+}
+
+/* Cuenta técnica: inputs de identidad. */
+.technician-account-identity-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 10px;
+  border: 1px solid rgba(148, 163, 184, .17);
+  border-radius: 13px;
+  color: #67e8f9;
+  background: rgba(15, 23, 42, .52);
+}
+
+.technician-account-identity-input input {
+  min-height: 42px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+/* Cuenta técnica autenticada: no debe volver a pedir tarjeta o QR personal. */
+.authenticated-technician-banner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(45, 212, 191, .28);
+  border-radius: 17px;
+  color: #eafff8;
+  background:
+    radial-gradient(circle at 0 0, rgba(34, 211, 238, .14), transparent 15rem),
+    rgba(13, 148, 136, .09);
+}
+
+.authenticated-technician-avatar {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 15px;
+  color: #03151b;
+  background: linear-gradient(135deg, #38bdf8, #5eead4);
+  font-weight: 900;
+}
+
+.authenticated-technician-copy,
+.authenticated-technician-copy small,
+.authenticated-technician-copy strong,
+.authenticated-technician-copy em {
+  display: block;
+  min-width: 0;
+}
+
+.authenticated-technician-copy small {
+  color: #7dd3fc;
+  font-size: .64rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.authenticated-technician-copy strong {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #ecfeff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authenticated-technician-copy em {
+  margin-top: 3px;
+  color: #9cc9c2;
+  font-size: .72rem;
+  font-style: normal;
+}
+
+.authenticated-technician-flow .native-progress-grid {
+  grid-template-columns: 1fr !important;
+}
+
+.authenticated-technician-flow .native-progress-grid > article:first-child {
+  display: none !important;
+}
+
+.authenticated-technician-flow .native-progress-grid > article:nth-child(2) {
+  min-height: 58px;
+}
+
+.authenticated-technician-flow .native-manual-primary span strong,
+.authenticated-technician-flow .native-camera-button strong,
+.authenticated-technician-flow .native-nfc-button strong {
+  opacity: 1 !important;
+}
+
+.authenticated-technician-loading .native-scan-methods,
+.authenticated-technician-loading .native-manual-primary,
+.authenticated-technician-loading .native-scan-footer {
+  pointer-events: none;
+  opacity: .48;
+}
+
+/* Tema claro completo para los nuevos componentes y los modales de las capturas. */
+html[data-theme='light'] .tool-photo-modal,
+html[data-theme='light'] .technician-detail-modal,
+html[data-theme='light'] .tool-sheet,
+html[data-theme='light'] .technician-edit-modal {
+  color: #17283a !important;
+  border-color: #d5e2e9 !important;
+  background: #ffffff !important;
+  box-shadow: 0 24px 70px rgba(38, 60, 77, .2) !important;
+}
+
+html[data-theme='light'] .tool-photo-modal header h2,
+html[data-theme='light'] .tool-photo-modal header p,
+html[data-theme='light'] .technician-detail-header h2,
+html[data-theme='light'] .technician-detail-header p,
+html[data-theme='light'] .tool-sheet-title h2,
+html[data-theme='light'] .tool-sheet-title p,
+html[data-theme='light'] .technician-edit-modal h2 {
+  color: #17283a !important;
+}
+
+html[data-theme='light'] .tool-photo-modal header small,
+html[data-theme='light'] .technician-detail-kicker,
+html[data-theme='light'] .technician-edit-modal header small {
+  color: #087b9e !important;
+}
+
+html[data-theme='light'] .tool-photo-preview,
+html[data-theme='light'] .tool-sheet-image,
+html[data-theme='light'] .technician-detail-item,
+html[data-theme='light'] .technician-detail-email,
+html[data-theme='light'] .technician-qr-preview,
+html[data-theme='light'] .tool-qr-card,
+html[data-theme='light'] .technician-edit-grid input:not([type='checkbox']) {
+  color: #17283a !important;
+  border-color: #d9e2e8 !important;
+  background: #f7f9fb !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='light'] .technician-detail-item strong,
+html[data-theme='light'] .technician-detail-email strong,
+html[data-theme='light'] .technician-qr-preview strong,
+html[data-theme='light'] .tool-sheet-facts strong {
+  color: #1b3042 !important;
+}
+
+html[data-theme='light'] .technician-detail-item small,
+html[data-theme='light'] .technician-detail-email small,
+html[data-theme='light'] .technician-detail-note,
+html[data-theme='light'] .tool-photo-note,
+html[data-theme='light'] .technician-edit-modal header p,
+html[data-theme='light'] .technician-edit-grid label:not(.technician-active-toggle) {
+  color: #667b8d !important;
+}
+
+html[data-theme='light'] .technician-detail-close,
+html[data-theme='light'] .tool-sheet-close,
+html[data-theme='light'] .tool-photo-close,
+html[data-theme='light'] .technician-edit-modal > header > button {
+  color: #294052 !important;
+  border-color: #d9e2e8 !important;
+  background: #f3f6f8 !important;
+}
+
+html[data-theme='light'] .technician-admin-actions button,
+html[data-theme='light'] .technician-edit-modal > footer button {
+  color: #214052;
+  border-color: #cfe0e7;
+  background: #f2f7f9;
+}
+
+html[data-theme='light'] .technician-edit-modal > footer,
+html[data-theme='light'] .technician-edit-modal > header {
+  border-color: #dfe7ec;
+  background: #f8fafb;
+}
+
+html[data-theme='light'] .authenticated-technician-banner {
+  color: #173a3a;
+  border-color: #b9dfd8;
+  background: #edf9f6;
+}
+
+html[data-theme='light'] .authenticated-technician-copy strong { color: #17343d; }
+html[data-theme='light'] .authenticated-technician-copy small { color: #087b9e; }
+html[data-theme='light'] .authenticated-technician-copy em { color: #53766f; }
+
+html[data-theme='light'] .registration-filter-tabs button {
+  color: #5d7284;
+  border-color: #d9e2e8;
+  background: #f7f9fb;
+}
+
+html[data-theme='light'] .registration-filter-tabs button.active {
+  color: #0d4d49;
+  border-color: #9fd2c8;
+  background: #e8f6f2;
+}
+
+html[data-theme='light'] .technician-account-identity-input {
+  color: #087b9e;
+  border-color: #d9e2e8;
+  background: #ffffff;
+}
+
+@media (max-width: 700px) {
+  .tool-photo-modal {
+    width: 100%;
+    max-height: 96dvh;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .tool-photo-preview {
+    min-height: 250px;
+    max-height: 42dvh;
+  }
+
+  .tool-photo-actions,
+  .technician-admin-actions,
+  .technician-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .technician-edit-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .technician-edit-modal {
+    width: 100%;
+    max-height: 96dvh;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .technician-edit-grid label.wide {
+    grid-column: auto;
+  }
+
+  .technician-edit-modal > footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .technician-edit-modal > footer button {
+    width: 100%;
+  }
+
+  .registration-filter-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .authenticated-technician-banner {
+    margin-top: -3px;
+  }
+
+  .rc51-photo-quality-badge,
+  .rc51-tool-demo-note {
+    font-size: .63rem;
+  }
+}

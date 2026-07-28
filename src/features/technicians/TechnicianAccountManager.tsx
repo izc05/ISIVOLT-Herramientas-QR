@@ -5,6 +5,7 @@ import {
   KeyRound,
   Mail,
   Pencil,
+  Phone,
   Plus,
   Search,
   ShieldCheck,
@@ -21,6 +22,7 @@ import { getCentralSyncConfig } from '../../services/centralSync/config';
 type TechnicianAccount = {
   id: string;
   email: string;
+  phone: string;
   name: string;
   technicianId: string;
   active: boolean;
@@ -31,6 +33,8 @@ type AccountListResponse = { accounts: TechnicianAccount[] };
 type AccountSaveResponse = { ok: boolean; account: TechnicianAccount; created: boolean };
 
 const normalize = (value: string) => value.trim().toLocaleLowerCase('es-ES');
+const normalizePhone = (value: string) => value.trim().replace(/[()\s.-]/g, '');
+const validPhone = (value: string) => normalizePhone(value).replace(/\D/g, '').length >= 7;
 
 export default function TechnicianAccountManager() {
   const config = useMemo(() => getCentralSyncConfig(), []);
@@ -80,7 +84,7 @@ export default function TechnicianAccountManager() {
     const openFromEvent = (event: Event) => openManager((event as CustomEvent<string | undefined>).detail);
     window.addEventListener('isivolt:technician-account-manager-open', openFromEvent);
     return () => window.removeEventListener('isivolt:technician-account-manager-open', openFromEvent);
-  });
+  }, [canManageRemoteAccounts, client, config.workspaceId]);
 
   useEffect(() => {
     let frame: number | null = null;
@@ -136,6 +140,7 @@ export default function TechnicianAccountManager() {
     technician.specialty,
     technician.role ?? '',
     technician.email ?? '',
+    technician.phone ?? '',
   ].some((value) => normalize(value).includes(normalize(query))));
 
   const patch = <K extends keyof Technician>(key: K, value: Technician[K]) => {
@@ -146,12 +151,17 @@ export default function TechnicianAccountManager() {
     if (!draft) return;
     try {
       setError('');
-      const next = saveManagedTechnician(draft);
+      const next = saveManagedTechnician({
+        ...draft,
+        phone: draft.phone ? normalizePhone(draft.phone) : undefined,
+        email: draft.email?.trim().toLocaleLowerCase('es-ES') || undefined,
+      });
       const saved = next.technicians.find((item) => item.id === draft.id) ?? draft;
       setData(next);
       setDraft(saved);
       setNotice('Ficha del técnico guardada correctamente.');
       window.dispatchEvent(new CustomEvent('isivolt:app-refresh'));
+      window.dispatchEvent(new CustomEvent('isivolt:management-refresh'));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se ha podido guardar el técnico.');
     }
@@ -160,8 +170,13 @@ export default function TechnicianAccountManager() {
   const saveAccount = async () => {
     if (!draft || !client || !config.workspaceId || !canManageRemoteAccounts) return;
     const email = draft.email?.trim().toLocaleLowerCase('es-ES') ?? '';
+    const phone = normalizePhone(draft.phone ?? '');
     if (!email) {
       setError('Escribe el correo del técnico antes de crear su cuenta.');
+      return;
+    }
+    if (!validPhone(phone)) {
+      setError('Escribe un teléfono válido antes de crear su cuenta.');
       return;
     }
     if (!selectedAccount && password.length < 8) {
@@ -184,6 +199,7 @@ export default function TechnicianAccountManager() {
           workspaceId: config.workspaceId,
           technicianId: draft.id,
           email,
+          phone,
           password,
           name: draft.name,
           active: accountActive,
@@ -191,7 +207,7 @@ export default function TechnicianAccountManager() {
       });
       setPassword('');
       setNotice(response.created
-        ? 'Cuenta creada. Entrega al técnico el correo y la contraseña temporal por un canal seguro.'
+        ? 'Cuenta creada. El técnico podrá entrar con teléfono o correo y la contraseña temporal.'
         : 'Cuenta técnica actualizada correctamente.');
       await loadAccounts();
       window.dispatchEvent(new CustomEvent('isivolt:central-account-changed'));
@@ -212,7 +228,7 @@ export default function TechnicianAccountManager() {
         <div className="technician-account-backdrop" onClick={() => setOpen(false)}>
           <section className="technician-account-center" role="dialog" aria-modal="true" aria-label="Técnicos y cuentas" onClick={(event) => event.stopPropagation()}>
             <header>
-              <div><span><Users size={24} /></span><div><small>Administración</small><h2>Técnicos y cuentas</h2><p>Edita cualquier dato y vincula el acceso por correo.</p></div></div>
+              <div><span><Users size={24} /></span><div><small>Administración</small><h2>Técnicos y cuentas</h2><p>Edita cualquier dato y vincula el acceso por teléfono o correo.</p></div></div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={21} /></button>
             </header>
 
@@ -226,7 +242,7 @@ export default function TechnicianAccountManager() {
                     return (
                       <button type="button" key={technician.id} className={draft?.id === technician.id ? 'active' : ''} onClick={() => setDraft(technician)}>
                         <span>{technician.name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span>
-                        <div><strong>{technician.name}</strong><small>{technician.code} · {technician.specialty}</small><em>{account ? `${account.email} · ${account.active ? 'cuenta activa' : 'cuenta inactiva'}` : 'Sin cuenta central'}</em></div>
+                        <div><strong>{technician.name}</strong><small>{technician.code} · {technician.specialty}</small><em>{account ? `${account.phone || account.email} · ${account.active ? 'cuenta activa' : 'cuenta inactiva'}` : 'Sin cuenta central'}</em></div>
                         <Pencil size={16} />
                       </button>
                     );
@@ -264,13 +280,14 @@ export default function TechnicianAccountManager() {
                         <p className="technician-account-info"><AlertTriangle size={18} /> Solo un administrador puede crear o modificar cuentas de técnicos.</p>
                       ) : (
                         <div className="technician-account-grid">
-                          <label className="wide"><span>Correo de acceso</span><input type="email" value={draft.email ?? ''} onChange={(event) => patch('email', event.target.value || undefined)} /></label>
+                          <label className="wide"><span>Teléfono de acceso</span><div className="technician-account-identity-input"><Phone size={16} /><input type="tel" inputMode="tel" value={draft.phone ?? ''} onChange={(event) => patch('phone', event.target.value || undefined)} /></div></label>
+                          <label className="wide"><span>Correo de acceso</span><div className="technician-account-identity-input"><Mail size={16} /><input type="email" value={draft.email ?? ''} onChange={(event) => patch('email', event.target.value || undefined)} /></div></label>
                           <label className="wide"><span>{selectedAccount ? 'Nueva contraseña (opcional)' : 'Contraseña temporal'}</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={selectedAccount ? 'Vacío para conservarla' : 'Mínimo 8 caracteres'} /></label>
                           <label className="technician-account-toggle wide"><input type="checkbox" checked={accountActive} onChange={(event) => setAccountActive(event.target.checked)} /><span>Cuenta central activa</span></label>
                           <button className="technician-account-primary wide" type="button" onClick={() => { void saveAccount(); }} disabled={busy}><KeyRound size={18} /> {busy ? 'Guardando…' : selectedAccount ? 'Actualizar cuenta' : 'Crear cuenta técnica'}</button>
                         </div>
                       )}
-                      <p className="technician-account-explanation">Al iniciar sesión con esta cuenta, la aplicación reconocerá automáticamente al técnico. Solo tendrá que escanear las herramientas que retira o devuelve.</p>
+                      <p className="technician-account-explanation">Al iniciar sesión con teléfono o correo, la aplicación reconocerá automáticamente al técnico. Solo tendrá que escanear las herramientas que retira o devuelve.</p>
                     </section>
 
                     {error && <p className="technician-account-error"><AlertTriangle size={17} /> {error}</p>}

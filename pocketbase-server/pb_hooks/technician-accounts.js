@@ -2,6 +2,18 @@ function asText(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizePhone(value) {
+  var raw = asText(value).replace(/[()\s.-]/g, "");
+  if (raw.indexOf("00") === 0) raw = "+" + raw.slice(2);
+  if (raw.indexOf("+") === 0) return "+" + raw.slice(1).replace(/\D/g, "");
+  return raw.replace(/\D/g, "");
+}
+
+function validPhone(value) {
+  var digits = normalizePhone(value).replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
+
 function asBool(value, fallback) {
   return typeof value === "boolean" ? value : fallback;
 }
@@ -35,6 +47,7 @@ function accountJson(record) {
   return {
     id: record.id,
     email: asText(record.get("email")),
+    phone: asText(record.get("phone")),
     name: asText(record.get("name")),
     technicianId: asText(record.get("technician_id")),
     active: record.get("active") === true,
@@ -63,6 +76,7 @@ function save(e) {
     workspaceId: "",
     technicianId: "",
     email: "",
+    phone: "",
     password: "",
     name: "",
     active: true
@@ -72,13 +86,17 @@ function save(e) {
   var workspace = asText(data.workspaceId);
   var technicianId = asText(data.technicianId);
   var email = asText(data.email).toLowerCase();
+  var phone = normalizePhone(data.phone);
   var password = asText(data.password);
   var name = asText(data.name);
   var active = asBool(data.active, true);
   assertWorkspace(context, workspace);
 
-  if (!technicianId || !email || !name) {
-    throw new BadRequestError("Técnico, nombre y correo son obligatorios.");
+  if (!technicianId || !email || !phone || !name) {
+    throw new BadRequestError("Técnico, nombre, teléfono y correo son obligatorios.");
+  }
+  if (!validPhone(phone)) {
+    throw new BadRequestError("El número de teléfono no es válido.");
   }
 
   var byTechnician = findOptional(
@@ -93,17 +111,24 @@ function save(e) {
     "email = {:email}",
     { email: email }
   );
-  if (byTechnician && byEmail && byTechnician.id !== byEmail.id) {
-    throw new BadRequestError("El correo ya pertenece a otra cuenta.");
+  var byPhone = findOptional(
+    e.app,
+    "isivolt_users",
+    "phone = {:phone}",
+    { phone: phone }
+  );
+  var candidates = [byTechnician, byEmail, byPhone].filter(function(record) { return Boolean(record); });
+  var existing = candidates.length > 0 ? candidates[0] : null;
+  if (candidates.some(function(record) { return record.id !== existing.id; })) {
+    throw new BadRequestError("El teléfono o el correo ya pertenecen a otra cuenta.");
   }
-  if (byEmail && asText(byEmail.get("workspace")) !== workspace) {
-    throw new BadRequestError("El correo ya se utiliza en otro espacio de trabajo.");
+  if (existing && asText(existing.get("workspace")) !== workspace) {
+    throw new BadRequestError("El teléfono o el correo ya se utilizan en otro espacio de trabajo.");
   }
-  if (byEmail && asText(byEmail.get("role")) !== "technician") {
-    throw new BadRequestError("El correo ya pertenece a un usuario con otro perfil.");
+  if (existing && asText(existing.get("role")) !== "technician") {
+    throw new BadRequestError("Los datos de acceso ya pertenecen a un usuario con otro perfil.");
   }
 
-  var existing = byTechnician || byEmail;
   var created = !existing;
   if (created && password.length < 8) {
     throw new BadRequestError("La cuenta nueva necesita una contraseña de al menos 8 caracteres.");
@@ -114,6 +139,7 @@ function save(e) {
 
   var record = existing || new Record(e.app.findCollectionByNameOrId("isivolt_users"));
   record.set("email", email);
+  record.set("phone", phone);
   record.set("verified", true);
   record.set("name", name);
   record.set("role", "technician");

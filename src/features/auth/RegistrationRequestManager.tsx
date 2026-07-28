@@ -6,6 +6,7 @@ import {
   KeyRound,
   LoaderCircle,
   Mail,
+  Phone,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -21,6 +22,7 @@ import { getCentralSyncConfig } from '../../services/centralSync/config';
 import { loadAppData } from '../../services/storage';
 
 type RequestStatus = 'pending' | 'approved' | 'rejected';
+type RequestFilter = 'all' | RequestStatus;
 
 type RegistrationRequest = {
   id: string;
@@ -28,6 +30,7 @@ type RegistrationRequest = {
   workspace: string;
   name: string;
   email: string;
+  phone: string;
   technicianCode: string;
   status: RequestStatus;
   requestedAt: string;
@@ -43,6 +46,12 @@ const formatDate = (value?: string) => value ? new Intl.DateTimeFormat('es-ES', 
   timeStyle: 'short',
 }).format(new Date(value)) : '';
 
+const statusLabel: Record<RequestStatus, string> = {
+  pending: 'Pendiente',
+  approved: 'Aprobada',
+  rejected: 'Rechazada',
+};
+
 export default function RegistrationRequestManager() {
   const config = useMemo(() => getCentralSyncConfig(), []);
   const client = useMemo(() => getCentralSyncClient(), []);
@@ -51,6 +60,7 @@ export default function RegistrationRequestManager() {
   const [selectedId, setSelectedId] = useState('');
   const [technicianId, setTechnicianId] = useState('');
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<RequestFilter>('pending');
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -70,7 +80,11 @@ export default function RegistrationRequestManager() {
         `/api/isivolt/registration-requests?workspace=${encodeURIComponent(config.workspaceId)}`,
         { method: 'GET' },
       );
-      const next = response.requests ?? [];
+      const next = [...(response.requests ?? [])].sort((a, b) => {
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+        return b.requestedAt.localeCompare(a.requestedAt);
+      });
       setRequests(next);
       setTechnicians(loadAppData().technicians.filter((technician) => technician.active));
       setSelectedId((current) => current && next.some((item) => item.id === current)
@@ -91,11 +105,12 @@ export default function RegistrationRequestManager() {
       setOpen(true);
       setError('');
       setNotice('');
+      setFilter('pending');
       void loadRequests();
     };
     window.addEventListener('isivolt:registration-request-manager-open', openManager);
     return () => window.removeEventListener('isivolt:registration-request-manager-open', openManager);
-  });
+  }, [canReview, client, config.enabled, config.workspaceId]);
 
   useEffect(() => {
     if (!open) return;
@@ -112,13 +127,22 @@ export default function RegistrationRequestManager() {
 
   const selected = requests.find((item) => item.id === selectedId) ?? null;
   const needle = query.trim().toLocaleLowerCase('es-ES');
-  const filtered = requests.filter((item) => !needle || [
-    item.name,
-    item.email,
-    item.technicianCode,
-    item.status,
-  ].some((value) => value.toLocaleLowerCase('es-ES').includes(needle)));
-  const pendingCount = requests.filter((item) => item.status === 'pending').length;
+  const filtered = requests.filter((item) => {
+    if (filter !== 'all' && item.status !== filter) return false;
+    return !needle || [
+      item.name,
+      item.email,
+      item.phone,
+      item.technicianCode,
+      item.status,
+    ].some((value) => value.toLocaleLowerCase('es-ES').includes(needle));
+  });
+  const counts = {
+    all: requests.length,
+    pending: requests.filter((item) => item.status === 'pending').length,
+    approved: requests.filter((item) => item.status === 'approved').length,
+    rejected: requests.filter((item) => item.status === 'rejected').length,
+  };
 
   const approve = async () => {
     if (!selected || !technicianId || !client || !config.workspaceId) return;
@@ -130,7 +154,7 @@ export default function RegistrationRequestManager() {
         method: 'POST',
         body: { workspaceId: config.workspaceId, requestId: selected.id, technicianId },
       });
-      setNotice('Cuenta aprobada y vinculada. El técnico ya puede iniciar sesión.');
+      setNotice('Cuenta aprobada y vinculada. El técnico ya puede iniciar sesión con teléfono o correo.');
       await loadRequests();
       window.dispatchEvent(new CustomEvent('isivolt:central-account-changed'));
     } catch (cause) {
@@ -167,14 +191,14 @@ export default function RegistrationRequestManager() {
         onClick={() => window.dispatchEvent(new CustomEvent('isivolt:registration-request-manager-open'))}
         aria-label="Abrir solicitudes de acceso"
       >
-        <UserCheck size={18} /> Solicitudes de acceso {pendingCount > 0 && <b>{pendingCount}</b>}
+        <UserCheck size={18} /> Solicitudes de acceso {counts.pending > 0 && <b>{counts.pending}</b>}
       </button>
 
       {open && (
         <div className="registration-manager-backdrop" onClick={() => setOpen(false)}>
           <section className="registration-manager" role="dialog" aria-modal="true" aria-label="Solicitudes de acceso" onClick={(event) => event.stopPropagation()}>
             <header>
-              <div><span><Users size={24} /></span><div><small>Administración de identidad</small><h2>Solicitudes de acceso</h2><p>Comprueba el código y vincula cada cuenta con una ficha existente.</p></div></div>
+              <div><span><Users size={24} /></span><div><small>Administración de identidad</small><h2>Solicitudes de acceso</h2><p>Comprueba teléfono, correo y código antes de vincular cada cuenta.</p></div></div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={21} /></button>
             </header>
 
@@ -186,15 +210,22 @@ export default function RegistrationRequestManager() {
               <div className="registration-manager-layout">
                 <aside>
                   <div className="registration-manager-toolbar">
-                    <label><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, correo o código…" /></label>
+                    <label><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, teléfono, correo o código…" /></label>
                     <button type="button" onClick={() => { void loadRequests(); }} disabled={busy} aria-label="Actualizar"><RefreshCw className={busy ? 'registration-spinner' : ''} size={18} /></button>
                   </div>
-                  <div className="registration-manager-summary"><span><Clock3 size={15} /> {pendingCount} pendientes</span><small>{requests.length} solicitudes totales</small></div>
+                  <div className="registration-filter-tabs" aria-label="Filtrar solicitudes">
+                    {(['pending', 'all', 'approved', 'rejected'] as RequestFilter[]).map((value) => (
+                      <button type="button" key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>
+                        {value === 'all' ? 'Todas' : statusLabel[value]} <b>{counts[value]}</b>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="registration-manager-summary"><span><Clock3 size={15} /> {counts.pending} pendientes</span><small>{requests.length} solicitudes totales</small></div>
                   <div className="registration-request-list">
                     {filtered.map((item) => (
                       <button type="button" key={item.id} className={`${selectedId === item.id ? 'active' : ''} status-${item.status}`} onClick={() => setSelectedId(item.id)}>
                         <span>{item.name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span>
-                        <div><strong>{item.name}</strong><small>{item.technicianCode} · {item.email}</small><em>{item.status === 'pending' ? 'Pendiente' : item.status === 'approved' ? 'Aprobada' : 'Rechazada'}</em></div>
+                        <div><strong>{item.name}</strong><small>{item.technicianCode} · {item.phone || item.email}</small><em>{statusLabel[item.status]}</em></div>
                       </button>
                     ))}
                     {filtered.length === 0 && <p className="registration-list-empty">No hay solicitudes en este filtro.</p>}
@@ -208,7 +239,14 @@ export default function RegistrationRequestManager() {
                     <>
                       <section className="registration-request-profile">
                         <div className="registration-request-avatar">{selected.name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</div>
-                        <div><small>{selected.status === 'pending' ? 'Pendiente de revisión' : selected.status === 'approved' ? 'Cuenta aprobada' : 'Solicitud rechazada'}</small><h3>{selected.name}</h3><p><Mail size={15} /> {selected.email}</p><p><KeyRound size={15} /> Código declarado: <strong>{selected.technicianCode}</strong></p><time><Clock3 size={14} /> {formatDate(selected.requestedAt)}</time></div>
+                        <div>
+                          <small>{selected.status === 'pending' ? 'Pendiente de revisión' : selected.status === 'approved' ? 'Cuenta aprobada' : 'Solicitud rechazada'}</small>
+                          <h3>{selected.name}</h3>
+                          <p><Phone size={15} /> {selected.phone || 'Teléfono no informado'}</p>
+                          <p><Mail size={15} /> {selected.email}</p>
+                          <p><KeyRound size={15} /> Código declarado: <strong>{selected.technicianCode}</strong></p>
+                          <time><Clock3 size={14} /> {formatDate(selected.requestedAt)}</time>
+                        </div>
                       </section>
 
                       {selected.status === 'pending' ? (

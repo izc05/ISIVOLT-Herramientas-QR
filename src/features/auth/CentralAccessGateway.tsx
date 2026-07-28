@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   LockKeyhole,
   Mail,
+  Phone,
   ShieldCheck,
   UserPlus,
   Wrench,
@@ -25,6 +26,22 @@ type StatusResponse = {
   rejectionReason?: string;
 };
 
+const normalizePhone = (value: string) => {
+  const compact = value.trim().replace(/[()\s.-]/g, '');
+  if (compact.startsWith('00')) return `+${compact.slice(2).replace(/\D/g, '')}`;
+  if (compact.startsWith('+')) return `+${compact.slice(1).replace(/\D/g, '')}`;
+  return compact.replace(/\D/g, '');
+};
+
+const normalizeIdentity = (value: string) => value.includes('@')
+  ? value.trim().toLowerCase()
+  : normalizePhone(value);
+
+const validPhone = (value: string) => {
+  const digits = normalizePhone(value).replace(/\D/g, '');
+  return digits.length >= 7 && digits.length <= 15;
+};
+
 const messageFromError = (cause: unknown, fallback: string) => {
   if (!(cause instanceof Error)) return fallback;
   const message = cause.message.trim();
@@ -32,7 +49,7 @@ const messageFromError = (cause: unknown, fallback: string) => {
     return 'No se puede contactar con el mini PC. Comprueba la red y vuelve a intentarlo.';
   }
   if (/400|401|auth|identity|credentials/i.test(message)) {
-    return 'Correo o contraseña incorrectos, o la cuenta todavía no ha sido aprobada.';
+    return 'Teléfono, correo o contraseña incorrectos, o la cuenta todavía no ha sido aprobada.';
   }
   return message || fallback;
 };
@@ -51,7 +68,9 @@ export default function CentralAccessGateway() {
   const client = useMemo(() => getCentralSyncClient(), []);
   const [revision, setRevision] = useState(0);
   const [mode, setMode] = useState<AccessMode>('login');
+  const [identity, setIdentity] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [technicianCode, setTechnicianCode] = useState('');
@@ -80,12 +99,13 @@ export default function CentralAccessGateway() {
   if (remote?.active === true && local?.id === centralLocalId) return null;
 
   const signIn = async () => {
-    if (!email.trim() || !password) return;
+    const loginIdentity = normalizeIdentity(identity);
+    if (!loginIdentity || !password) return;
     setBusy(true);
     setError('');
     setNotice('');
     try {
-      await client.collection('isivolt_users').authWithPassword(email.trim().toLowerCase(), password);
+      await client.collection('isivolt_users').authWithPassword(loginIdentity, password);
       setPassword('');
       window.dispatchEvent(new CustomEvent('isivolt:central-account-changed'));
     } catch (cause) {
@@ -97,7 +117,7 @@ export default function CentralAccessGateway() {
   };
 
   const submitRequest = async () => {
-    if (!name.trim() || !email.trim() || !technicianCode.trim() || password.length < 8) return;
+    if (!name.trim() || !email.trim() || !validPhone(phone) || !technicianCode.trim() || password.length < 8) return;
     setBusy(true);
     setError('');
     setNotice('');
@@ -109,11 +129,13 @@ export default function CentralAccessGateway() {
           workspaceId: config.workspaceId,
           name: name.trim(),
           email: email.trim().toLowerCase(),
+          phone: normalizePhone(phone),
           technicianCode: technicianCode.trim().toUpperCase(),
           password,
         },
       });
       setPassword('');
+      setIdentity(email.trim().toLowerCase());
       setNotice('Solicitud enviada. Un administrador debe comprobarla y vincularla con tu ficha técnica.');
       setStatus({ found: true, status: 'pending', requestedAt: new Date().toISOString() });
     } catch (cause) {
@@ -124,21 +146,22 @@ export default function CentralAccessGateway() {
   };
 
   const checkStatus = async () => {
-    if (!email.trim()) return;
+    const statusIdentity = normalizeIdentity(identity || email || phone);
+    if (!statusIdentity) return;
     setBusy(true);
     setError('');
     try {
       const response = await client.send<StatusResponse>('/api/isivolt/register-status', {
         method: 'POST',
-        body: { workspaceId: config.workspaceId, email: email.trim().toLowerCase() },
+        body: { workspaceId: config.workspaceId, identity: statusIdentity },
       });
       setStatus(response);
       if (response.status === 'approved') {
-        setNotice('Tu cuenta ha sido aprobada. Ya puedes iniciar sesión.');
+        setNotice('Tu cuenta ha sido aprobada. Ya puedes iniciar sesión con tu teléfono o correo.');
       } else if (response.status === 'rejected') {
         setNotice('La solicitud fue revisada y no se ha aprobado.');
       } else if (response.status === 'missing') {
-        setNotice('No se ha encontrado ninguna solicitud con ese correo.');
+        setNotice('No se ha encontrado ninguna solicitud con esos datos.');
       } else {
         setNotice('La solicitud sigue pendiente de revisión.');
       }
@@ -163,6 +186,7 @@ export default function CentralAccessGateway() {
 
   const requestReady = name.trim().length >= 3
     && email.includes('@')
+    && validPhone(phone)
     && technicianCode.trim().length >= 2
     && password.length >= 8;
 
@@ -182,10 +206,10 @@ export default function CentralAccessGateway() {
         {mode === 'login' ? (
           <main className="central-access-form">
             <div className="central-access-heading"><LockKeyhole size={25} /><span><small>Cuenta aprobada</small><strong>Accede a tu espacio</strong></span></div>
-            <label><span>Correo</span><div><Mail size={17} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="nombre@organizacion.es" /></div></label>
+            <label><span>Teléfono o correo</span><div><Phone size={17} /><input type="text" inputMode="email" value={identity} onChange={(event) => setIdentity(event.target.value)} autoComplete="username" placeholder="697958917 o nombre@organizacion.es" /></div></label>
             <label><span>Contraseña</span><div><KeyRound size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" onKeyDown={(event) => { if (event.key === 'Enter') void signIn(); }} /></div></label>
-            <button className="central-access-primary" type="button" onClick={() => { void signIn(); }} disabled={busy || !email.trim() || !password}>{busy ? <LoaderCircle className="central-access-spinner" size={19} /> : <KeyRound size={19} />}{busy ? 'Comprobando…' : 'Entrar en la aplicación'}</button>
-            <button className="central-access-status-button" type="button" onClick={() => { setMode('request'); setNotice('Introduce el correo utilizado para consultar la solicitud.'); }}><ShieldCheck size={17} /> Consultar una solicitud pendiente</button>
+            <button className="central-access-primary" type="button" onClick={() => { void signIn(); }} disabled={busy || !normalizeIdentity(identity) || !password}>{busy ? <LoaderCircle className="central-access-spinner" size={19} /> : <KeyRound size={19} />}{busy ? 'Comprobando…' : 'Entrar en la aplicación'}</button>
+            <button className="central-access-status-button" type="button" onClick={() => { void checkStatus(); }} disabled={busy || !normalizeIdentity(identity)}><ShieldCheck size={17} /> Consultar solicitud con este teléfono o correo</button>
           </main>
         ) : (
           <main className="central-access-form central-registration-form">
@@ -194,11 +218,12 @@ export default function CentralAccessGateway() {
             <label><span>Nombre y apellidos</span><div><UserPlus size={17} /><input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" placeholder="Nombre completo" /></div></label>
             <div className="central-access-two-columns">
               <label><span>Código interno</span><div><ShieldCheck size={17} /><input value={technicianCode} onChange={(event) => setTechnicianCode(event.target.value.toUpperCase())} placeholder="TEC-001" /></div></label>
-              <label><span>Correo corporativo</span><div><Mail size={17} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" /></div></label>
+              <label><span>Teléfono</span><div><Phone size={17} /><input type="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" placeholder="697958917" /></div></label>
             </div>
+            <label><span>Correo corporativo</span><div><Mail size={17} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="nombre@organizacion.es" /></div></label>
             <label><span>Contraseña</span><div><KeyRound size={17} /><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" placeholder="Mínimo 8 caracteres" /></div></label>
             <button className="central-access-primary" type="button" onClick={() => { void submitRequest(); }} disabled={busy || !requestReady}>{busy ? <LoaderCircle className="central-access-spinner" size={19} /> : <UserPlus size={19} />}{busy ? 'Enviando…' : 'Enviar solicitud'}</button>
-            <button className="central-access-status-button" type="button" onClick={() => { void checkStatus(); }} disabled={busy || !email.trim()}><ShieldCheck size={17} /> Consultar estado con este correo</button>
+            <button className="central-access-status-button" type="button" onClick={() => { setIdentity(email || phone); void checkStatus(); }} disabled={busy || (!email.trim() && !phone.trim())}><ShieldCheck size={17} /> Consultar estado con teléfono o correo</button>
           </main>
         )}
 

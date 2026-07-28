@@ -2,6 +2,18 @@ function asText(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizePhone(value) {
+  var raw = asText(value).replace(/[()\s.-]/g, "");
+  if (raw.indexOf("00") === 0) raw = "+" + raw.slice(2);
+  if (raw.indexOf("+") === 0) return "+" + raw.slice(1).replace(/\D/g, "");
+  return raw.replace(/\D/g, "");
+}
+
+function isValidPhone(value) {
+  var digits = normalizePhone(value).replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -47,11 +59,38 @@ function workspaceExists(app, workspace) {
 }
 
 function findAuthByEmail(app, email) {
+  if (!email) return null;
   try {
     return app.findAuthRecordByEmail("isivolt_users", email);
   } catch (_) {
     return null;
   }
+}
+
+function findAuthByPhone(app, phone) {
+  if (!phone) return null;
+  return findOptional(app, "isivolt_users", "phone = {:phone}", { phone: phone });
+}
+
+function findRequest(app, workspace, email, phone) {
+  if (email) {
+    var byEmail = findOptional(
+      app,
+      "isivolt_registration_requests",
+      "workspace = {:workspace} && email = {:email}",
+      { workspace: workspace, email: email }
+    );
+    if (byEmail) return byEmail;
+  }
+  if (phone) {
+    return findOptional(
+      app,
+      "isivolt_registration_requests",
+      "workspace = {:workspace} && phone = {:phone}",
+      { workspace: workspace, phone: phone }
+    );
+  }
+  return null;
 }
 
 function requestJson(record) {
@@ -61,6 +100,7 @@ function requestJson(record) {
     workspace: asText(record.get("workspace")),
     name: asText(record.get("name")),
     email: asText(record.get("email")),
+    phone: asText(record.get("phone")),
     technicianCode: asText(record.get("technician_code")),
     status: asText(record.get("status")),
     requestedAt: asText(record.get("requested_at")),
@@ -75,12 +115,14 @@ function submit(e) {
     workspaceId: "",
     name: "",
     email: "",
+    phone: "",
     technicianCode: "",
     password: ""
   });
   var workspace = asText(data.workspaceId);
   var name = asText(data.name);
   var email = asText(data.email).toLowerCase();
+  var phone = normalizePhone(data.phone);
   var technicianCode = asText(data.technicianCode).toUpperCase();
   var password = asText(data.password);
 
@@ -93,6 +135,9 @@ function submit(e) {
   if (!email || email.indexOf("@") < 1 || email.length > 180) {
     throw new BadRequestError("Escribe un correo válido.");
   }
+  if (!isValidPhone(phone)) {
+    throw new BadRequestError("Escribe un número de teléfono válido.");
+  }
   if (technicianCode.length < 2 || technicianCode.length > 80) {
     throw new BadRequestError("Escribe el código interno del técnico.");
   }
@@ -100,30 +145,31 @@ function submit(e) {
     throw new BadRequestError("La contraseña debe contener entre 8 y 72 caracteres.");
   }
 
-  var existingUser = findAuthByEmail(e.app, email);
+  var userByEmail = findAuthByEmail(e.app, email);
+  var userByPhone = findAuthByPhone(e.app, phone);
+  if (userByEmail && userByPhone && userByEmail.id !== userByPhone.id) {
+    throw new BadRequestError("El correo y el teléfono pertenecen a cuentas diferentes. Contacta con administración.");
+  }
+  var existingUser = userByEmail || userByPhone;
   var existingStatus = existingUser ? asText(existingUser.get("registration_status")) : "";
   if (existingUser && existingUser.get("active") === true && existingStatus !== "pending" && existingStatus !== "rejected") {
-    throw new BadRequestError("Ya existe una cuenta activa con este correo.");
+    throw new BadRequestError("Ya existe una cuenta activa con ese correo o teléfono.");
   }
   if (existingUser && asText(existingUser.get("workspace")) !== workspace) {
-    throw new BadRequestError("El correo ya pertenece a otro centro de trabajo.");
+    throw new BadRequestError("Los datos de acceso ya pertenecen a otro centro de trabajo.");
   }
   if (existingUser && asText(existingUser.get("role")) !== "technician") {
-    throw new BadRequestError("El correo ya pertenece a un perfil diferente.");
+    throw new BadRequestError("Los datos de acceso ya pertenecen a un perfil diferente.");
   }
 
-  var request = findOptional(
-    e.app,
-    "isivolt_registration_requests",
-    "workspace = {:workspace} && email = {:email}",
-    { workspace: workspace, email: email }
-  );
+  var request = findRequest(e.app, workspace, email, phone);
   if (request && asText(request.get("status")) === "approved") {
-    throw new BadRequestError("La solicitud ya fue aprobada. Inicia sesión con tu correo.");
+    throw new BadRequestError("La solicitud ya fue aprobada. Inicia sesión con tu teléfono o correo.");
   }
 
   var user = existingUser || new Record(e.app.findCollectionByNameOrId("isivolt_users"));
   user.set("email", email);
+  user.set("phone", phone);
   user.setPassword(password);
   user.setVerified(false);
   user.set("name", name);
@@ -139,6 +185,7 @@ function submit(e) {
   request.set("user_id", user.id);
   request.set("name", name);
   request.set("email", email);
+  request.set("phone", phone);
   request.set("technician_code", technicianCode);
   request.set("status", "pending");
   request.set("requested_at", nowIso());
@@ -155,15 +202,16 @@ function submit(e) {
 }
 
 function status(e) {
-  var data = bind(e, { workspaceId: "", email: "" });
+  var data = bind(e, { workspaceId: "", identity: "", email: "", phone: "" });
   var workspace = asText(data.workspaceId);
+  var identity = asText(data.identity);
   var email = asText(data.email).toLowerCase();
-  var request = findOptional(
-    e.app,
-    "isivolt_registration_requests",
-    "workspace = {:workspace} && email = {:email}",
-    { workspace: workspace, email: email }
-  );
+  var phone = normalizePhone(data.phone);
+  if (identity) {
+    if (identity.indexOf("@") >= 0) email = identity.toLowerCase();
+    else phone = normalizePhone(identity);
+  }
+  var request = findRequest(e.app, workspace, email, phone);
   if (!request) {
     return e.json(200, { found: false, status: "missing" });
   }
@@ -235,6 +283,7 @@ function approve(e) {
   }
 
   user.set("name", asText(request.get("name")));
+  user.set("phone", asText(request.get("phone")));
   user.set("role", "technician");
   user.set("workspace", workspace);
   user.set("technician_id", technicianId);

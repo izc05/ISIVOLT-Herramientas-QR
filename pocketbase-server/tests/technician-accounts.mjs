@@ -6,6 +6,7 @@ const adminPassword = process.env.ISIVOLT_BOOTSTRAP_ADMIN_PASSWORD ?? 'ChangeThi
 const workspaceId = process.env.ISIVOLT_BOOTSTRAP_WORKSPACE ?? 'ISIVOLT-CI';
 const technicianId = 'tech-account-ci-1';
 const technicianEmail = 'cuenta.tecnico@example.test';
+const technicianPhone = '600100203';
 const technicianPassword = 'Temporary123!';
 
 const request = async (path, options = {}) => {
@@ -43,6 +44,7 @@ await request('/api/isivolt/entity', {
       code: 'TEC-ACCOUNT-CI',
       name: 'Técnico Cuenta CI',
       specialty: 'Electricidad',
+      phone: technicianPhone,
       email: technicianEmail,
       active: true,
       createdAt: now,
@@ -58,6 +60,7 @@ const created = await request('/api/isivolt/technician-account', {
     workspaceId,
     technicianId,
     email: technicianEmail,
+    phone: technicianPhone,
     password: technicianPassword,
     name: 'Técnico Cuenta CI',
     active: true,
@@ -67,29 +70,40 @@ assert.equal(created.ok, true);
 assert.equal(created.created, true);
 assert.equal(created.account.technicianId, technicianId);
 assert.equal(created.account.email, technicianEmail);
+assert.equal(created.account.phone, technicianPhone);
 
 const accounts = await request(`/api/isivolt/technician-accounts?workspace=${encodeURIComponent(workspaceId)}`, {
   headers: adminHeaders,
 });
-assert.ok(accounts.accounts.some((account) => account.technicianId === technicianId));
+assert.ok(accounts.accounts.some((account) => account.technicianId === technicianId && account.phone === technicianPhone));
 
-const technicianAuth = await request('/api/collections/isivolt_users/auth-with-password', {
-  method: 'POST',
-  body: JSON.stringify({ identity: technicianEmail, password: technicianPassword }),
-});
-const identity = await request('/api/isivolt/me', { headers: { Authorization: technicianAuth.token } });
-assert.equal(identity.role, 'technician');
-assert.equal(identity.technicianId, technicianId);
-assert.equal(identity.workspace, workspaceId);
-
-let forbidden = false;
-try {
-  await request('/api/isivolt/technician-accounts?workspace=' + encodeURIComponent(workspaceId), {
-    headers: { Authorization: technicianAuth.token },
+for (const loginIdentity of [technicianEmail, technicianPhone]) {
+  const technicianAuth = await request('/api/collections/isivolt_users/auth-with-password', {
+    method: 'POST',
+    body: JSON.stringify({ identity: loginIdentity, password: technicianPassword }),
   });
-} catch (error) {
-  forbidden = error.status === 403;
-}
-assert.equal(forbidden, true);
+  const identity = await request('/api/isivolt/me', { headers: { Authorization: technicianAuth.token } });
+  assert.equal(identity.role, 'technician');
+  assert.equal(identity.technicianId, technicianId);
+  assert.equal(identity.workspace, workspaceId);
 
-console.log(JSON.stringify({ ok: true, technicianId, accountCreated: true, technicianLogin: true }, null, 2));
+  if (loginIdentity === technicianEmail) {
+    let forbidden = false;
+    try {
+      await request('/api/isivolt/technician-accounts?workspace=' + encodeURIComponent(workspaceId), {
+        headers: { Authorization: technicianAuth.token },
+      });
+    } catch (error) {
+      forbidden = error.status === 403;
+    }
+    assert.equal(forbidden, true);
+  }
+}
+
+console.log(JSON.stringify({
+  ok: true,
+  technicianId,
+  accountCreated: true,
+  technicianLoginByEmail: true,
+  technicianLoginByPhone: true,
+}, null, 2));

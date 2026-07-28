@@ -67,6 +67,7 @@ import './rc49-1-responsive-structure.css';
 import './rc49-2-layer-cleanup.css';
 import './rc49-3-light-theme-finish.css';
 import './rc49-4-status-finish.css';
+import './rc50-visual-fixes.css';
 
 const root = document.getElementById('root');
 

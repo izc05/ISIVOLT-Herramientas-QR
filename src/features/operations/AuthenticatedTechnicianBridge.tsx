@@ -6,6 +6,16 @@ const findManualTechnicianButton = (consoleElement: HTMLElement) => Array.from(
   consoleElement.querySelectorAll<HTMLButtonElement>('.native-manual-primary'),
 ).find((button) => (button.textContent ?? '').toLocaleLowerCase('es-ES').includes('elegir técnico')) ?? null;
 
+const setTextElement = (parent: HTMLElement, selector: string, tag: keyof HTMLElementTagNameMap, value: string) => {
+  let element = parent.querySelector<HTMLElement>(selector);
+  if (!element) {
+    element = document.createElement(tag);
+    element.className = selector.replace('.', '');
+    parent.appendChild(element);
+  }
+  element.textContent = value;
+};
+
 const ensureIdentityBanner = (consoleElement: HTMLElement, technicianId: string) => {
   const technician = loadAppData().technicians.find((item) => item.id === technicianId);
   if (!technician) return;
@@ -13,10 +23,22 @@ const ensureIdentityBanner = (consoleElement: HTMLElement, technicianId: string)
   if (!banner) {
     banner = document.createElement('section');
     banner.className = 'authenticated-technician-banner';
+    const avatar = document.createElement('span');
+    avatar.className = 'authenticated-technician-avatar';
+    const copy = document.createElement('div');
+    copy.className = 'authenticated-technician-copy';
+    banner.append(avatar, copy);
     const progress = consoleElement.querySelector('.native-progress-grid');
     progress?.before(banner);
   }
-  banner.innerHTML = `<span>${technician.name.split(' ').map((part) => part[0]).slice(0, 2).join('')}</span><div><small>Sesión técnica identificada</small><strong>${technician.name}</strong><em>${technician.code} · ${technician.specialty}</em></div>`;
+
+  const avatar = banner.querySelector<HTMLElement>('.authenticated-technician-avatar');
+  const copy = banner.querySelector<HTMLElement>('.authenticated-technician-copy');
+  if (!avatar || !copy) return;
+  avatar.textContent = technician.name.split(' ').map((part) => part[0]).slice(0, 2).join('');
+  setTextElement(copy, '.authenticated-technician-label', 'small', 'Sesión técnica identificada');
+  setTextElement(copy, '.authenticated-technician-name', 'strong', technician.name);
+  setTextElement(copy, '.authenticated-technician-meta', 'em', `${technician.code} · ${technician.specialty}`);
 };
 
 const applyAuthenticatedCopy = (consoleElement: HTMLElement, technicianId: string) => {
@@ -41,10 +63,17 @@ export default function AuthenticatedTechnicianBridge() {
     const synchronizeIdentity = () => {
       frame = null;
       const identity = getEffectiveTechnicianIdentity();
-      if (!identity) return;
-
       const consoleElement = document.querySelector<HTMLElement>('.rc33-fast-scan-console');
       if (!consoleElement) return;
+
+      if (!identity) {
+        consoleElement.classList.remove('authenticated-technician-flow', 'authenticated-technician-loading');
+        consoleElement.querySelector('.authenticated-technician-banner')?.remove();
+        delete consoleElement.dataset.authenticatedTechnicianId;
+        delete consoleElement.dataset.rc51IdentityRequested;
+        return;
+      }
+
       applyAuthenticatedCopy(consoleElement, identity.technicianId);
 
       const step = Array.from(consoleElement.querySelectorAll<HTMLElement>('.native-progress-grid strong'))

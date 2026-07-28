@@ -6,7 +6,9 @@ const adminPassword = process.env.ISIVOLT_BOOTSTRAP_ADMIN_PASSWORD ?? 'ChangeThi
 const workspaceId = process.env.ISIVOLT_BOOTSTRAP_WORKSPACE ?? 'ISIVOLT-CI';
 const approvedTechnicianId = 'tech-registration-ci-approved';
 const approvedEmail = 'solicitud.aprobada@example.test';
+const approvedPhone = '600100201';
 const rejectedEmail = 'solicitud.rechazada@example.test';
+const rejectedPhone = '600100202';
 const password = 'Registration123!';
 
 const request = async (path, options = {}) => {
@@ -44,6 +46,7 @@ await request('/api/isivolt/entity', {
       code: 'TEC-REG-CI',
       name: 'Técnico Registro CI',
       specialty: 'Electricidad',
+      phone: approvedPhone,
       email: approvedEmail,
       active: true,
       createdAt: now,
@@ -58,6 +61,7 @@ const submitted = await request('/api/isivolt/register-request', {
     workspaceId,
     name: 'Técnico Registro CI',
     email: approvedEmail,
+    phone: approvedPhone,
     technicianCode: 'TEC-REG-CI',
     password,
   }),
@@ -65,16 +69,18 @@ const submitted = await request('/api/isivolt/register-request', {
 assert.equal(submitted.ok, true);
 assert.equal(submitted.status, 'pending');
 
-let loginBlocked = false;
-try {
-  await request('/api/collections/isivolt_users/auth-with-password', {
-    method: 'POST',
-    body: JSON.stringify({ identity: approvedEmail, password }),
-  });
-} catch (error) {
-  loginBlocked = error.status >= 400;
+for (const identity of [approvedEmail, approvedPhone]) {
+  let loginBlocked = false;
+  try {
+    await request('/api/collections/isivolt_users/auth-with-password', {
+      method: 'POST',
+      body: JSON.stringify({ identity, password }),
+    });
+  } catch (error) {
+    loginBlocked = error.status >= 400;
+  }
+  assert.equal(loginBlocked, true);
 }
-assert.equal(loginBlocked, true);
 
 const listed = await request(`/api/isivolt/registration-requests?workspace=${encodeURIComponent(workspaceId)}`, {
   headers: adminHeaders,
@@ -83,6 +89,7 @@ const pending = listed.requests.find((item) => item.email === approvedEmail);
 assert.ok(pending);
 assert.equal(pending.status, 'pending');
 assert.equal(pending.technicianCode, 'TEC-REG-CI');
+assert.equal(pending.phone, approvedPhone);
 
 const approved = await request('/api/isivolt/registration-request/approve', {
   method: 'POST',
@@ -92,13 +99,21 @@ const approved = await request('/api/isivolt/registration-request/approve', {
 assert.equal(approved.ok, true);
 assert.equal(approved.request.status, 'approved');
 
-const technicianAuth = await request('/api/collections/isivolt_users/auth-with-password', {
+const technicianAuthByEmail = await request('/api/collections/isivolt_users/auth-with-password', {
   method: 'POST',
   body: JSON.stringify({ identity: approvedEmail, password }),
 });
-const identity = await request('/api/isivolt/me', { headers: { Authorization: technicianAuth.token } });
-assert.equal(identity.role, 'technician');
-assert.equal(identity.technicianId, approvedTechnicianId);
+const identityByEmail = await request('/api/isivolt/me', { headers: { Authorization: technicianAuthByEmail.token } });
+assert.equal(identityByEmail.role, 'technician');
+assert.equal(identityByEmail.technicianId, approvedTechnicianId);
+
+const technicianAuthByPhone = await request('/api/collections/isivolt_users/auth-with-password', {
+  method: 'POST',
+  body: JSON.stringify({ identity: approvedPhone, password }),
+});
+const identityByPhone = await request('/api/isivolt/me', { headers: { Authorization: technicianAuthByPhone.token } });
+assert.equal(identityByPhone.role, 'technician');
+assert.equal(identityByPhone.technicianId, approvedTechnicianId);
 
 await request('/api/isivolt/register-request', {
   method: 'POST',
@@ -106,6 +121,7 @@ await request('/api/isivolt/register-request', {
     workspaceId,
     name: 'Solicitud Rechazada CI',
     email: rejectedEmail,
+    phone: rejectedPhone,
     technicianCode: 'TEC-NO-EXISTE',
     password,
   }),
@@ -115,6 +131,7 @@ const withRejectedPending = await request(`/api/isivolt/registration-requests?wo
 });
 const rejectedPending = withRejectedPending.requests.find((item) => item.email === rejectedEmail);
 assert.ok(rejectedPending);
+assert.equal(rejectedPending.phone, rejectedPhone);
 
 const rejected = await request('/api/isivolt/registration-request/reject', {
   method: 'POST',
@@ -126,7 +143,7 @@ assert.equal(rejected.request.status, 'rejected');
 
 const status = await request('/api/isivolt/register-status', {
   method: 'POST',
-  body: JSON.stringify({ workspaceId, email: rejectedEmail }),
+  body: JSON.stringify({ workspaceId, identity: rejectedPhone }),
 });
 assert.equal(status.found, true);
 assert.equal(status.status, 'rejected');
@@ -135,6 +152,7 @@ assert.match(status.rejectionReason, /código interno/i);
 console.log(JSON.stringify({
   ok: true,
   pendingBlocked: true,
-  approvedLogin: true,
-  rejectedStatusVisible: true,
+  approvedLoginByEmail: true,
+  approvedLoginByPhone: true,
+  rejectedStatusVisibleByPhone: true,
 }, null, 2));

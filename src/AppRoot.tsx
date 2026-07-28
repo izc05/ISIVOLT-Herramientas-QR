@@ -18,6 +18,7 @@ import InventoryPhotoBridge from './features/inventory/InventoryPhotoBridge';
 import ResponsiveInventoryEnhancer from './features/inventory/ResponsiveInventoryEnhancer';
 import ToolEditManager from './features/inventory/ToolEditManager';
 import ToolLifecycleManager from './features/inventory/ToolLifecycleManager';
+import ToolPhotoQualityBridge from './features/inventory/ToolPhotoQualityBridge';
 import MaintenanceBoard from './features/management/MaintenanceBoard';
 import NfcManagementCenter from './features/nfc/NfcManagementCenter';
 import AuthenticatedTechnicianBridge from './features/operations/AuthenticatedTechnicianBridge';
@@ -132,8 +133,8 @@ export default function AppRoot() {
               <aside className="web-mode-banner" aria-label="Aplicación ejecutándose en modo web">
                 <Globe2 size={18} />
                 <div>
-                  <strong>Modo web RC50</strong>
-                  <span>Historial claro · flujo legible · navegación corregida</span>
+                  <strong>Modo web RC51</strong>
+                  <span>Acceso por teléfono o correo · edición técnica · escaneo personal</span>
                 </div>
               </aside>
               <SyncStatusIndicator />
@@ -160,6 +161,7 @@ export default function AppRoot() {
           <InventoryFilterBridge />
           <InventoryOperationalEnhancer />
           <InventoryPhotoBridge />
+          <ToolPhotoQualityBridge />
           <ResponsiveInventoryEnhancer />
           <ToolEditManager />
           <ToolLifecycleManager />

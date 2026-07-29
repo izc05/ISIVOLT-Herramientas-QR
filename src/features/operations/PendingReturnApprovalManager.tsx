@@ -38,19 +38,26 @@ export default function PendingReturnApprovalManager() {
   const refresh = () => setData(loadAppData());
 
   useEffect(() => {
-    const sync = () => {
-      setNavTarget(document.querySelector<HTMLElement>('.professional-navigation-secondary'));
-      refresh();
+    let frame: number | null = null;
+    const locateNavigation = () => {
+      if (frame !== null) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = null;
+        const next = document.querySelector<HTMLElement>('.professional-navigation-secondary');
+        setNavTarget((current) => current === next ? current : next);
+      });
     };
-    const observer = new MutationObserver(sync);
+    const refreshData = () => refresh();
+    const observer = new MutationObserver(locateNavigation);
     observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener('isivolt:data-updated', sync);
-    window.addEventListener('isivolt:security-session', sync);
-    sync();
+    window.addEventListener('isivolt:data-updated', refreshData);
+    window.addEventListener('isivolt:security-session', refreshData);
+    locateNavigation();
     return () => {
       observer.disconnect();
-      window.removeEventListener('isivolt:data-updated', sync);
-      window.removeEventListener('isivolt:security-session', sync);
+      window.removeEventListener('isivolt:data-updated', refreshData);
+      window.removeEventListener('isivolt:security-session', refreshData);
+      if (frame !== null) window.cancelAnimationFrame(frame);
     };
   }, []);
 

@@ -71,6 +71,7 @@ import './rc50-visual-fixes.css';
 import './rc51-identity-technician-workflow.css';
 import './rc52-admin-access-clarity.css';
 import './rc53-local-registration-pilot.css';
+import './rc54-technician-scan-return-approval.css';
 
 const root = document.getElementById('root');
 

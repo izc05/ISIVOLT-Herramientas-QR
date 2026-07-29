@@ -41,10 +41,10 @@ const resolveIdentity = () => {
 
   if (remoteName) {
     const role = String(remote?.role ?? 'technician');
-    return { name: remoteName, role, roleText: roleLabel[role] ?? role };
+    return { name: remoteName, role, roleText: roleLabel[role] ?? role, source: 'central' as const };
   }
   if (local) {
-    return { name: local.name, role: local.role, roleText: roleLabel[local.role] ?? local.role };
+    return { name: local.name, role: local.role, roleText: roleLabel[local.role] ?? local.role, source: 'local' as const };
   }
   return null;
 };
@@ -72,8 +72,13 @@ const presentIdentity = () => {
   });
 
   document.querySelectorAll<HTMLElement>('.professional-user-card').forEach((card) => {
-    setText(card.querySelector<HTMLElement>('strong'), identity?.name ?? 'Cuenta y seguridad');
-    setText(card.querySelector<HTMLElement>('small'), identity ? `${roleText} · sesión activa` : 'Perfil, PIN y sesiones');
+    setText(card.querySelector<HTMLElement>('strong'), identity ? `Sesión: ${identity.name}` : 'Cuenta y seguridad');
+    setText(
+      card.querySelector<HTMLElement>('small'),
+      identity
+        ? `${roleText} · ${identity.source === 'central' ? 'cuenta central' : 'usuario local'} · cambiar acceso`
+        : 'Perfil, PIN y sesiones',
+    );
   });
 
   const ready = identity ? 'true' : 'false';

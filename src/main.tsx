@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import AppRoot from './AppRoot';
+import AppRootRC52 from './AppRootRC52';
 import './styles.css';
 import './core.css';
 import './game-ui.css';
@@ -69,6 +69,7 @@ import './rc49-3-light-theme-finish.css';
 import './rc49-4-status-finish.css';
 import './rc50-visual-fixes.css';
 import './rc51-identity-technician-workflow.css';
+import './rc52-admin-access-clarity.css';
 
 const root = document.getElementById('root');
 
@@ -78,6 +79,6 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <AppRoot />
+    <AppRootRC52 />
   </StrictMode>,
 );

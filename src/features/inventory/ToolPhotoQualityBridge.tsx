@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { DEMO_TOOL_IMAGES } from '../../data/demoToolImages';
+import type { Tool } from '../../domain/types';
 import { loadAppData } from '../../services/storage';
 
 const normalize = (value: string) => value.trim().toLocaleUpperCase('es-ES');
@@ -11,6 +12,12 @@ const readCode = (root: ParentNode, selector: string) => root.querySelector<HTML
   ?.split('·')[0]
   ?.trim() ?? '';
 
+const isDemoPhoto = (tool: Tool) => Boolean(
+  tool.imageDataUrl
+  && DEMO_TOOL_IMAGES[tool.code]
+  && (DEMO_TOOL_IMAGES[tool.code] === tool.imageDataUrl || !tool.imageUpdatedAt),
+);
+
 const ensureBadge = (container: HTMLElement, text: string) => {
   let badge = container.querySelector<HTMLElement>('.rc51-photo-quality-badge');
   if (!badge) {
@@ -21,17 +28,52 @@ const ensureBadge = (container: HTMLElement, text: string) => {
   badge.textContent = text;
 };
 
+const ensureDemoPlaceholder = (container: HTMLElement) => {
+  let placeholder = container.querySelector<HTMLElement>('.rc52-demo-photo-placeholder');
+  if (!placeholder) {
+    placeholder = document.createElement('div');
+    placeholder.className = 'rc52-demo-photo-placeholder';
+    const title = document.createElement('strong');
+    title.textContent = 'Sin fotografía real';
+    const detail = document.createElement('small');
+    detail.textContent = 'La imagen inicial era solo una demostración. Pulsa Cambiar foto para identificar correctamente este activo.';
+    placeholder.append(title, detail);
+    container.appendChild(placeholder);
+  }
+};
+
+const clearDemoPlaceholder = (container: HTMLElement) => {
+  container.querySelector('.rc52-demo-photo-placeholder')?.remove();
+};
+
+const decorateToolCards = () => {
+  const data = loadAppData();
+  document.querySelectorAll<HTMLElement>('.tool-card').forEach((card) => {
+    const code = card.querySelector<HTMLElement>('.tool-code')?.textContent?.trim() ?? '';
+    const tool = data.tools.find((item) => normalize(item.code) === normalize(code));
+    const media = card.querySelector<HTMLElement>('.tool-media-trigger');
+    if (!tool || !media) return;
+    media.classList.toggle('rc52-demo-photo', isDemoPhoto(tool));
+  });
+};
+
 const decoratePhotoEditor = () => {
   document.querySelectorAll<HTMLElement>('.tool-photo-modal').forEach((modal) => {
     const code = readCode(modal, 'header p');
     const tool = toolFromCode(code);
     const preview = modal.querySelector<HTMLElement>('.tool-photo-preview');
     if (!tool || !preview) return;
-    const isDemo = Boolean(tool.imageDataUrl && DEMO_TOOL_IMAGES[tool.code] === tool.imageDataUrl);
-    preview.classList.toggle('rc51-demo-photo', isDemo);
-    preview.classList.toggle('rc51-real-photo', Boolean(tool.imageDataUrl && !isDemo));
-    if (isDemo) ensureBadge(preview, 'Imagen de demostración · sustitúyela por una foto real');
-    else preview.querySelector('.rc51-photo-quality-badge')?.remove();
+    const demo = isDemoPhoto(tool);
+    preview.classList.toggle('rc51-demo-photo', demo);
+    preview.classList.toggle('rc52-demo-photo', demo);
+    preview.classList.toggle('rc51-real-photo', Boolean(tool.imageDataUrl && !demo));
+    if (demo) {
+      ensureBadge(preview, 'Imagen de demostración · sustitúyela por una foto real');
+      ensureDemoPlaceholder(preview);
+    } else {
+      preview.querySelector('.rc51-photo-quality-badge')?.remove();
+      clearDemoPlaceholder(preview);
+    }
   });
 };
 
@@ -41,11 +83,13 @@ const decorateToolSheet = () => {
     const tool = toolFromCode(code);
     const media = sheet.querySelector<HTMLElement>('.tool-sheet-image');
     if (!tool || !media) return;
-    const isDemo = Boolean(tool.imageDataUrl && DEMO_TOOL_IMAGES[tool.code] === tool.imageDataUrl);
-    media.classList.toggle('rc51-demo-photo', isDemo);
-    media.classList.toggle('rc51-real-photo', Boolean(tool.imageDataUrl && !isDemo));
+    const demo = isDemoPhoto(tool);
+    media.classList.toggle('rc51-demo-photo', demo);
+    media.classList.toggle('rc52-demo-photo', demo);
+    media.classList.toggle('rc51-real-photo', Boolean(tool.imageDataUrl && !demo));
     let note = media.querySelector<HTMLElement>('.rc51-tool-demo-note');
-    if (isDemo) {
+    if (demo) {
+      ensureDemoPlaceholder(media);
       if (!note) {
         note = document.createElement('span');
         note.className = 'rc51-tool-demo-note';
@@ -54,11 +98,13 @@ const decorateToolSheet = () => {
       note.textContent = 'Imagen demo · añade una fotografía real del activo';
     } else {
       note?.remove();
+      clearDemoPlaceholder(media);
     }
   });
 };
 
 const decoratePhotos = () => {
+  decorateToolCards();
   decoratePhotoEditor();
   decorateToolSheet();
 };

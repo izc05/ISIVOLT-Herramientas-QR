@@ -9,8 +9,8 @@ export default function ReleaseBannerRC54() {
         frame = null;
         const title = document.querySelector<HTMLElement>('.web-mode-banner strong');
         const detail = document.querySelector<HTMLElement>('.web-mode-banner span');
-        if (title && title.textContent !== 'Modo web RC54') title.textContent = 'Modo web RC54';
-        const copy = 'Escaneo técnico automático · devoluciones con validación administrativa';
+        if (title && title.textContent !== 'Modo web RC55') title.textContent = 'Modo web RC55';
+        const copy = 'Ventanas claras corregidas · gestión NFC guiada · capas adaptadas';
         if (detail && detail.textContent !== copy) detail.textContent = copy;
       });
     };

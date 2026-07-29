@@ -1,9 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { AlertTriangle, Check, ScanLine, Search, Unlink, UserRound, Wrench, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  Info,
+  ScanLine,
+  Search,
+  Smartphone,
+  Unlink,
+  UserRound,
+  Wrench,
+  X,
+} from 'lucide-react';
 import type { AppData, Technician, Tool } from '../../domain/types';
 import { assertPermission, hasPermission } from '../../security/permissions';
-import { normalizeNfcUid, scanNfcTag } from '../../services/nfcScanner';
+import { isNfcScannerAvailable, normalizeNfcUid, scanNfcTag } from '../../services/nfcScanner';
 import { loadAppData, saveAppData } from '../../services/storage';
 
 type EntityMode = 'technician' | 'tool';
@@ -30,11 +41,12 @@ const shortUid = (uid?: string) => {
 export default function NfcManagementCenter() {
   const [allowed, setAllowed] = useState(() => hasPermission('inventory.manage') || hasPermission('technicians.manage'));
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<EntityMode>('technician');
+  const [mode, setMode] = useState<EntityMode>('tool');
   const [data, setData] = useState<AppData>(() => loadAppData());
   const [query, setQuery] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const nativeReader = isNfcScannerAvailable();
 
   useEffect(() => {
     const refresh = () => setAllowed(hasPermission('inventory.manage') || hasPermission('technicians.manage'));
@@ -60,8 +72,13 @@ export default function NfcManagementCenter() {
       });
   }, [data, mode, query]);
 
+  const linkedCount = entities.filter((entity) => Boolean(entity.nfcUid)).length;
+  const pendingCount = entities.length - linkedCount;
+
   const openCenter = () => {
     setData(loadAppData());
+    setMode('tool');
+    setQuery('');
     setFeedback(null);
     setOpen(true);
   };
@@ -88,7 +105,12 @@ export default function NfcManagementCenter() {
     }
 
     setBusyId(entity.id);
-    setFeedback({ tone: 'warning', text: 'Acerca la tarjeta o pegatina NFC a la parte trasera del teléfono.' });
+    setFeedback({
+      tone: 'warning',
+      text: nativeReader
+        ? 'Acerca la tarjeta o pegatina NFC a la parte trasera del teléfono.'
+        : 'Modo web de prueba: introduce el UID impreso o leído por un dispositivo NFC.',
+    });
     const result = await scanNfcTag();
 
     if (result.status !== 'success') {
@@ -161,6 +183,11 @@ export default function NfcManagementCenter() {
 
   if (!allowed) return null;
 
+  const guideTitle = mode === 'tool' ? 'Cómo vincular una etiqueta a una herramienta' : 'Cómo vincular una tarjeta a un técnico';
+  const guideCopy = mode === 'tool'
+    ? 'Busca la herramienta, pulsa Vincular y acerca una etiqueta NFC sin usar a la parte trasera del móvil. Después pega esa misma etiqueta en la herramienta.'
+    : 'Busca al técnico, pulsa Vincular y acerca su tarjeta NFC al móvil. La tarjeta quedará asociada únicamente a su ficha.';
+
   return (
     <>
       <motion.button
@@ -186,18 +213,33 @@ export default function NfcManagementCenter() {
               aria-label="Gestión NFC"
             >
               <header>
-                <div><span><ScanLine size={24} /></span><div><small>Identificación rápida</small><h2>Tarjetas y etiquetas NFC</h2><p>Vincula técnicos y herramientas sin modificar el sistema de puertas.</p></div></div>
+                <div><span><ScanLine size={24} /></span><div><small>Identificación rápida</small><h2>Tarjetas y etiquetas NFC</h2><p>Asocia un UID único a cada herramienta o técnico.</p></div></div>
                 <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={21} /></button>
               </header>
 
               <div className="nfc-management-tabs">
-                <button type="button" className={mode === 'technician' ? 'active' : ''} onClick={() => { setMode('technician'); setQuery(''); }}><UserRound size={18} /> Técnicos</button>
-                <button type="button" className={mode === 'tool' ? 'active' : ''} onClick={() => { setMode('tool'); setQuery(''); }}><Wrench size={18} /> Herramientas</button>
+                <button type="button" className={mode === 'tool' ? 'active' : ''} onClick={() => { setMode('tool'); setQuery(''); setFeedback(null); }}><Wrench size={18} /> Herramientas</button>
+                <button type="button" className={mode === 'technician' ? 'active' : ''} onClick={() => { setMode('technician'); setQuery(''); setFeedback(null); }}><UserRound size={18} /> Técnicos</button>
+              </div>
+
+              <aside className="nfc-management-guide">
+                <Info size={20} />
+                <div>
+                  <strong>{guideTitle}</strong>
+                  <span>{guideCopy}</span>
+                  <small><Smartphone size={13} /> {nativeReader ? 'Lector Android disponible. Mantén la etiqueta quieta hasta recibir la confirmación.' : 'En el PC se permite introducir un UID manual para pruebas. La lectura física se hará desde la app Android.'}</small>
+                </div>
+              </aside>
+
+              <div className="nfc-management-summary">
+                <span>{entities.length} registros</span>
+                <span>{linkedCount} vinculados</span>
+                <span>{pendingCount} pendientes</span>
               </div>
 
               <label className="nfc-management-search">
                 <Search size={18} />
-                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, código, categoría o UID…" />
+                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={mode === 'tool' ? 'Buscar herramienta, código, categoría o UID…' : 'Buscar técnico, código, especialidad o UID…'} />
               </label>
 
               {feedback && (
@@ -226,7 +268,7 @@ export default function NfcManagementCenter() {
               </main>
 
               <footer>
-                <span>El UID se usa solo para seleccionar el registro local. No concede permisos ni abre puertas.</span>
+                <span>La aplicación lee el UID de la etiqueta; no necesita escribir datos en ella. Un mismo UID no puede pertenecer a dos registros.</span>
               </footer>
             </motion.section>
           </motion.div>

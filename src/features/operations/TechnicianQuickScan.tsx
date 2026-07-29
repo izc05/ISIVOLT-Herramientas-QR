@@ -117,20 +117,34 @@ export default function TechnicianQuickScan() {
   }, []);
 
   useEffect(() => {
-    const adaptNavigation = () => {
-      if (!getEffectiveTechnicianIdentity()) return;
-      document.querySelectorAll<HTMLElement>('.nav-scan-button strong, .scan-main-button strong')
-        .forEach((element) => { element.textContent = 'Escanear herramienta'; });
-      document.querySelectorAll<HTMLElement>('.nav-scan-button small, .scan-main-button small')
-        .forEach((element) => { element.textContent = 'Retirada o devolución automática'; });
+    let frame: number | null = null;
+    const schedule = () => {
+      if (frame !== null) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = null;
+        if (!getEffectiveTechnicianIdentity()) return;
+        const title = 'Escanear herramienta';
+        const detail = 'Retirada o devolución automática';
+        document.querySelectorAll<HTMLElement>('.nav-scan-button strong, .scan-main-button strong')
+          .forEach((element) => {
+            if (element.textContent !== title) element.textContent = title;
+          });
+        document.querySelectorAll<HTMLElement>('.nav-scan-button small, .scan-main-button small')
+          .forEach((element) => {
+            if (element.textContent !== detail) element.textContent = detail;
+          });
+      });
     };
-    const observer = new MutationObserver(adaptNavigation);
+    const observer = new MutationObserver(schedule);
     observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener('isivolt:security-session', adaptNavigation);
-    adaptNavigation();
+    window.addEventListener('isivolt:security-session', schedule);
+    window.addEventListener('isivolt:central-account-changed', schedule);
+    schedule();
     return () => {
       observer.disconnect();
-      window.removeEventListener('isivolt:security-session', adaptNavigation);
+      window.removeEventListener('isivolt:security-session', schedule);
+      window.removeEventListener('isivolt:central-account-changed', schedule);
+      if (frame !== null) window.cancelAnimationFrame(frame);
     };
   }, []);
 

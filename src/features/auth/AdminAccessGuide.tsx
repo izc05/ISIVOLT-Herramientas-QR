@@ -56,9 +56,11 @@ export default function AdminAccessGuide() {
     const refresh = () => setRevision((value) => value + 1);
     window.addEventListener('isivolt:security-session', refresh);
     window.addEventListener('isivolt:central-account-changed', refresh);
+    window.addEventListener('isivolt:local-registration-updated', refresh);
     return () => {
       window.removeEventListener('isivolt:security-session', refresh);
       window.removeEventListener('isivolt:central-account-changed', refresh);
+      window.removeEventListener('isivolt:local-registration-updated', refresh);
     };
   }, []);
 
@@ -79,8 +81,8 @@ export default function AdminAccessGuide() {
 
         const webTitle = document.querySelector<HTMLElement>('.web-mode-banner strong');
         const webDetail = document.querySelector<HTMLElement>('.web-mode-banner span');
-        if (webTitle) webTitle.textContent = 'Modo web RC52';
-        if (webDetail) webDetail.textContent = 'Administración clara · prueba técnica local · acceso central guiado';
+        if (webTitle) webTitle.textContent = 'Modo web RC53';
+        if (webDetail) webDetail.textContent = 'Autorregistro local · aprobación administrativa · piloto técnico completo';
       });
     };
 
@@ -101,6 +103,11 @@ export default function AdminAccessGuide() {
   const openRequests = () => {
     setOpen(false);
     window.setTimeout(() => click('.registration-request-manager-launcher'), 40);
+  };
+
+  const openLocalRequests = () => {
+    setOpen(false);
+    window.setTimeout(() => window.dispatchEvent(new CustomEvent('isivolt:local-registration-manager-open')), 40);
   };
 
   const openCentral = () => {
@@ -128,13 +135,13 @@ export default function AdminAccessGuide() {
 
   return (
     <>
-      {launcher && navTarget ? createPortal(launcher, navTarget, `rc52-admin-${revision}`) : launcher}
+      {launcher && navTarget ? createPortal(launcher, navTarget, `rc53-admin-${revision}`) : launcher}
 
       {open && (
         <div className="rc52-access-backdrop" onClick={() => setOpen(false)}>
           <section className="rc52-access-guide" role="dialog" aria-modal="true" aria-label="Técnicos y acceso" onClick={(event) => event.stopPropagation()}>
             <header>
-              <div><span><UserCheck size={24} /></span><div><small>Administración diferenciada</small><h2>Técnicos y acceso</h2><p>Fichas profesionales, prueba local y registro real con el mini PC.</p></div></div>
+              <div><span><UserCheck size={24} /></span><div><small>Administración diferenciada</small><h2>Técnicos y acceso</h2><p>Fichas profesionales, piloto local y registro real con el mini PC.</p></div></div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={21} /></button>
             </header>
 
@@ -150,27 +157,29 @@ export default function AdminAccessGuide() {
               </section>
 
               <section className="rc52-access-card local">
-                <div className="rc52-access-card-heading"><span><Smartphone size={22} /></span><div><small>Disponible ahora, sin PocketBase</small><h3>Probar la aplicación como técnico</h3><p>Crea un usuario local con PIN, rol Técnico y una ficha vinculada. Después cambia de usuario.</p></div></div>
+                <div className="rc52-access-card-heading"><span><Smartphone size={22} /></span><div><small>Disponible ahora, sin PocketBase</small><h3>Piloto local completo</h3><p>El técnico solicita acceso, tú revisas la solicitud y la vinculas con una ficha. Después entra con su usuario y PIN.</p></div></div>
                 <ol>
-                  <li>Crear usuario técnico local.</li>
-                  <li>Elegir la ficha técnica y un PIN de 4 a 8 cifras.</li>
-                  <li>Salir y entrar con ese usuario para ver su espacio personal.</li>
+                  <li>Cierra la sesión para mostrar “Solicitar acceso local de prueba”.</li>
+                  <li>El técnico completa sus datos y elige un PIN.</li>
+                  <li>Aprueba la solicitud y vincúlala con su ficha técnica.</li>
+                  <li>Cambia de usuario para comprobar su espacio personal.</li>
                 </ol>
                 <div className="rc52-access-actions">
-                  <button type="button" onClick={createLocalTechnician}><UserPlus size={18} /> Crear técnico local</button>
+                  <button type="button" onClick={openLocalRequests}><UserCheck size={18} /> Revisar solicitudes locales</button>
                   <button type="button" onClick={changeLocalUser}><LogOut size={18} /> Cambiar de usuario</button>
+                  <button type="button" onClick={createLocalTechnician}><UserPlus size={18} /> Alta manual urgente</button>
                 </div>
               </section>
 
               <section className="rc52-access-card central">
-                <div className="rc52-access-card-heading"><span><Phone size={22} /></span><div><small>Funcionamiento real multiusuario</small><h3>Registro con teléfono o correo</h3><p>Al configurar PocketBase, el técnico verá “Iniciar sesión” y “Solicitar cuenta”. La solicitud quedará pendiente hasta que la apruebe un administrador.</p></div></div>
+                <div className="rc52-access-card-heading"><span><Phone size={22} /></span><div><small>Funcionamiento real multiusuario</small><h3>Registro con teléfono o correo</h3><p>Al configurar PocketBase, el mismo recorrido funcionará desde cada móvil con contraseña personal y aprobación administrativa.</p></div></div>
                 <div className="rc52-login-preview" aria-label="Vista previa del acceso técnico">
                   <div><KeyRound size={18} /><span><small>Inicio de sesión</small><strong>Teléfono o correo + contraseña</strong></span></div>
                   <div><UserPlus size={18} /><span><small>Nueva cuenta</small><strong>Nombre, código, teléfono, correo y contraseña</strong></span></div>
                 </div>
                 <div className="rc52-access-actions">
-                  <button type="button" onClick={openRequests}><UserCheck size={18} /> Revisar solicitudes</button>
-                  <button type="button" onClick={openCentral}><CloudCog size={18} /> {config.enabled ? 'Abrir mini PC' : 'Configurar mini PC'}</button>
+                  <button type="button" onClick={openRequests}><UserCheck size={18} /> Solicitudes centrales</button>
+                  <button type="button" onClick={openCentral}><CloudCog size={18} /> {config.enabled ? 'Abrir mini PC' : 'Preparar configuración'}</button>
                 </div>
               </section>
             </main>

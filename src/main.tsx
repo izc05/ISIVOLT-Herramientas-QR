@@ -73,6 +73,7 @@ import './rc52-admin-access-clarity.css';
 import './rc53-local-registration-pilot.css';
 import './rc54-technician-scan-return-approval.css';
 import './rc55-light-modals-nfc-guide.css';
+import './rc56-nfc-batch-registration.css';
 
 const root = document.getElementById('root');
 

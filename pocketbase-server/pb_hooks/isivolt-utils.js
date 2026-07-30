@@ -90,6 +90,46 @@ function findEntity(app, workspace, entity, externalId) {
   );
 }
 
+function normalizeNfcUid(value) {
+  return asText(value).replace(/[^a-fA-F0-9]/g, "").toUpperCase();
+}
+
+function assertUniqueNfcUid(app, workspace, entity, externalId, payload) {
+  if (["tools", "technicians"].indexOf(entity) === -1) return;
+
+  var uid = normalizeNfcUid(payload.nfcUid || payload.nfc_uid);
+  delete payload.nfc_uid;
+  if (!uid) {
+    delete payload.nfcUid;
+    return;
+  }
+  payload.nfcUid = uid;
+
+  var records = app.findRecordsByFilter(
+    "isivolt_entities",
+    "workspace = {:workspace} && (entity = 'tools' || entity = 'technicians')",
+    "",
+    10000,
+    0,
+    { workspace: workspace }
+  );
+
+  for (var index = 0; index < records.length; index += 1) {
+    var record = records[index];
+    var recordEntity = asText(record.get("entity"));
+    var recordId = asText(record.get("external_id"));
+    if (recordEntity === entity && recordId === externalId) continue;
+
+    var existingPayload = asObject(record.get("payload"));
+    var existingUid = normalizeNfcUid(existingPayload.nfcUid || existingPayload.nfc_uid);
+    if (existingUid !== uid) continue;
+
+    var existingName = asText(existingPayload.name) || recordId;
+    var existingType = recordEntity === "technicians" ? "técnico" : "herramienta";
+    throw new BadRequestError("El UID NFC ya está vinculado al " + existingType + " " + existingName + ".");
+  }
+}
+
 function saveEntity(app, workspace, entity, externalId, payload, actorUserId) {
   var existing = findEntity(app, workspace, entity, externalId);
   var record = existing || new Record(app.findCollectionByNameOrId("isivolt_entities"));
@@ -229,7 +269,7 @@ function health(e) {
   return e.json(200, {
     ok: true,
     service: "isivolt-pocketbase",
-    version: "rc41",
+    version: "rc56",
     time: nowIso()
   });
 }
@@ -299,8 +339,19 @@ function entity(e) {
     return e.json(200, { ok: true, deleted: true });
   }
 
-  var record = saveEntity(e.app, context.workspace, entityName, entityId, asObject(data.payload), context.id);
-  return e.json(200, { ok: true, id: record.id, version: Number(record.get("version")) });
+  var payload = asObject(data.payload);
+  if (asText(payload.id) && asText(payload.id) !== entityId) {
+    throw new BadRequestError("El identificador del contenido no coincide con la entidad solicitada.");
+  }
+  payload.id = entityId;
+
+  var result = null;
+  e.app.runInTransaction(function (txApp) {
+    assertUniqueNfcUid(txApp, context.workspace, entityName, entityId, payload);
+    var record = saveEntity(txApp, context.workspace, entityName, entityId, payload, context.id);
+    result = { ok: true, id: record.id, version: Number(record.get("version")) };
+  });
+  return e.json(200, result);
 }
 
 function movement(e) {

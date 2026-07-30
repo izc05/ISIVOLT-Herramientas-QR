@@ -38,6 +38,9 @@ export type Tool = {
   code: string;
   qrCode: string;
   nfcUid?: string;
+  nfcUpdatedAt?: string;
+  nfcUpdatedBy?: string;
+  nfcTechTypes?: string[];
   name: string;
   category: string;
   brand?: string;
@@ -69,6 +72,9 @@ export type Technician = {
   id: string;
   code: string;
   nfcUid?: string;
+  nfcUpdatedAt?: string;
+  nfcUpdatedBy?: string;
+  nfcTechTypes?: string[];
   barcodeValue?: string;
   name: string;
   specialty: string;

@@ -125,8 +125,9 @@ export default function NfcManagementCenter() {
   };
 
   const linkEntity = async (entity: SelectableEntity) => {
+    const targetMode = mode;
     try {
-      assertPermission(mode === 'technician' ? 'technicians.manage' : 'inventory.manage');
+      assertPermission(targetMode === 'technician' ? 'technicians.manage' : 'inventory.manage');
     } catch (error) {
       setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No tienes permiso para vincular NFC.' });
       return;
@@ -156,7 +157,7 @@ export default function NfcManagementCenter() {
 
     const uid = normalizeNfcUid(result.tag.uid);
     const current = loadAppData();
-    const conflict = ensureUniqueUid(current, uid, mode, entity.id);
+    const conflict = ensureUniqueUid(current, uid, targetMode, entity.id);
     if (conflict) {
       setBusyId(null);
       setFeedback({ tone: 'error', text: conflict });
@@ -164,7 +165,7 @@ export default function NfcManagementCenter() {
     }
 
     const timestamp = new Date().toISOString();
-    const next: AppData = mode === 'technician'
+    const next: AppData = targetMode === 'technician'
       ? {
           ...current,
           technicians: current.technicians.map((item) => item.id === entity.id
@@ -181,19 +182,22 @@ export default function NfcManagementCenter() {
     saveAppData(next);
     setData(next);
     setSessionLinkedKeys((currentKeys) => {
-      const key = entityKey(mode, entity.id);
+      const key = entityKey(targetMode, entity.id);
       return currentKeys.includes(key) ? currentKeys : [...currentKeys, key];
     });
     setBusyId(null);
     setFeedback({
       tone: 'success',
-      text: `${entity.name} vinculado al UID ${shortUid(uid)}. Ya puedes pegar esa etiqueta en la herramienta.`,
+      text: targetMode === 'tool'
+        ? `${entity.name} vinculado al UID ${shortUid(uid)}. Ya puedes pegar esa etiqueta en la herramienta.`
+        : `${entity.name} vinculado correctamente a la tarjeta ${shortUid(uid)}.`,
     });
   };
 
   const unlinkEntity = (entity: SelectableEntity) => {
+    const targetMode = mode;
     try {
-      assertPermission(mode === 'technician' ? 'technicians.manage' : 'inventory.manage');
+      assertPermission(targetMode === 'technician' ? 'technicians.manage' : 'inventory.manage');
     } catch (error) {
       setFeedback({ tone: 'error', text: error instanceof Error ? error.message : 'No tienes permiso para desvincular NFC.' });
       return;
@@ -203,7 +207,7 @@ export default function NfcManagementCenter() {
 
     const current = loadAppData();
     const timestamp = new Date().toISOString();
-    const next: AppData = mode === 'technician'
+    const next: AppData = targetMode === 'technician'
       ? {
           ...current,
           technicians: current.technicians.map((item) => item.id === entity.id
@@ -219,7 +223,7 @@ export default function NfcManagementCenter() {
 
     saveAppData(next);
     setData(next);
-    setSessionLinkedKeys((currentKeys) => currentKeys.filter((key) => key !== entityKey(mode, entity.id)));
+    setSessionLinkedKeys((currentKeys) => currentKeys.filter((key) => key !== entityKey(targetMode, entity.id)));
     setFeedback({ tone: 'success', text: `${entity.name} ya no tiene una identificación NFC asociada.` });
   };
 
@@ -290,7 +294,7 @@ export default function NfcManagementCenter() {
                   onClick={() => setShowPendingOnly((current) => !current)}
                   aria-pressed={showPendingOnly}
                 >
-                  <ListFilter size={16} /> {showPendingOnly ? 'Solo pendientes' : 'Mostrar pendientes'}
+                  <ListFilter size={16} /> {showPendingOnly ? 'Solo pendientes' : 'Mostrar solo pendientes'}
                 </button>
               </div>
 

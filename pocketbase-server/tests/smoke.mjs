@@ -93,7 +93,7 @@ await request('/api/isivolt/entity', {
   }),
 });
 
-const createTool = async (id, code, name) => request('/api/isivolt/entity', {
+const createTool = async (id, code, name, extra = {}) => request('/api/isivolt/entity', {
   method: 'POST',
   headers: adminHeaders,
   body: JSON.stringify({
@@ -112,12 +112,53 @@ const createTool = async (id, code, name) => request('/api/isivolt/entity', {
       active: true,
       createdAt: now,
       updatedAt: now,
+      ...extra,
     },
   }),
 });
 
-await createTool('tool-ci-1', 'ELE-CI-1', 'Multímetro CI');
+const primaryNfcUid = '04A1B2C3D4E5F6';
+await createTool('tool-ci-1', 'ELE-CI-1', 'Multímetro CI', {
+  nfcUid: '04:a1-b2-c3-d4-e5-f6',
+  nfcUpdatedAt: now,
+  nfcUpdatedBy: 'Administrador CI',
+  nfcTechTypes: ['android.nfc.tech.NfcA'],
+});
 await createTool('tool-ci-2', 'ELE-CI-2', 'Pinza CI');
+
+await createTool('tool-ci-1', 'ELE-CI-1', 'Multímetro CI', {
+  nfcUid: primaryNfcUid,
+  nfcUpdatedAt: new Date(Date.now() + 100).toISOString(),
+  nfcUpdatedBy: 'Administrador CI',
+  nfcTechTypes: ['android.nfc.tech.NfcA'],
+});
+
+await expectStatus(400, () => createTool('tool-ci-2', 'ELE-CI-2', 'Pinza CI', {
+  nfcUid: primaryNfcUid,
+  nfcUpdatedAt: new Date(Date.now() + 200).toISOString(),
+  nfcUpdatedBy: 'Administrador CI',
+}));
+
+await expectStatus(400, () => request('/api/isivolt/entity', {
+  method: 'POST',
+  headers: adminHeaders,
+  body: JSON.stringify({
+    workspaceId,
+    entity: 'technicians',
+    entityId: linkedTechnicianId,
+    action: 'upsert',
+    payload: {
+      id: linkedTechnicianId,
+      code: 'TEC-CI-1',
+      name: 'Técnico CI',
+      specialty: 'Electricidad',
+      nfcUid: primaryNfcUid,
+      active: true,
+      createdAt: now,
+      updatedAt: new Date(Date.now() + 300).toISOString(),
+    },
+  }),
+}));
 
 const adminMovement = {
   id: 'mov-ci-1',
@@ -142,6 +183,7 @@ const first = await request('/api/isivolt/movement', {
 assert.equal(first.ok, true);
 assert.equal(first.duplicate, false);
 assert.equal(first.tool.status, 'loaned');
+assert.equal(first.tool.nfcUid, primaryNfcUid);
 
 const duplicate = await request('/api/isivolt/movement', {
   method: 'POST',
@@ -199,10 +241,11 @@ assert.equal(ownMovement.tool.holderTechnicianId, linkedTechnicianId);
 
 const sync = await request(`/api/isivolt/sync?workspace=${encodeURIComponent(workspaceId)}&cursor=0`, { headers: adminHeaders });
 assert.ok(Array.isArray(sync.events));
-assert.ok(sync.events.length >= 7);
+assert.ok(sync.events.length >= 8);
 assert.ok(sync.events.some((event) => event.entity === 'movements' && event.entity_id === 'mov-ci-1'));
 assert.ok(sync.events.some((event) => event.entity === 'movements' && event.entity_id === 'mov-ci-2'));
 assert.ok(sync.events.some((event) => event.entity === 'tools' && event.entity_id === 'tool-ci-2' && event.payload.status === 'loaned'));
+assert.ok(sync.events.some((event) => event.entity === 'tools' && event.entity_id === 'tool-ci-1' && event.payload.nfcUid === primaryNfcUid));
 assert.ok(sync.cursor > 0);
 
 console.log(JSON.stringify({
@@ -212,6 +255,8 @@ console.log(JSON.stringify({
   events: sync.events.length,
   cursor: sync.cursor,
   duplicateProtected: duplicate.duplicate,
+  nfcDuplicateProtected: true,
+  nfcNormalized: first.tool.nfcUid === primaryNfcUid,
   foreignIdentityRejected: true,
   ownIdentityAccepted: ownMovement.tool.holderTechnicianId === linkedTechnicianId,
 }, null, 2));

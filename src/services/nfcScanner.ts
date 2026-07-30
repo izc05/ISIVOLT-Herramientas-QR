@@ -43,10 +43,15 @@ export const getNfcAvailability = async (): Promise<AvailabilityResult> => {
   }
 };
 
-export const scanNfcTag = async (timeoutMs = 20_000): Promise<NativeNfcResult> => {
+export const scanNfcTag = async (
+  timeoutMs = 20_000,
+  signal?: AbortSignal,
+): Promise<NativeNfcResult> => {
+  if (signal?.aborted) return { status: 'cancelled' };
+
   if (!isNfcScannerAvailable()) {
     const manual = window.prompt('Introduce manualmente el UID NFC para pruebas.');
-    if (manual === null) return { status: 'cancelled' };
+    if (manual === null || signal?.aborted) return { status: 'cancelled' };
     const uid = normalizeNfcUid(manual);
     return uid
       ? { status: 'success', tag: { uid, techTypes: ['manual'] } }
@@ -54,6 +59,7 @@ export const scanNfcTag = async (timeoutMs = 20_000): Promise<NativeNfcResult> =
   }
 
   const availability = await getNfcAvailability();
+  if (signal?.aborted) return { status: 'cancelled' };
   if (!availability.available) {
     return { status: 'unsupported', message: 'Este dispositivo no dispone de lector NFC compatible.' };
   }
@@ -67,10 +73,15 @@ export const scanNfcTag = async (timeoutMs = 20_000): Promise<NativeNfcResult> =
   return new Promise<NativeNfcResult>((resolve) => {
     let settled = false;
 
+    const abortHandler = () => {
+      void finish({ status: 'cancelled' });
+    };
+
     const finish = async (result: NativeNfcResult) => {
       if (settled) return;
       settled = true;
       if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      signal?.removeEventListener('abort', abortHandler);
       try {
         await IsivoltNfc.stopScan();
       } catch {
@@ -82,6 +93,12 @@ export const scanNfcTag = async (timeoutMs = 20_000): Promise<NativeNfcResult> =
         resolve(result);
       }
     };
+
+    if (signal?.aborted) {
+      void finish({ status: 'cancelled' });
+      return;
+    }
+    signal?.addEventListener('abort', abortHandler, { once: true });
 
     void (async () => {
       try {

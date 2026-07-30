@@ -74,6 +74,7 @@ import './rc53-local-registration-pilot.css';
 import './rc54-technician-scan-return-approval.css';
 import './rc55-light-modals-nfc-guide.css';
 import './rc56-nfc-batch-registration.css';
+import './rc56-nfc-runtime-safety.css';
 
 const root = document.getElementById('root');
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   AlertTriangle,
@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import type { AppData, Technician, Tool } from '../../domain/types';
 import { assertPermission, hasPermission } from '../../security/permissions';
+import { getCurrentOperatorId, getCurrentOperatorName } from '../../security/session';
+import { appendAuditEntry } from '../../security/store';
 import { isNfcScannerAvailable, normalizeNfcUid, scanNfcTag } from '../../services/nfcScanner';
 import { loadAppData, saveAppData } from '../../services/storage';
 
@@ -42,6 +44,34 @@ const shortUid = (uid?: string) => {
 
 const entityKey = (mode: EntityMode, id: string) => `${mode}:${id}`;
 
+const formatNfcUpdate = (entity: SelectableEntity) => {
+  if (!entity.nfcUpdatedAt) return '';
+  const timestamp = new Date(entity.nfcUpdatedAt);
+  if (Number.isNaN(timestamp.getTime())) return entity.nfcUpdatedBy ?? '';
+  const formatted = new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(timestamp);
+  return entity.nfcUpdatedBy ? `${formatted} · ${entity.nfcUpdatedBy}` : formatted;
+};
+
+const saveNfcAudit = (
+  mode: EntityMode,
+  entity: SelectableEntity,
+  detail: string,
+) => {
+  void appendAuditEntry({
+    eventType: 'admin.action',
+    entityType: mode === 'tool' ? 'tool-nfc' : 'technician-nfc',
+    entityId: entity.id,
+    operatorUserId: getCurrentOperatorId(),
+    operatorName: getCurrentOperatorName(),
+    detail,
+  }).catch(() => undefined);
+};
+
 export default function NfcManagementCenter() {
   const [allowed, setAllowed] = useState(() => hasPermission('inventory.manage') || hasPermission('technicians.manage'));
   const [open, setOpen] = useState(false);
@@ -52,12 +82,18 @@ export default function NfcManagementCenter() {
   const [sessionLinkedKeys, setSessionLinkedKeys] = useState<string[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const scanControllerRef = useRef<AbortController | null>(null);
   const nativeReader = isNfcScannerAvailable();
 
   useEffect(() => {
     const refresh = () => setAllowed(hasPermission('inventory.manage') || hasPermission('technicians.manage'));
     window.addEventListener('isivolt:security-session', refresh);
     return () => window.removeEventListener('isivolt:security-session', refresh);
+  }, []);
+
+  useEffect(() => () => {
+    scanControllerRef.current?.abort();
+    scanControllerRef.current = null;
   }, []);
 
   const allEntities = useMemo<SelectableEntity[]>(() => {
@@ -87,6 +123,17 @@ export default function NfcManagementCenter() {
   const pendingCount = allEntities.length - linkedCount;
   const sessionLinkedCount = sessionLinkedKeys.filter((key) => key.startsWith(`${mode}:`)).length;
 
+  const cancelActiveScan = () => {
+    scanControllerRef.current?.abort();
+    scanControllerRef.current = null;
+    setBusyId(null);
+  };
+
+  const closeCenter = () => {
+    cancelActiveScan();
+    setOpen(false);
+  };
+
   const openCenter = () => {
     setData(loadAppData());
     setMode('tool');
@@ -98,6 +145,7 @@ export default function NfcManagementCenter() {
   };
 
   const changeMode = (nextMode: EntityMode) => {
+    if (busyId) return;
     setMode(nextMode);
     setQuery('');
     setShowPendingOnly(true);
@@ -125,6 +173,7 @@ export default function NfcManagementCenter() {
   };
 
   const linkEntity = async (entity: SelectableEntity) => {
+    if (busyId) return;
     const targetMode = mode;
     try {
       assertPermission(targetMode === 'technician' ? 'technicians.manage' : 'inventory.manage');
@@ -133,10 +182,13 @@ export default function NfcManagementCenter() {
       return;
     }
 
-    if (entity.nfcUid && !window.confirm(
-      `${entity.name} ya tiene el UID ${shortUid(entity.nfcUid)}. ¿Quieres sustituirlo por otra etiqueta?`,
+    const previousUid = normalizeNfcUid(entity.nfcUid);
+    if (previousUid && !window.confirm(
+      `${entity.name} ya tiene el UID ${shortUid(previousUid)}. ¿Quieres sustituirlo por otra etiqueta?`,
     )) return;
 
+    const controller = new AbortController();
+    scanControllerRef.current = controller;
     setBusyId(entity.id);
     setFeedback({
       tone: 'warning',
@@ -144,7 +196,8 @@ export default function NfcManagementCenter() {
         ? `Acerca ahora la etiqueta que vas a pegar en ${entity.name}.`
         : 'Modo web de prueba: introduce el UID impreso o leído por un dispositivo NFC.',
     });
-    const result = await scanNfcTag();
+    const result = await scanNfcTag(20_000, controller.signal);
+    if (scanControllerRef.current === controller) scanControllerRef.current = null;
 
     if (result.status !== 'success') {
       setBusyId(null);
@@ -165,27 +218,53 @@ export default function NfcManagementCenter() {
     }
 
     const timestamp = new Date().toISOString();
+    const operatorName = getCurrentOperatorName();
+    const techTypes = result.tag.techTypes.filter((value) => typeof value === 'string' && value.trim());
+    const nfcUpdate = {
+      nfcUid: uid,
+      nfcUpdatedAt: timestamp,
+      nfcUpdatedBy: operatorName,
+      nfcTechTypes: techTypes,
+      updatedAt: timestamp,
+    };
     const next: AppData = targetMode === 'technician'
       ? {
           ...current,
           technicians: current.technicians.map((item) => item.id === entity.id
-            ? { ...item, nfcUid: uid, updatedAt: timestamp }
+            ? { ...item, ...nfcUpdate }
             : item),
         }
       : {
           ...current,
           tools: current.tools.map((item) => item.id === entity.id
-            ? { ...item, nfcUid: uid, updatedAt: timestamp }
+            ? { ...item, ...nfcUpdate }
             : item),
         };
 
-    saveAppData(next);
+    try {
+      saveAppData(next);
+    } catch (error) {
+      setBusyId(null);
+      setFeedback({
+        tone: 'error',
+        text: error instanceof Error ? error.message : 'No se ha podido guardar la vinculación NFC.',
+      });
+      return;
+    }
+
     setData(next);
     setSessionLinkedKeys((currentKeys) => {
       const key = entityKey(targetMode, entity.id);
       return currentKeys.includes(key) ? currentKeys : [...currentKeys, key];
     });
     setBusyId(null);
+    saveNfcAudit(
+      targetMode,
+      entity,
+      previousUid
+        ? `NFC sustituido: ${shortUid(previousUid)} → ${shortUid(uid)}.`
+        : `NFC vinculado: ${shortUid(uid)}.`,
+    );
     setFeedback({
       tone: 'success',
       text: targetMode === 'tool'
@@ -195,6 +274,7 @@ export default function NfcManagementCenter() {
   };
 
   const unlinkEntity = (entity: SelectableEntity) => {
+    if (busyId) return;
     const targetMode = mode;
     try {
       assertPermission(targetMode === 'technician' ? 'technicians.manage' : 'inventory.manage');
@@ -203,27 +283,46 @@ export default function NfcManagementCenter() {
       return;
     }
 
+    const previousUid = normalizeNfcUid(entity.nfcUid);
     if (!window.confirm(`¿Desvincular el NFC de ${entity.name}? La etiqueta quedará libre para otro registro.`)) return;
 
     const current = loadAppData();
     const timestamp = new Date().toISOString();
+    const operatorName = getCurrentOperatorName();
+    const nfcUpdate = {
+      nfcUid: undefined,
+      nfcUpdatedAt: timestamp,
+      nfcUpdatedBy: operatorName,
+      nfcTechTypes: undefined,
+      updatedAt: timestamp,
+    };
     const next: AppData = targetMode === 'technician'
       ? {
           ...current,
           technicians: current.technicians.map((item) => item.id === entity.id
-            ? { ...item, nfcUid: undefined, updatedAt: timestamp }
+            ? { ...item, ...nfcUpdate }
             : item),
         }
       : {
           ...current,
           tools: current.tools.map((item) => item.id === entity.id
-            ? { ...item, nfcUid: undefined, updatedAt: timestamp }
+            ? { ...item, ...nfcUpdate }
             : item),
         };
 
-    saveAppData(next);
+    try {
+      saveAppData(next);
+    } catch (error) {
+      setFeedback({
+        tone: 'error',
+        text: error instanceof Error ? error.message : 'No se ha podido desvincular la etiqueta NFC.',
+      });
+      return;
+    }
+
     setData(next);
     setSessionLinkedKeys((currentKeys) => currentKeys.filter((key) => key !== entityKey(targetMode, entity.id)));
+    saveNfcAudit(targetMode, entity, `NFC desvinculado: ${shortUid(previousUid)}.`);
     setFeedback({ tone: 'success', text: `${entity.name} ya no tiene una identificación NFC asociada.` });
   };
 
@@ -257,15 +356,16 @@ export default function NfcManagementCenter() {
               role="dialog"
               aria-modal="true"
               aria-label="Gestión NFC"
+              aria-busy={busyId !== null}
             >
               <header>
                 <div><span><ScanLine size={24} /></span><div><small>Identificación rápida</small><h2>Tarjetas y etiquetas NFC</h2><p>Asocia un UID único a cada herramienta o técnico.</p></div></div>
-                <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={21} /></button>
+                <button type="button" onClick={closeCenter} aria-label="Cerrar"><X size={21} /></button>
               </header>
 
               <div className="nfc-management-tabs">
-                <button type="button" className={mode === 'tool' ? 'active' : ''} onClick={() => changeMode('tool')}><Wrench size={18} /> Herramientas</button>
-                <button type="button" className={mode === 'technician' ? 'active' : ''} onClick={() => changeMode('technician')}><UserRound size={18} /> Técnicos</button>
+                <button type="button" disabled={busyId !== null} className={mode === 'tool' ? 'active' : ''} onClick={() => changeMode('tool')}><Wrench size={18} /> Herramientas</button>
+                <button type="button" disabled={busyId !== null} className={mode === 'technician' ? 'active' : ''} onClick={() => changeMode('technician')}><UserRound size={18} /> Técnicos</button>
               </div>
 
               <aside className="nfc-management-guide">
@@ -291,6 +391,7 @@ export default function NfcManagementCenter() {
                 <button
                   className={showPendingOnly ? 'active' : ''}
                   type="button"
+                  disabled={busyId !== null}
                   onClick={() => setShowPendingOnly((current) => !current)}
                   aria-pressed={showPendingOnly}
                 >
@@ -307,7 +408,7 @@ export default function NfcManagementCenter() {
 
               <label className="nfc-management-search">
                 <Search size={18} />
-                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={mode === 'tool' ? 'Buscar herramienta, código, categoría o UID…' : 'Buscar técnico, código, especialidad o UID…'} />
+                <input disabled={busyId !== null} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={mode === 'tool' ? 'Buscar herramienta, código, categoría o UID…' : 'Buscar técnico, código, especialidad o UID…'} />
               </label>
 
               {feedback && (
@@ -322,14 +423,20 @@ export default function NfcManagementCenter() {
                   const linked = Boolean(entity.nfcUid);
                   const linkedNow = sessionLinkedKeys.includes(entityKey(mode, entity.id));
                   const detail = 'specialty' in entity ? entity.specialty : `${entity.category} · ${entity.location}`;
+                  const updated = formatNfcUpdate(entity);
+                  const nfcState = linkedNow
+                    ? `Vinculada ahora · NFC ${shortUid(entity.nfcUid)}`
+                    : linked
+                      ? `NFC ${shortUid(entity.nfcUid)}`
+                      : 'NFC pendiente';
                   return (
                     <article key={entity.id} className={`${linked ? 'linked' : ''} ${linkedNow ? 'linked-now' : ''}`}>
                       <span>{mode === 'technician' ? <UserRound size={20} /> : <Wrench size={20} />}</span>
-                      <div><strong>{entity.name}</strong><small>{entity.code} · {detail}</small><em>{linkedNow ? `Vinculada ahora · NFC ${shortUid(entity.nfcUid)}` : linked ? `NFC ${shortUid(entity.nfcUid)}` : 'NFC pendiente'}</em></div>
-                      <button type="button" disabled={busyId === entity.id} onClick={() => { void linkEntity(entity); }}>
+                      <div><strong>{entity.name}</strong><small>{entity.code} · {detail}</small><em>{nfcState}{updated ? ` · ${updated}` : ''}</em></div>
+                      <button type="button" disabled={busyId !== null} onClick={() => { void linkEntity(entity); }}>
                         <ScanLine size={17} /> {busyId === entity.id ? 'Leyendo…' : linked ? 'Cambiar' : 'Vincular'}
                       </button>
-                      {linked && <button className="unlink" type="button" onClick={() => unlinkEntity(entity)} aria-label={`Desvincular NFC de ${entity.name}`}><Unlink size={17} /></button>}
+                      {linked && <button disabled={busyId !== null} className="unlink" type="button" onClick={() => unlinkEntity(entity)} aria-label={`Desvincular NFC de ${entity.name}`}><Unlink size={17} /></button>}
                     </article>
                   );
                 })}
@@ -344,6 +451,7 @@ export default function NfcManagementCenter() {
 
               <footer>
                 <span>La aplicación lee el UID de la etiqueta; no necesita escribir datos en ella. Un mismo UID no puede pertenecer a dos registros.</span>
+                {busyId && <button className="nfc-batch-cancel" type="button" onClick={cancelActiveScan}><X size={15} /> Cancelar lectura</button>}
               </footer>
             </motion.section>
           </motion.div>

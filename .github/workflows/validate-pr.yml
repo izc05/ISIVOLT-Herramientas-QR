@@ -1,0 +1,40 @@
+name: Validar aplicación
+
+on:
+  pull_request:
+    branches:
+      - main
+      - agent/rc31-web-preview
+      - agent/rc56-nfc-batch-registration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Pruebas y compilación web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+
+      - name: Ejecutar pruebas
+        run: npm test
+
+      - name: Compilar TypeScript y Vite
+        run: npm run build

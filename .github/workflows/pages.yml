@@ -1,9 +1,10 @@
-name: Publicar demo en GitHub Pages
+name: Publicar RC57 en GitHub Pages
 
 on:
   push:
     branches:
       - main
+      - agent/rc57-ecosystem-refresh
   workflow_dispatch:
 
 permissions:
@@ -17,7 +18,9 @@ concurrency:
 
 jobs:
   build:
+    name: Validar y preparar vista previa
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Descargar código
         uses: actions/checkout@v4
@@ -28,7 +31,10 @@ jobs:
           node-version: 22
 
       - name: Instalar dependencias
-        run: npm install
+        run: npm install --no-audit --no-fund
+
+      - name: Ejecutar pruebas
+        run: npm test
 
       - name: Compilar aplicación
         run: npm run build
@@ -42,6 +48,7 @@ jobs:
           path: ./dist
 
   deploy:
+    name: Publicar vista previa RC57
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -56,6 +56,7 @@ export default function EcosystemIdentityRC57() {
           <span className="ivp-ecosystem-module"><small>Módulo</small><strong>Herramientas</strong></span>
           <span className="ivp-ecosystem-technology">QR/NFC</span>
           <span className="ivp-ecosystem-view">{currentView}</span>
+          <span className="ivp-ecosystem-release" title="Versión publicada">RC57 · WEB</span>
         </section>,
         topbarTarget,
       )}
@@ -64,7 +65,7 @@ export default function EcosystemIdentityRC57() {
         <section className="ivp-sidebar-module" aria-label="Módulo activo de IsiVoltPro">
           <span><Boxes size={18} /></span>
           <div>
-            <small>Módulo activo</small>
+            <small>Módulo activo · RC57</small>
             <strong>Herramientas</strong>
             <p>Inventario · trazabilidad · QR/NFC</p>
           </div>

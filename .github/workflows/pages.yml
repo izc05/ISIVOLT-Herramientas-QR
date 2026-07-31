@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - agent/rc31-web-preview
       - agent/rc57-ecosystem-refresh
   workflow_dispatch:
 

@@ -8,7 +8,6 @@ import {
   MapPin,
   PackagePlus,
   Sparkles,
-  Wrench,
   X,
 } from 'lucide-react';
 import type { Tool } from '../../domain/types';
@@ -135,6 +134,7 @@ export default function ToolQuickCreateRC57({ onSaved }: Props) {
       const target = event.target as HTMLElement | null;
       const button = target?.closest('button');
       if (!button || !button.textContent?.includes('Nueva herramienta')) return;
+      if (button.closest('.workflow-command-panel')) return;
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();

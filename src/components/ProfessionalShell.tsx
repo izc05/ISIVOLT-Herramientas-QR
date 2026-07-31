@@ -22,9 +22,9 @@ import {
   UserCog,
   Users,
   Volume2,
-  Wrench,
   X,
 } from 'lucide-react';
+import isivoltproHerramientasLogo from '../assets/brand/isivoltpro-herramientas-logo.svg';
 import { getCurrentSecurityUser } from '../security/session';
 import type { UserRole } from '../security/types';
 
@@ -102,6 +102,7 @@ const adminActions: AdminAction[] = [
   { label: 'Archivos', detail: 'Informes de gestión', selector: '.management-files-launcher', Icon: Files, roles: ['admin', 'warehouse', 'coordinator'] },
   { label: 'Mantenimiento', detail: 'Actuaciones técnicas', selector: '.maintenance-board-launcher', Icon: Hammer, roles: ['admin', 'warehouse'] },
   { label: 'Rectificaciones', detail: 'Corregir movimientos', selector: '.rectification-launcher', Icon: History, roles: ['admin'] },
+  { label: 'Vaciar datos', detail: 'Empezar con un espacio limpio', selector: '.workspace-reset-launcher', Icon: RotateCcw, roles: ['admin'] },
   { label: 'Respuesta', detail: 'Sonido y vibración', selector: '.experience-settings-button', Icon: Volume2, roles: ['admin', 'warehouse', 'coordinator', 'technician'] },
   { label: 'Diagnóstico', detail: 'Estado local y errores', selector: '.stability-badge', Icon: ShieldCheck, roles: ['admin'] },
 ];
@@ -119,7 +120,7 @@ export default function ProfessionalShell() {
   const navigation = useMemo(() => role === 'technician' ? technicianNavigation : generalNavigation, [role]);
   const visibleAdminActions = useMemo(() => adminActions.filter((action) => action.roles.includes(role)), [role]);
   const canScan = role !== 'coordinator';
-  const canRestoreDemo = role === 'admin';
+  const canResetWorkspace = role === 'admin';
 
   useEffect(() => {
     const refreshRole = () => {
@@ -210,8 +211,11 @@ export default function ProfessionalShell() {
     <>
       <aside className="professional-sidebar" aria-label="Navegación profesional">
         <header className="professional-brand">
-          <span><Wrench size={22} /></span>
-          <div><strong>ISIVOLT</strong><small>Herramientas QR</small></div>
+          <img
+            className="professional-brand-logo"
+            src={isivoltproHerramientasLogo}
+            alt="IsiVoltPro Herramientas"
+          />
         </header>
 
         <div className="professional-section-label">{role === 'technician' ? 'Espacio personal' : 'Menú principal'}</div>
@@ -245,10 +249,10 @@ export default function ProfessionalShell() {
             <span><strong>Más</strong><small>{role === 'technician' ? 'Cuenta y sincronización' : 'Cuenta e informes'}</small></span>
             <ChevronRight size={16} />
           </button>
-          {canRestoreDemo && (
-            <button type="button" onClick={() => triggerClick('.demo-reset')} title="Restaurar demo">
+          {canResetWorkspace && (
+            <button type="button" onClick={() => triggerClick('.workspace-reset-launcher')} title="Vaciar datos operativos">
               <span><RotateCcw size={19} /></span>
-              <span><strong>Restaurar demo</strong><small>Recuperar datos iniciales</small></span>
+              <span><strong>Vaciar datos</strong><small>Empezar desde cero</small></span>
               <ChevronRight size={16} />
             </button>
           )}

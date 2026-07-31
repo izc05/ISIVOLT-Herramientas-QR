@@ -47,8 +47,10 @@ const legacyWorkspace = (): AppData => ({
 });
 
 describe('workspaceReset', () => {
-  it('no precarga personas al iniciar RC57', () => {
-    expect(hospitalTechnicians).toEqual([]);
+  it('conserva el directorio operativo de técnicos en RC57', () => {
+    expect(hospitalTechnicians).toHaveLength(76);
+    expect(hospitalTechnicians[0]?.code).toBe('TEC-001');
+    expect(hospitalTechnicians[75]?.code).toBe('TEC-076');
     expect(technicianSpecialties.length).toBeGreaterThan(0);
   });
 
@@ -77,7 +79,7 @@ describe('workspaceReset', () => {
     expect(isLegacyDemoWorkspace(data)).toBe(false);
   });
 
-  it('crea un espacio nuevo completamente vacío', () => {
+  it('crea un espacio nuevo sin inventario ni movimientos de demostración', () => {
     const fresh = createFreshWorkspace();
 
     expect(fresh).toEqual({

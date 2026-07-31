@@ -16,23 +16,28 @@ import { loadAppData } from '../../services/storage';
 
 const DISMISS_KEY = 'isivolt:rc57-onboarding-dismissed';
 
+const findButtonByCopy = (selector: string, copy: string) => (
+  Array.from(document.querySelectorAll<HTMLButtonElement>(selector))
+    .find((button) => button.textContent?.toLocaleLowerCase('es-ES').includes(copy.toLocaleLowerCase('es-ES')))
+);
+
+const retryClick = (resolve: () => HTMLButtonElement | null | undefined, attempts = 12) => {
+  const button = resolve();
+  if (button) {
+    button.click();
+    return;
+  }
+  if (attempts <= 1) return;
+  window.setTimeout(() => retryClick(resolve, attempts - 1), 75);
+};
+
 const triggerClick = (selector: string) => {
-  document.querySelector<HTMLButtonElement>(selector)?.click();
+  retryClick(() => document.querySelector<HTMLButtonElement>(selector));
 };
 
 const openToolCreation = () => {
-  triggerClick('.management-launcher');
-  window.setTimeout(() => {
-    const inventoryTab = Array.from(document.querySelectorAll<HTMLButtonElement>('.management-tabs button'))
-      .find((button) => button.textContent?.includes('Inventario'));
-    inventoryTab?.click();
-
-    window.setTimeout(() => {
-      const createButton = Array.from(document.querySelectorAll<HTMLButtonElement>('.management-list-section .management-section-heading button'))
-        .find((button) => button.textContent?.includes('Nueva'));
-      createButton?.click();
-    }, 120);
-  }, 120);
+  retryClick(() => findButtonByCopy('.core-bottom-nav > button', 'Inventario'));
+  retryClick(() => findButtonByCopy('.page-section .page-heading button', 'Nueva herramienta'));
 };
 
 export default function WorkspaceOnboardingRC57() {

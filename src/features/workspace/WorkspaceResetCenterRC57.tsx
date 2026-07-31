@@ -17,10 +17,15 @@ import {
 } from './workspaceReset';
 
 const CLEANUP_KEY = 'isivolt:rc57-legacy-demo-cleanup';
+const ONBOARDING_DISMISS_KEY = 'isivolt:rc57-onboarding-dismissed';
 
 const refreshApplication = () => {
   window.dispatchEvent(new CustomEvent('isivolt:management-refresh'));
   window.dispatchEvent(new CustomEvent('isivolt:app-refresh'));
+};
+
+const reactivateOnboarding = () => {
+  window.localStorage.removeItem(ONBOARDING_DISMISS_KEY);
 };
 
 export default function WorkspaceResetCenterRC57() {
@@ -47,6 +52,7 @@ export default function WorkspaceResetCenterRC57() {
     if (isLegacyDemoWorkspace(current)) {
       if (hasOperationalData(current)) {
         saveAppData(createFreshWorkspace(), { replaceNative: true });
+        reactivateOnboarding();
         refreshApplication();
       }
       window.localStorage.setItem(CLEANUP_KEY, 'cleared');
@@ -79,6 +85,7 @@ export default function WorkspaceResetCenterRC57() {
     const clean = createFreshWorkspace();
     saveAppData(clean, { replaceNative: true });
     window.localStorage.setItem(CLEANUP_KEY, 'manual-clear');
+    reactivateOnboarding();
     setSnapshot(clean);
     setPhrase('');
     setCompleted(true);

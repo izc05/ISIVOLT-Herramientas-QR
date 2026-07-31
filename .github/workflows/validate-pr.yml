@@ -1,6 +1,9 @@
 name: Validar aplicación
 
 on:
+  push:
+    branches:
+      - agent/rc57-ecosystem-refresh
   pull_request:
     branches:
       - main

@@ -20,6 +20,21 @@ const triggerClick = (selector: string) => {
   document.querySelector<HTMLButtonElement>(selector)?.click();
 };
 
+const openToolCreation = () => {
+  triggerClick('.management-launcher');
+  window.setTimeout(() => {
+    const inventoryTab = Array.from(document.querySelectorAll<HTMLButtonElement>('.management-tabs button'))
+      .find((button) => button.textContent?.includes('Inventario'));
+    inventoryTab?.click();
+
+    window.setTimeout(() => {
+      const createButton = Array.from(document.querySelectorAll<HTMLButtonElement>('.management-list-section .management-section-heading button'))
+        .find((button) => button.textContent?.includes('Nueva'));
+      createButton?.click();
+    }, 120);
+  }, 120);
+};
+
 export default function WorkspaceOnboardingRC57() {
   const [data, setData] = useState<AppData>(() => loadAppData());
   const [role, setRole] = useState(() => getCurrentSecurityUser()?.role ?? null);
@@ -75,9 +90,7 @@ export default function WorkspaceOnboardingRC57() {
       return;
     }
     if (currentStep === 'tool') {
-      window.dispatchEvent(new CustomEvent('isivolt:management-open', {
-        detail: { tab: 'tools', create: 'tool' },
-      }));
+      openToolCreation();
       return;
     }
     triggerClick('.nav-scan-button, .scan-main-button');

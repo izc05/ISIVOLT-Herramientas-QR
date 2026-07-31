@@ -1,0 +1,281 @@
+.workspace-onboarding {
+  position: fixed;
+  right: 26px;
+  bottom: 26px;
+  z-index: 8800;
+  width: min(410px, calc(100vw - 44px));
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 94%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--panel-strong) 97%, transparent);
+  box-shadow: 0 28px 72px rgba(3, 17, 30, .24);
+  backdrop-filter: blur(20px);
+  animation: workspace-onboarding-enter .34s ease both;
+}
+
+.workspace-onboarding > header {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 36px;
+  align-items: start;
+  gap: 12px;
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(34, 211, 238, .20), transparent 38%),
+    linear-gradient(135deg, color-mix(in srgb, var(--ecosystem-primary) 97%, transparent), color-mix(in srgb, #1d4ed8 68%, var(--ecosystem-primary)));
+  color: #fff;
+}
+
+.workspace-onboarding > header > span {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .10);
+  color: #a5f3fc;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .12);
+}
+
+.workspace-onboarding header div {
+  min-width: 0;
+}
+
+.workspace-onboarding header small,
+.workspace-onboarding header strong,
+.workspace-onboarding header p {
+  display: block;
+  margin: 0;
+}
+
+.workspace-onboarding header small {
+  color: #a5f3fc;
+  font-size: .63rem;
+  font-weight: 850;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.workspace-onboarding header strong {
+  margin-top: 4px;
+  font-size: 1.02rem;
+}
+
+.workspace-onboarding header p {
+  margin-top: 5px;
+  color: #c9dced;
+  font-size: .74rem;
+  line-height: 1.4;
+}
+
+.workspace-onboarding header > button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .07);
+  color: #d9edf8;
+  cursor: pointer;
+}
+
+.workspace-onboarding-steps {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px 10px;
+}
+
+.workspace-onboarding-steps article {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: var(--muted);
+  background: transparent;
+  transition: border-color .18s ease, background .18s ease, color .18s ease;
+}
+
+.workspace-onboarding-steps article > span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--panel-strong) 88%, var(--ecosystem-primary-2) 12%);
+  color: var(--cyan);
+}
+
+.workspace-onboarding-steps article div {
+  display: grid;
+  gap: 3px;
+}
+
+.workspace-onboarding-steps article strong {
+  color: inherit;
+  font-size: .81rem;
+}
+
+.workspace-onboarding-steps article small {
+  color: var(--muted);
+  font-size: .69rem;
+}
+
+.workspace-onboarding-steps article.active {
+  border-color: rgba(37, 99, 235, .24);
+  color: color-mix(in srgb, var(--cyan) 44%, currentColor);
+  background: color-mix(in srgb, var(--ecosystem-primary-2) 8%, var(--panel-strong));
+  box-shadow: inset 3px 0 0 #22d3ee;
+}
+
+.workspace-onboarding-steps article.done {
+  color: var(--green);
+}
+
+.workspace-onboarding-steps article.done > span {
+  background: color-mix(in srgb, var(--green) 12%, var(--panel-strong));
+  color: var(--green);
+}
+
+.workspace-onboarding-progress {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px 18px 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-strong) 92%, var(--ecosystem-primary-2) 8%);
+  color: var(--cyan);
+}
+
+.workspace-onboarding-progress span {
+  margin-left: 5px;
+  color: var(--muted);
+  font-size: .69rem;
+  font-weight: 750;
+}
+
+.workspace-onboarding > footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 14px 18px 18px;
+}
+
+.workspace-onboarding > footer button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: .76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.workspace-onboarding > footer .secondary {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-strong) 92%, transparent);
+  color: var(--cyan);
+}
+
+.workspace-onboarding > footer .primary {
+  border: 0;
+  background: var(--ecosystem-gradient);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, .20);
+}
+
+.workspace-onboarding > footer .primary:hover,
+.workspace-onboarding > footer .secondary:hover {
+  transform: translateY(-1px);
+}
+
+body.modal-open .workspace-onboarding,
+body.professional-more-open .workspace-onboarding {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@keyframes workspace-onboarding-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (min-width: 1100px) {
+  .workspace-onboarding {
+    right: 30px;
+  }
+}
+
+@media (max-width: 1099px) {
+  .workspace-onboarding {
+    right: 18px;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    width: min(390px, calc(100vw - 36px));
+  }
+}
+
+@media (max-width: 620px) {
+  .workspace-onboarding {
+    right: 10px;
+    bottom: calc(82px + env(safe-area-inset-bottom));
+    width: calc(100vw - 20px);
+    max-height: min(72vh, 620px);
+    overflow: auto;
+    border-radius: 19px;
+  }
+
+  .workspace-onboarding > header {
+    grid-template-columns: 40px minmax(0, 1fr) 34px;
+    padding: 15px;
+  }
+
+  .workspace-onboarding > header > span {
+    width: 40px;
+    height: 40px;
+  }
+
+  .workspace-onboarding header p {
+    display: none;
+  }
+
+  .workspace-onboarding-steps {
+    padding: 12px 14px 8px;
+  }
+
+  .workspace-onboarding-steps article {
+    min-height: 47px;
+    padding: 6px 8px;
+  }
+
+  .workspace-onboarding-progress {
+    margin: 2px 14px 10px;
+  }
+
+  .workspace-onboarding > footer {
+    padding: 11px 14px 15px;
+  }
+
+  .workspace-onboarding > footer button {
+    flex: 1;
+    padding: 0 10px;
+  }
+}

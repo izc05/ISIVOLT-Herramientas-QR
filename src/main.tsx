@@ -76,6 +76,7 @@ import './rc55-light-modals-nfc-guide.css';
 import './rc56-nfc-batch-registration.css';
 import './rc56-nfc-runtime-safety.css';
 import './rc57-ecosystem-refresh.css';
+import './rc57-onboarding.css';
 
 const root = document.getElementById('root');
 

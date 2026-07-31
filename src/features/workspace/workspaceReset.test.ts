@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { hospitalTechnicians, technicianSpecialties } from '../../data/technicians';
 import type { AppData } from '../../domain/types';
 import {
   createFreshWorkspace,
@@ -13,7 +14,7 @@ const legacyWorkspace = (): AppData => ({
   technicians: [{
     id: 'tech-antonio',
     code: 'TEC-001',
-    name: 'Antonio Ruiz',
+    name: 'Técnico de demostración',
     specialty: 'Electricidad',
     active: true,
     createdAt: timestamp,
@@ -46,6 +47,11 @@ const legacyWorkspace = (): AppData => ({
 });
 
 describe('workspaceReset', () => {
+  it('no precarga personas al iniciar RC57', () => {
+    expect(hospitalTechnicians).toEqual([]);
+    expect(technicianSpecialties.length).toBeGreaterThan(0);
+  });
+
   it('reconoce únicamente los identificadores históricos de demostración', () => {
     expect(isLegacyDemoWorkspace(legacyWorkspace())).toBe(true);
   });

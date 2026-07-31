@@ -9,8 +9,8 @@ export default function ReleaseBannerRC54() {
         frame = null;
         const title = document.querySelector<HTMLElement>('.web-mode-banner strong');
         const detail = document.querySelector<HTMLElement>('.web-mode-banner span');
-        if (title && title.textContent !== 'Modo web RC56') title.textContent = 'Modo web RC56';
-        const copy = 'Registro NFC en lote · filtro de pendientes · cambios protegidos';
+        if (title && title.textContent !== 'Modo web RC57') title.textContent = 'Modo web RC57';
+        const copy = 'Identidad IsiVoltPro · espacio limpio · QR/NFC protegido';
         if (detail && detail.textContent !== copy) detail.textContent = copy;
       });
     };

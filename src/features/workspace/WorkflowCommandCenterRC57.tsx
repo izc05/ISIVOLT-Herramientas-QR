@@ -23,36 +23,63 @@ const findButtonByCopy = (selector: string, copy: string) => (
     .find((button) => button.textContent?.toLocaleLowerCase('es-ES').includes(copy.toLocaleLowerCase('es-ES')))
 );
 
+const retryAction = (
+  resolve: () => HTMLElement | null | undefined,
+  action: (target: HTMLElement) => void,
+  attempts = 12,
+) => {
+  const target = resolve();
+  if (target) {
+    action(target);
+    return;
+  }
+  if (attempts <= 1) return;
+  window.setTimeout(() => retryAction(resolve, action, attempts - 1), 75);
+};
+
 const openLegacyRoute = (copy: string) => {
-  findButtonByCopy('.core-bottom-nav > button', copy)?.click();
+  retryAction(
+    () => findButtonByCopy('.core-bottom-nav > button', copy),
+    (button) => button.click(),
+  );
 };
 
 const openToolCreation = () => {
   openLegacyRoute('Inventario');
-  window.setTimeout(() => {
-    findButtonByCopy('.page-section .page-heading button', 'Nueva herramienta')?.click();
-  }, 120);
+  retryAction(
+    () => findButtonByCopy('.page-section .page-heading button', 'Nueva herramienta'),
+    (button) => button.click(),
+  );
 };
 
 const openOperation = (mode: 'delivery' | 'return') => {
-  document.querySelector<HTMLButtonElement>('.nav-scan-button, .scan-main-button')?.click();
+  retryAction(
+    () => document.querySelector<HTMLButtonElement>('.nav-scan-button, .scan-main-button'),
+    (button) => button.click(),
+  );
   if (mode === 'delivery') return;
-  window.setTimeout(() => {
-    findButtonByCopy('.native-mode-switch button', 'Devolución')?.click();
-  }, 140);
+  retryAction(
+    () => findButtonByCopy('.native-mode-switch button', 'Devolución'),
+    (button) => button.click(),
+  );
 };
 
 const focusGlobalSearch = () => {
   openLegacyRoute('Inventario');
-  window.setTimeout(() => {
-    const input = document.querySelector<HTMLInputElement>('.header-search input');
-    input?.focus();
-    input?.select();
-  }, 90);
+  retryAction(
+    () => document.querySelector<HTMLInputElement>('.header-search input'),
+    (input) => {
+      input.focus();
+      input.select();
+    },
+  );
 };
 
 const clickSelector = (selector: string) => {
-  document.querySelector<HTMLButtonElement>(selector)?.click();
+  retryAction(
+    () => document.querySelector<HTMLButtonElement>(selector),
+    (button) => button.click(),
+  );
 };
 
 export default function WorkflowCommandCenterRC57() {

@@ -45,11 +45,7 @@ const openLegacyRoute = (copy: string) => {
 };
 
 const openToolCreation = () => {
-  openLegacyRoute('Inventario');
-  retryAction(
-    () => findButtonByCopy('.page-section .page-heading button', 'Nueva herramienta'),
-    (button) => button.click(),
-  );
+  window.dispatchEvent(new CustomEvent('isivolt:tool-create-open'));
 };
 
 const openOperation = (mode: 'delivery' | 'return') => {
@@ -185,7 +181,7 @@ export default function WorkflowCommandCenterRC57() {
               </button>
               <button type="button" onClick={() => run(openToolCreation)}>
                 <span><Plus size={23} /></span>
-                <div><strong>Nueva herramienta</strong><small>Ficha, ubicación y código QR</small></div>
+                <div><strong>Nueva herramienta</strong><small>Alta rápida con código automático</small></div>
               </button>
               <button type="button" onClick={() => run(() => window.dispatchEvent(new CustomEvent('isivolt:technician-create-open')))}>
                 <span><UserPlus size={23} /></span>

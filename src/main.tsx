@@ -25,6 +25,7 @@ import './features/history/movement-history-rc30.css';
 import './features/history/presence-audit-rc40.css';
 import './features/inventory/inventory-operational.css';
 import './features/inventory/tool-scan-alert.css';
+import './features/inventory/tool-quick-create-rc57.css';
 import './features/management/management.css';
 import './features/management/management-files.css';
 import './features/management/maintenance-board.css';

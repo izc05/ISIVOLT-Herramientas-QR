@@ -23,9 +23,9 @@ const findButtonByCopy = (selector: string, copy: string) => (
     .find((button) => button.textContent?.toLocaleLowerCase('es-ES').includes(copy.toLocaleLowerCase('es-ES')))
 );
 
-const retryAction = (
-  resolve: () => HTMLElement | null | undefined,
-  action: (target: HTMLElement) => void,
+const retryAction = <Target extends HTMLElement,>(
+  resolve: () => Target | null | undefined,
+  action: (target: Target) => void,
   attempts = 12,
 ) => {
   const target = resolve();

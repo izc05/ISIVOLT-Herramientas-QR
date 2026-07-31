@@ -8,44 +8,15 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { seedData } from '../../data/seed';
-import type { AppData } from '../../domain/types';
 import { getCurrentSecurityUser } from '../../security/session';
 import { loadAppData, saveAppData } from '../../services/storage';
-
-const LEGACY_DEMO_TOOL_IDS = new Set([
-  'tool-fluke-289',
-  'tool-hilti-te30',
-  'tool-camera',
-  'tool-clamp',
-  'tool-detector',
-  'tool-extension',
-]);
-
-const LEGACY_DEMO_TECHNICIAN_IDS = new Set([
-  'tech-antonio',
-  'tech-marta',
-  'tech-carlos',
-]);
-
-const LEGACY_DEMO_MOVEMENT_IDS = new Set([
-  'mov-001',
-  'mov-002',
-  'mov-003',
-  'mov-004',
-]);
+import {
+  createFreshWorkspace,
+  hasOperationalData,
+  isLegacyDemoWorkspace,
+} from './workspaceReset';
 
 const CLEANUP_KEY = 'isivolt:rc57-legacy-demo-cleanup';
-
-const cloneFreshWorkspace = (): AppData => JSON.parse(JSON.stringify(seedData)) as AppData;
-
-const isLegacyDemoWorkspace = (data: AppData) => (
-  data.tools.every((item) => LEGACY_DEMO_TOOL_IDS.has(item.id))
-  && data.technicians.every((item) => LEGACY_DEMO_TECHNICIAN_IDS.has(item.id))
-  && data.movements.every((item) => LEGACY_DEMO_MOVEMENT_IDS.has(item.id))
-  && (data.accessories ?? []).length === 0
-  && (data.maintenanceRecords ?? []).length === 0
-);
 
 const refreshApplication = () => {
   window.dispatchEvent(new CustomEvent('isivolt:management-refresh'));
@@ -74,11 +45,8 @@ export default function WorkspaceResetCenterRC57() {
     const current = loadAppData();
 
     if (isLegacyDemoWorkspace(current)) {
-      const hasDemoData = current.tools.length > 0
-        || current.technicians.length > 0
-        || current.movements.length > 0;
-      if (hasDemoData) {
-        saveAppData(cloneFreshWorkspace(), { replaceNative: true });
+      if (hasOperationalData(current)) {
+        saveAppData(createFreshWorkspace(), { replaceNative: true });
         refreshApplication();
       }
       window.localStorage.setItem(CLEANUP_KEY, 'cleared');
@@ -108,7 +76,7 @@ export default function WorkspaceResetCenterRC57() {
 
   const clearWorkspace = () => {
     if (phrase.trim().toLocaleUpperCase('es-ES') !== 'VACIAR') return;
-    const clean = cloneFreshWorkspace();
+    const clean = createFreshWorkspace();
     saveAppData(clean, { replaceNative: true });
     window.localStorage.setItem(CLEANUP_KEY, 'manual-clear');
     setSnapshot(clean);

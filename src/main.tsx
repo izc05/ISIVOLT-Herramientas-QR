@@ -78,6 +78,7 @@ import './rc56-nfc-batch-registration.css';
 import './rc56-nfc-runtime-safety.css';
 import './rc57-ecosystem-refresh.css';
 import './rc57-ecosystem-identity.css';
+import './rc57-release-marker.css';
 import './rc57-onboarding.css';
 import './rc57-legacy-cleanup.css';
 import './rc57-workflow-command-center.css';

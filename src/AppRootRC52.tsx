@@ -1,4 +1,5 @@
 import AppRoot from './AppRoot';
+import EcosystemIdentityRC57 from './components/EcosystemIdentityRC57';
 import ReleaseBannerRC54 from './components/ReleaseBannerRC54';
 import AdminAccessGuide from './features/auth/AdminAccessGuide';
 import LocalRegistrationPilot from './features/auth/LocalRegistrationPilot';
@@ -13,6 +14,7 @@ export default function AppRootRC52() {
     <>
       <AppRoot />
       <ReleaseBannerRC54 />
+      <EcosystemIdentityRC57 />
       <AdminAccessGuide />
       <LocalRegistrationPilot />
       <TechnicianQuickScan />

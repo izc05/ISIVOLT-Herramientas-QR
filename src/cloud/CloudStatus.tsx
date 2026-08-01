@@ -13,7 +13,14 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
-import { loadData, saveData, WORKSPACE_DATA_EVENT } from '../storage';
+import {
+  announceActiveData,
+  hasMeaningfulData,
+  hasStoredData,
+  loadData,
+  saveData,
+  WORKSPACE_DATA_EVENT,
+} from '../storage';
 import type { AppData } from '../types';
 import {
   clearCloudSession,
@@ -32,7 +39,7 @@ const stateCopy: Record<CloudState, { label: string; detail: string }> = {
   local: { label: 'Solo local', detail: 'Los datos se guardan únicamente en este dispositivo.' },
   connecting: { label: 'Sincronizando', detail: 'Conectando con el servidor central.' },
   synced: { label: 'En la nube', detail: 'Datos sincronizados con PocketBase.' },
-  offline: { label: 'Sin conexión', detail: 'Trabajas con la copia local hasta recuperar la conexión.' },
+  offline: { label: 'Sin conexión', detail: 'Trabajas con la copia local de esta cuenta hasta recuperar la conexión.' },
   error: { label: 'Revisar nube', detail: 'La configuración o los permisos necesitan revisión.' },
 };
 
@@ -58,6 +65,11 @@ export default function CloudStatus() {
   const ignoreNextDataEvent = useRef(false);
   const debounceTimer = useRef<number | null>(null);
 
+  const returnToLocalContext = () => {
+    setProfile(null);
+    announceActiveData();
+  };
+
   const syncNow = async (data = loadData(), activeProfile = profile): Promise<void> => {
     if (!activeProfile || syncing.current) return;
     syncing.current = true;
@@ -75,6 +87,7 @@ export default function CloudStatus() {
       );
     } catch (syncError) {
       const requestError = syncError instanceof PocketBaseRequestError ? syncError : null;
+      if (!getCloudProfile()) returnToLocalContext();
       setState(requestError?.status === 0 ? 'offline' : 'error');
       setError(syncError instanceof Error ? syncError.message : 'No se pudo sincronizar.');
     } finally {
@@ -90,7 +103,7 @@ export default function CloudStatus() {
 
     const restore = async () => {
       if (!getPocketBaseUrl() || !getPocketBaseToken() || !getCloudProfile()) {
-        setState(getPocketBaseUrl() ? 'error' : 'local');
+        setState('local');
         return;
       }
       try {
@@ -98,8 +111,10 @@ export default function CloudStatus() {
         const restoredProfile = await refreshAuthentication();
         setProfile(restoredProfile);
         setEmail(restoredProfile.email);
+        announceActiveData();
         await syncNow(loadData(), restoredProfile);
       } catch (restoreError) {
+        if (!getCloudProfile()) returnToLocalContext();
         setState(restoreError instanceof PocketBaseRequestError && restoreError.status === 0 ? 'offline' : 'error');
         setError(restoreError instanceof Error ? restoreError.message : 'No se pudo restaurar la sesión.');
       }
@@ -135,15 +150,33 @@ export default function CloudStatus() {
       setError('Indica servidor, correo y contraseña.');
       return;
     }
+
+    const dataBeforeLogin = loadData();
     savePocketBaseUrl(url);
     setUrl(getPocketBaseUrl());
     setState('connecting');
+
     try {
       const authenticatedProfile = await authenticate(email, password);
+      const accountAlreadyCached = hasStoredData(authenticatedProfile);
+      const accountData = loadData();
+      const migrateLocalData = !accountAlreadyCached
+        && authenticatedProfile.role !== 'technician'
+        && hasMeaningfulData(dataBeforeLogin);
+      const seed = migrateLocalData ? dataBeforeLogin : accountData;
+
       setProfile(authenticatedProfile);
       setPassword('');
-      await syncNow(loadData(), authenticatedProfile);
+
+      if (migrateLocalData) saveData(seed);
+      else announceActiveData();
+
+      await syncNow(seed, authenticatedProfile);
+      if (migrateLocalData) {
+        setMessage('La copia del modo local se ha vinculado a esta cuenta y se ha sincronizado.');
+      }
     } catch (loginError) {
+      if (!getCloudProfile()) returnToLocalContext();
       setState(loginError instanceof PocketBaseRequestError && loginError.status === 0 ? 'offline' : 'error');
       setError(loginError instanceof Error ? loginError.message : 'No se pudo iniciar sesión.');
     }
@@ -151,11 +184,11 @@ export default function CloudStatus() {
 
   const logout = () => {
     clearCloudSession();
-    setProfile(null);
+    returnToLocalContext();
     setPassword('');
-    setMessage('La copia local permanece en este dispositivo.');
+    setMessage('Sesión cerrada. Se ha recuperado la copia del modo local de este dispositivo.');
     setError('');
-    setState(getPocketBaseUrl() ? 'error' : 'local');
+    setState('local');
   };
 
   const copy = stateCopy[state];
@@ -197,7 +230,7 @@ export default function CloudStatus() {
 
             {message && <p className="cloud-feedback success"><CheckCircle2 size={16} /> {message}</p>}
             {error && <p className="cloud-feedback error"><CloudOff size={16} /> {error}</p>}
-            <footer><p>La copia local se conserva para poder seguir trabajando si se pierde la conexión. Al recuperarla, IsiVoltPro combina los registros y sincroniza los cambios.</p></footer>
+            <footer><p>Cada cuenta y espacio de trabajo conserva una caché independiente. El modo local también permanece separado para evitar mezclar datos entre usuarios.</p></footer>
           </section>
         </div>,
         document.body,

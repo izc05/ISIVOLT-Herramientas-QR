@@ -145,3 +145,10 @@ export async function updateRecord(
     { method: 'PATCH', body: JSON.stringify(data) },
   );
 }
+
+export async function deleteRecord(collection: string, recordId: string): Promise<void> {
+  await request<unknown>(
+    `/api/collections/${encodeURIComponent(collection)}/records/${encodeURIComponent(recordId)}`,
+    { method: 'DELETE' },
+  );
+}

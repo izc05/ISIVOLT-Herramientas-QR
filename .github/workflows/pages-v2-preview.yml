@@ -1,116 +1,58 @@
-name: Publicar vista previa V2
+name: Publicar IsiVoltPro Herramientas
 
 on:
   push:
     branches:
       - main
-    paths:
-      - .github/workflows/pages-v2-preview.yml
-  workflow_run:
-    workflows:
-      - Validar reconstrucción V2
-    branches:
-      - rebuild/isivoltpro-herramientas-v2
-    types:
-      - completed
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
-  issues: write
 
 concurrency:
-  group: pages-isivolt-web
+  group: pages-isivoltpro
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Preparar aplicación actual y V2
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    name: Validar y preparar aplicación
     runs-on: ubuntu-latest
-    outputs:
-      v2_sha: ${{ steps.v2-ref.outputs.sha }}
     steps:
-      - name: Descargar aplicación actual
+      - name: Descargar repositorio
         uses: actions/checkout@v4
-        with:
-          ref: agent/rc31-web-preview
-          path: legacy
-
-      - name: Descargar reconstrucción V2
-        uses: actions/checkout@v4
-        with:
-          ref: rebuild/isivoltpro-herramientas-v2
-          path: v2
-
-      - name: Registrar commit exacto de V2
-        id: v2-ref
-        run: echo "sha=$(git -C v2 rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Preparar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Instalar aplicación actual
-        working-directory: legacy
+      - name: Instalar dependencias
         run: npm install --no-audit --no-fund
 
-      - name: Compilar aplicación actual
-        working-directory: legacy
-        run: npm run build
-
-      - name: Instalar reconstrucción V2
-        working-directory: v2
-        run: npm install --no-audit --no-fund
-
-      - name: Comprobar TypeScript V2
-        working-directory: v2
+      - name: Comprobar TypeScript
         run: npm run check
 
-      - name: Compilar reconstrucción V2
-        working-directory: v2
+      - name: Compilar producción
         run: npm run build
 
-      - name: Combinar ambas aplicaciones
-        run: |
-          mkdir -p site/v2
-          cp -a legacy/dist/. site/
-          cp -a v2/dist/. site/v2/
-          touch site/.nojekyll
-
-      - name: Configurar GitHub Pages
+      - name: Preparar GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Subir sitio combinado
+      - name: Subir aplicación
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./site
+          path: ./dist
 
   deploy:
-    name: Publicar vista previa independiente
+    name: Publicar aplicación principal
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}v2/
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Publicar en GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Registrar vista previa en la PR
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PREVIEW_URL: ${{ steps.deployment.outputs.page_url }}v2/
-          PREVIEW_SHA: ${{ needs.build.outputs.v2_sha }}
-        run: |
-          gh issue comment 99 --repo "${{ github.repository }}" --body "🚀 **Vista previa V2 publicada**
-
-          Aplicación actual conservada en la raíz.
-
-          Vista previa independiente: ${PREVIEW_URL}
-
-          Commit V2 publicado: \`${PREVIEW_SHA}\`."

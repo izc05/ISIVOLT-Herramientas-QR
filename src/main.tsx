@@ -31,6 +31,7 @@ import './technician/my-material.css';
 import './access/access-mode.css';
 import './monitoring/loan-monitor.css';
 import './diagnostics/release-diagnostics.css';
+import './diagnostics/release-diagnostics-mobile.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No se encontró el contenedor principal.');

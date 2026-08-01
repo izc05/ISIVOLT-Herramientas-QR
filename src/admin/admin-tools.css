@@ -1,0 +1,135 @@
+.admin-tools-launcher {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 7px;
+  width: auto !important;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid #c9daed !important;
+  border-radius: 10px !important;
+  color: #355a84 !important;
+  background: #f7fbff !important;
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+.admin-tools-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2750;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(4, 24, 58, .62);
+  backdrop-filter: blur(10px);
+}
+
+.admin-tools-panel {
+  width: min(980px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border: 1px solid #cfdeed;
+  border-radius: 22px;
+  color: #17365f;
+  background: #f6f9fd;
+  box-shadow: 0 32px 90px rgba(4, 29, 68, .34);
+}
+
+.admin-tools-panel > header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  color: white;
+  background: linear-gradient(120deg, #063b98, #0768d9);
+}
+.admin-tools-panel header small { color: #66e1f2; font-size: .65rem; font-weight: 900; letter-spacing: .1em; }
+.admin-tools-panel header h2 { margin: 5px 0 3px; font-size: 1.45rem; }
+.admin-tools-panel header p { margin: 0; color: rgba(255,255,255,.72); font-size: .76rem; }
+.admin-tools-panel header > button { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,.2); border-radius: 11px; color: white; background: rgba(255,255,255,.1); }
+
+.admin-tools-panel > nav {
+  position: sticky;
+  top: 100px;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+  padding: 10px 18px;
+  border-bottom: 1px solid #dce6f1;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(14px);
+}
+.admin-tools-panel > nav button { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 10px; color: #6a7f9b; background: transparent; font-weight: 800; }
+.admin-tools-panel > nav button.active { color: #0756c9; background: #eaf4ff; }
+.admin-tools-panel > main { padding: 20px; }
+
+.admin-credential-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 18px; }
+.admin-form-card,
+.admin-credential-card,
+.admin-data-grid article { border: 1px solid #d7e2ef; border-radius: 17px; background: white; box-shadow: 0 10px 24px rgba(22, 54, 96, .07); }
+.admin-form-card { padding: 18px; }
+.admin-form-card label { display: grid; gap: 7px; color: #466487; font-size: .72rem; font-weight: 800; }
+.admin-form-card select,
+.admin-form-card input { width: 100%; height: 44px; padding: 0 12px; border: 1px solid #cbd9e8; border-radius: 10px; color: #17365f; background: #fbfdff; }
+.admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.admin-toggle { display: flex !important; grid-template-columns: auto 34px 1fr; align-items: center; gap: 9px; margin-top: 15px; }
+.admin-toggle input { width: 18px; height: 18px; }
+.admin-primary { width: 100%; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; border: 0; border-radius: 10px; color: white; background: #0756c9; font-weight: 850; }
+.admin-empty { min-height: 190px; display: grid; place-items: center; margin: 14px 0 0; padding: 20px; border: 1px dashed #cbd9e8; border-radius: 12px; color: #778aa4; text-align: center; }
+
+.admin-credential-card { display: grid; place-items: center; align-content: center; min-height: 500px; padding: 24px; text-align: center; }
+.credential-brand { display: flex; align-items: center; gap: 10px; justify-self: stretch; margin-bottom: 18px; text-align: left; }
+.credential-brand > span { display: grid; place-items: center; width: 44px; height: 48px; border-radius: 12px; color: #72e7f6; background: #0756c9; font-size: 2rem; font-weight: 900; transform: skew(-5deg); }
+.credential-brand div { display: grid; gap: 2px; }
+.credential-brand strong { font-size: 1rem; }
+.credential-brand small { color: #7b8da4; font-size: .68rem; }
+.admin-credential-card svg { padding: 8px; border: 1px solid #dce5ef; border-radius: 14px; background: white; }
+.admin-credential-card h3 { margin: 17px 0 4px; font-size: 1.25rem; }
+.admin-credential-card > p { margin: 0; color: #70849e; }
+.admin-credential-card code { max-width: 100%; margin-top: 12px; overflow: hidden; color: #4d6d91; text-overflow: ellipsis; white-space: nowrap; font-size: .67rem; }
+.credential-actions { display: flex; gap: 9px; margin-top: 18px; }
+.credential-actions button { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 13px; border: 1px solid #cbdbea; border-radius: 10px; color: #31577f; background: #f8fbff; font-weight: 800; }
+.credential-placeholder { display: grid; place-items: center; gap: 9px; color: #8092aa; }
+.credential-placeholder strong { color: #385777; }
+.credential-placeholder p { margin: 0; }
+
+.admin-data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.admin-data-grid article { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 13px; padding: 17px; }
+.admin-data-grid article > svg { color: #0756c9; }
+.admin-data-grid article div { min-width: 0; }
+.admin-data-grid strong { display: block; }
+.admin-data-grid p { margin: 4px 0 0; color: #74879f; font-size: .72rem; }
+.admin-data-grid button { grid-column: 1 / -1; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #c9daec; border-radius: 10px; color: #0756c9; background: #f5faff; font-weight: 800; }
+.admin-message { margin: 16px 0 0; padding: 11px 13px; border: 1px solid #b8d8f5; border-radius: 10px; color: #235b8e; background: #edf7ff; font-size: .75rem; font-weight: 750; }
+
+@media (max-width: 760px) {
+  .admin-tools-launcher { position: fixed; top: 10px; right: 56px; z-index: 2350; width: 38px !important; height: 38px; min-height: 38px; padding: 0 !important; justify-content: center; border-radius: 11px !important; }
+  .admin-tools-launcher span { display: none; }
+  .admin-tools-backdrop { padding: 0; }
+  .admin-tools-panel { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; }
+  .admin-tools-panel > header { padding: 15px; }
+  .admin-tools-panel > nav { top: 91px; padding-inline: 12px; }
+  .admin-tools-panel > main { padding: 14px; }
+  .admin-credential-layout { grid-template-columns: 1fr; }
+  .admin-form-grid,
+  .admin-data-grid { grid-template-columns: 1fr; }
+  .admin-credential-card { min-height: 440px; }
+}
+
+@media print {
+  body * { visibility: hidden !important; }
+  #isivoltpro-technician-card,
+  #isivoltpro-technician-card * { visibility: visible !important; }
+  #isivoltpro-technician-card { position: fixed; inset: 0; width: 86mm; height: 54mm; min-height: 0; margin: auto; padding: 7mm; border: 1px solid #b9cce0; box-shadow: none; background: white; }
+  #isivoltpro-technician-card .credential-brand { margin-bottom: 3mm; }
+  #isivoltpro-technician-card .credential-brand > span { width: 11mm; height: 12mm; font-size: 7mm; }
+  #isivoltpro-technician-card svg { width: 25mm; height: 25mm; padding: 1mm; }
+  #isivoltpro-technician-card h3 { margin: 2mm 0 0; font-size: 4mm; }
+  #isivoltpro-technician-card p { font-size: 2.7mm; }
+  #isivoltpro-technician-card code,
+  #isivoltpro-technician-card .credential-actions { display: none !important; }
+}

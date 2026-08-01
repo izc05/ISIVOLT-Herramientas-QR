@@ -1,7 +1,7 @@
 [Unit]
 Description=Copia de seguridad IsiVoltPro PocketBase
-Requires=isivoltpro-pocketbase.service
-After=isivoltpro-pocketbase.service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot

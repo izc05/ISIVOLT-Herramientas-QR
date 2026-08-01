@@ -1,0 +1,689 @@
+/*
+ * RC58 · Dirección visual aprobada
+ * Tema claro, limpio y coherente con el ecosistema IsiVoltPro.
+ * Esta hoja se carga al final para sustituir el aspecto heredado sin alterar
+ * los flujos funcionales de inventario, QR, NFC, préstamos y devoluciones.
+ */
+
+html[data-theme='light'],
+html[data-theme='dark'],
+:root {
+  color-scheme: light;
+  --bg: #f5f8fc;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --line: #e2eaf4;
+  --muted: #667892;
+  --cyan: #10bfe3;
+  --blue: #0f62fe;
+  --green: #0aa97b;
+  --orange: #e89724;
+  --red: #df4f5f;
+  --violet: #7259e8;
+  --shadow: 0 12px 34px rgba(22, 58, 104, .07);
+  --rc58-navy: #092c72;
+  --rc58-blue: #0f62fe;
+  --rc58-blue-deep: #0645bd;
+  --rc58-cyan: #19c6e9;
+  --rc58-ink: #102b55;
+  --rc58-muted: #687b98;
+  --rc58-surface: #ffffff;
+  --rc58-soft: #f5f8fc;
+  --rc58-soft-blue: #edf5ff;
+  --rc58-border: #e1e9f3;
+  --rc58-shadow: 0 10px 30px rgba(25, 63, 111, .07);
+  --rc58-radius: 16px;
+}
+
+html,
+body,
+#root,
+.core-app-shell,
+.game-app-shell {
+  min-height: 100%;
+  color: var(--rc58-ink) !important;
+  background: var(--rc58-soft) !important;
+}
+
+body {
+  background: var(--rc58-soft) !important;
+}
+
+/* Retira capas decorativas heredadas que provocaban ruido y solapamientos. */
+.ambient,
+.game-ambient,
+.orb,
+.grid-glow,
+.game-scan-sweep,
+.particle-field,
+.card-shimmer,
+.hud-corner,
+.button-aura,
+.nav-scan-ring,
+.web-mode-banner,
+.boot-ready-marker {
+  display: none !important;
+}
+
+/* Navegación principal del ecosistema. */
+@media (min-width: 1100px) {
+  :root {
+    --professional-sidebar-width: 254px;
+  }
+
+  .professional-sidebar {
+    width: var(--professional-sidebar-width) !important;
+    gap: 10px !important;
+    padding: 22px 14px 18px !important;
+    border: 0 !important;
+    color: #fff !important;
+    background:
+      linear-gradient(180deg, #0b52ca 0%, #0647bc 58%, #073b9d 100%) !important;
+    box-shadow: 16px 0 42px rgba(13, 68, 163, .13) !important;
+  }
+
+  .professional-brand {
+    min-height: 70px !important;
+    padding: 0 10px 20px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, .16) !important;
+  }
+
+  .professional-brand-logo {
+    width: 100% !important;
+    max-width: 212px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .professional-section-label {
+    display: none !important;
+  }
+
+  .professional-navigation {
+    gap: 7px !important;
+  }
+
+  .professional-navigation button {
+    min-height: 52px !important;
+    grid-template-columns: 38px minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+    padding: 7px 10px !important;
+    border: 1px solid transparent !important;
+    border-radius: 12px !important;
+    color: rgba(255, 255, 255, .84) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  .professional-navigation button:hover,
+  .professional-navigation button.active {
+    color: #fff !important;
+    border-color: rgba(255, 255, 255, .10) !important;
+    background: rgba(255, 255, 255, .12) !important;
+    box-shadow: inset 4px 0 0 var(--rc58-cyan) !important;
+    transform: none !important;
+  }
+
+  .professional-navigation button > span:first-child {
+    width: 36px !important;
+    height: 36px !important;
+    color: #fff !important;
+    background: transparent !important;
+  }
+
+  .professional-navigation button small,
+  .professional-navigation button > svg {
+    display: none !important;
+  }
+
+  .professional-navigation button strong {
+    font-size: .88rem !important;
+    font-weight: 720 !important;
+  }
+
+  .professional-navigation .professional-scan {
+    margin-top: 0 !important;
+    border-color: transparent !important;
+    background: transparent !important;
+  }
+
+  .professional-navigation-secondary {
+    margin-top: 2px !important;
+  }
+
+  .professional-sync-card,
+  .professional-appearance-shortcut,
+  .professional-user-card {
+    min-height: 48px !important;
+    padding: 9px 10px !important;
+    border: 1px solid rgba(255, 255, 255, .14) !important;
+    border-radius: 12px !important;
+    color: #fff !important;
+    background: rgba(0, 26, 91, .13) !important;
+    box-shadow: none !important;
+  }
+
+  .professional-sync-card {
+    margin-top: auto !important;
+  }
+
+  .professional-sync-card small,
+  .professional-appearance-shortcut small,
+  .professional-user-card small {
+    color: rgba(255, 255, 255, .66) !important;
+  }
+
+  .professional-sync-card > span,
+  .professional-appearance-shortcut > span,
+  .professional-user-card > span {
+    color: #fff !important;
+    background: rgba(255, 255, 255, .10) !important;
+  }
+
+  .core-app-shell > main {
+    margin-left: calc(var(--professional-sidebar-width) + 34px) !important;
+    margin-right: 30px !important;
+    padding-top: 92px !important;
+  }
+}
+
+/* Cabecera blanca y ligera. */
+.core-topbar {
+  min-height: 72px !important;
+  border-bottom: 1px solid var(--rc58-border) !important;
+  color: var(--rc58-ink) !important;
+  background: rgba(255, 255, 255, .96) !important;
+  box-shadow: 0 4px 18px rgba(25, 63, 111, .035) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.ivp-ecosystem-context {
+  gap: 8px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  color: var(--rc58-muted) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.ivp-ecosystem-icon,
+.ivp-ecosystem-brand small,
+.ivp-ecosystem-module small {
+  display: none !important;
+}
+
+.ivp-ecosystem-brand,
+.ivp-ecosystem-module {
+  display: inline-flex !important;
+}
+
+.ivp-ecosystem-context strong {
+  color: #4d6282 !important;
+  font-size: .78rem !important;
+  font-weight: 650 !important;
+}
+
+.ivp-ecosystem-chevron {
+  color: #a8b5c8 !important;
+}
+
+.ivp-ecosystem-technology,
+.ivp-ecosystem-view {
+  padding: 6px 11px !important;
+  border-radius: 999px !important;
+  color: #073f8f !important;
+  background: #bfeff7 !important;
+  font-size: .67rem !important;
+  font-weight: 800 !important;
+}
+
+.header-search {
+  height: 42px !important;
+  border: 1px solid var(--rc58-border) !important;
+  border-radius: 11px !important;
+  color: var(--rc58-muted) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.header-search input,
+.header-search input::placeholder {
+  color: var(--rc58-muted) !important;
+}
+
+.header-search:focus-within {
+  border-color: #91b8ff !important;
+  box-shadow: 0 0 0 4px rgba(15, 98, 254, .09) !important;
+}
+
+.profile-button {
+  border: 0 !important;
+  color: #fff !important;
+  background: var(--rc58-blue) !important;
+  box-shadow: none !important;
+}
+
+/* Título principal: sin hero oscuro ni efectos de videojuego. */
+.command-hero {
+  min-height: auto !important;
+  margin: 0 0 22px !important;
+  padding: 6px 0 0 !important;
+  border: 0 !important;
+  color: var(--rc58-ink) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.command-hero::before {
+  display: none !important;
+}
+
+.command-hero .eyebrow {
+  margin-bottom: 8px !important;
+  color: var(--rc58-blue) !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+.command-hero h1 {
+  margin: 0 !important;
+  color: var(--rc58-ink) !important;
+  font-size: clamp(1.75rem, 2.7vw, 2.45rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -.035em !important;
+}
+
+.command-hero .hero-date {
+  margin-top: 7px !important;
+  color: var(--rc58-muted) !important;
+  font-size: .92rem !important;
+}
+
+.scan-main-button {
+  min-width: 212px !important;
+  padding: 12px 15px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  color: #fff !important;
+  background: var(--rc58-blue) !important;
+  box-shadow: 0 9px 20px rgba(15, 98, 254, .18) !important;
+}
+
+.scan-main-button small {
+  color: rgba(255, 255, 255, .76) !important;
+}
+
+.status-line {
+  display: none !important;
+}
+
+/* KPI como el concepto aprobado. */
+.core-stats {
+  gap: 16px !important;
+  margin-bottom: 22px !important;
+}
+
+.core-stats .stat-card {
+  min-height: 142px !important;
+  padding: 20px !important;
+  border: 1px solid var(--rc58-border) !important;
+  border-radius: var(--rc58-radius) !important;
+  color: var(--rc58-ink) !important;
+  background: var(--rc58-surface) !important;
+  box-shadow: var(--rc58-shadow) !important;
+  transform: none !important;
+}
+
+.core-stats .stat-card:hover {
+  border-color: #cdddf4 !important;
+  box-shadow: 0 14px 34px rgba(25, 63, 111, .09) !important;
+  transform: translateY(-2px) !important;
+}
+
+.core-stats .stat-card::after,
+.core-stats .mini-trend,
+.core-stats .card-shimmer {
+  display: none !important;
+}
+
+.core-stats .stat-card-header {
+  margin-bottom: 12px !important;
+}
+
+.core-stats .stat-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 999px !important;
+  color: var(--rc58-blue) !important;
+  background: var(--rc58-soft-blue) !important;
+}
+
+.core-stats .stat-card > strong {
+  color: var(--rc58-ink) !important;
+  font-size: 2rem !important;
+}
+
+.core-stats .stat-card h3 {
+  color: #4e6381 !important;
+  font-size: .82rem !important;
+}
+
+.core-stats .stat-card p {
+  margin-top: 10px !important;
+  color: var(--rc58-muted) !important;
+  font-size: .72rem !important;
+}
+
+/* Paneles y acciones. */
+.core-content-grid {
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+.panel,
+.game-panel,
+.quick-actions,
+.movement-history,
+.tool-card,
+.technician-card,
+.empty-state,
+.core-modal,
+.professional-more-panel,
+.workflow-command-panel {
+  border: 1px solid var(--rc58-border) !important;
+  border-radius: var(--rc58-radius) !important;
+  color: var(--rc58-ink) !important;
+  background: #fff !important;
+  box-shadow: var(--rc58-shadow) !important;
+}
+
+.actions-panel,
+.movements-panel {
+  min-height: 330px !important;
+  padding: 22px !important;
+}
+
+.section-heading h2,
+.page-heading h1,
+.modal-heading h2 {
+  color: var(--rc58-ink) !important;
+}
+
+.section-heading .eyebrow,
+.page-heading .eyebrow,
+.modal-heading .eyebrow,
+.hud-tag {
+  color: var(--rc58-blue) !important;
+}
+
+.quick-actions {
+  gap: 10px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.quick-action {
+  min-height: 66px !important;
+  border: 1px solid var(--rc58-border) !important;
+  border-radius: 12px !important;
+  color: var(--rc58-ink) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.quick-action:hover {
+  border-color: #a9c7fa !important;
+  background: #f8fbff !important;
+  transform: none !important;
+}
+
+.quick-action.action-primary {
+  border-color: var(--rc58-blue) !important;
+  color: #fff !important;
+  background: var(--rc58-blue) !important;
+}
+
+.quick-action.action-primary small,
+.quick-action.action-primary svg {
+  color: rgba(255, 255, 255, .82) !important;
+}
+
+.quick-action .quick-icon,
+.tool-avatar,
+.technician-avatar,
+.movement-icon {
+  color: var(--rc58-blue) !important;
+  background: var(--rc58-soft-blue) !important;
+}
+
+.empty-state {
+  min-height: 240px !important;
+  color: var(--rc58-muted) !important;
+  background: #fff !important;
+}
+
+.empty-state > svg {
+  color: var(--rc58-blue) !important;
+}
+
+.empty-state strong {
+  color: var(--rc58-ink) !important;
+}
+
+.movement,
+.game-movement {
+  border-color: var(--rc58-border) !important;
+  color: var(--rc58-ink) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Pantallas interiores. */
+.page-section {
+  padding-top: 4px !important;
+}
+
+.page-heading {
+  margin-bottom: 22px !important;
+}
+
+.page-heading p,
+.modal-heading p,
+.tool-card p,
+.technician-card p,
+.tool-details dt,
+.tool-details dd {
+  color: var(--rc58-muted) !important;
+}
+
+.primary-button,
+.mission-button,
+.tool-card-actions button,
+.modal-footer button {
+  border: 0 !important;
+  border-radius: 11px !important;
+  color: #fff !important;
+  background: var(--rc58-blue) !important;
+  box-shadow: 0 8px 18px rgba(15, 98, 254, .16) !important;
+}
+
+.text-button,
+.tool-code {
+  color: var(--rc58-blue) !important;
+}
+
+.tool-grid,
+.technician-grid {
+  gap: 16px !important;
+}
+
+.tool-card,
+.technician-card {
+  border-color: var(--rc58-border) !important;
+  background: #fff !important;
+  box-shadow: var(--rc58-shadow) !important;
+  transform: none !important;
+}
+
+.tool-card:hover,
+.technician-card:hover {
+  border-color: #bfd3f2 !important;
+  box-shadow: 0 14px 30px rgba(25, 63, 111, .09) !important;
+  transform: translateY(-2px) !important;
+}
+
+.specialty-filter button,
+.segmented-control button,
+.condition-grid button,
+.field-label input,
+.field-label select,
+.field-label textarea {
+  border: 1px solid var(--rc58-border) !important;
+  color: var(--rc58-ink) !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.specialty-filter button.active,
+.segmented-control button.active,
+.condition-grid button.active {
+  border-color: #91b8ff !important;
+  color: var(--rc58-blue) !important;
+  background: var(--rc58-soft-blue) !important;
+}
+
+/* Modales claros, sin inclinaciones ni brillos. */
+.modal-backdrop,
+.workflow-command-backdrop,
+.professional-more-backdrop {
+  background: rgba(16, 43, 85, .32) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.core-modal,
+.workflow-command-panel,
+.professional-more-panel {
+  color: var(--rc58-ink) !important;
+  background: #fff !important;
+}
+
+.icon-button,
+.modal-close,
+.workflow-command-panel header > button,
+.professional-more-panel header > button {
+  color: var(--rc58-muted) !important;
+  background: #f5f8fc !important;
+}
+
+/* Botón flotante: limpio y secundario, sin tapar contenido. */
+.workflow-command-launcher {
+  border: 1px solid #bad0f4 !important;
+  border-radius: 13px !important;
+  color: var(--rc58-blue) !important;
+  background: #fff !important;
+  box-shadow: 0 12px 30px rgba(25, 63, 111, .12) !important;
+}
+
+.workspace-onboarding,
+.workspace-reset-center {
+  color: var(--rc58-ink) !important;
+}
+
+/* Ajustes responsive conservando el mismo lenguaje visual. */
+@media (max-width: 1099px) {
+  .core-topbar {
+    background: #fff !important;
+  }
+
+  .core-app-shell > main {
+    padding-top: 82px !important;
+  }
+
+  .core-bottom-nav {
+    border-top: 1px solid var(--rc58-border) !important;
+    color: var(--rc58-muted) !important;
+    background: rgba(255, 255, 255, .97) !important;
+    box-shadow: 0 -8px 24px rgba(25, 63, 111, .06) !important;
+  }
+
+  .core-bottom-nav button.active,
+  .core-bottom-nav button.nav-active {
+    color: var(--rc58-blue) !important;
+  }
+
+  .professional-mobile-more {
+    color: #fff !important;
+    background: var(--rc58-blue) !important;
+    box-shadow: 0 10px 24px rgba(15, 98, 254, .22) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .core-topbar {
+    min-height: 62px !important;
+  }
+
+  .header-search,
+  .ivp-ecosystem-context {
+    display: none !important;
+  }
+
+  .command-hero {
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .scan-main-button {
+    width: 100% !important;
+  }
+
+  .core-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .core-stats .stat-card {
+    min-height: 126px !important;
+    padding: 16px !important;
+  }
+
+  .core-content-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .core-stats {
+    gap: 10px !important;
+  }
+
+  .core-stats .stat-card {
+    min-height: 116px !important;
+    border-radius: 14px !important;
+  }
+
+  .actions-panel,
+  .movements-panel {
+    padding: 16px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

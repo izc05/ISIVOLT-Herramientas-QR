@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    name: TypeScript y compilación
+    name: TypeScript, PWA y compilación
     runs-on: ubuntu-latest
     steps:
       - name: Descargar repositorio
@@ -27,8 +27,14 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Comprobar TypeScript
         run: npm run check
+      - name: Validar manifiesto PWA
+        run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest','utf8')); console.log('Manifest válido')"
+      - name: Validar service worker
+        run: node --check public/sw.js
       - name: Compilar aplicación
         run: npm run build
+      - name: Comprobar archivos PWA compilados
+        run: test -f dist/manifest.webmanifest && test -f dist/sw.js && test -f dist/icons/icon.svg
       - name: Guardar compilación para revisión visual
         uses: actions/upload-artifact@v4
         with:

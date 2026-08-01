@@ -52,6 +52,7 @@ jobs:
           bash -n deploy/pocketbase/create-admin.sh
           bash -n deploy/pocketbase/backup.sh
           bash -n deploy/check-deployment.sh
+          bash -n scripts/test-pocketbase-integration.sh
           node scripts/validate-deployment-kit.mjs
       - name: Compilar aplicación e iconos
         run: npm run build
@@ -64,3 +65,19 @@ jobs:
           path: dist
           if-no-files-found: error
           retention-days: 7
+
+  pocketbase-integration:
+    name: PocketBase real y migraciones
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Arrancar PocketBase temporal y probar IsiVoltPro
+        env:
+          PB_VERSION: 0.39.9
+        run: bash scripts/test-pocketbase-integration.sh

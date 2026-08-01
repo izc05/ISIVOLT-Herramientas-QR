@@ -4,6 +4,7 @@ import AccessMode from './access/AccessMode';
 import App from './App';
 import AdminTools from './admin/AdminTools';
 import CloudStatus from './cloud/CloudStatus';
+import ReleaseDiagnostics from './diagnostics/ReleaseDiagnostics';
 import EcosystemSwitcher from './ecosystem/EcosystemSwitcher';
 import OperationalCenter from './ecosystem/OperationalCenter';
 import MobileFastScan from './mobile/MobileFastScan';
@@ -29,6 +30,7 @@ import './cloud/cloud.css';
 import './technician/my-material.css';
 import './access/access-mode.css';
 import './monitoring/loan-monitor.css';
+import './diagnostics/release-diagnostics.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No se encontró el contenedor principal.');
@@ -45,6 +47,7 @@ createRoot(root).render(
     <MobileFastScan />
     <AdminTools />
     <CloudStatus />
+    <ReleaseDiagnostics />
     <MyMaterial />
     <PwaInstallPrompt />
   </StrictMode>,

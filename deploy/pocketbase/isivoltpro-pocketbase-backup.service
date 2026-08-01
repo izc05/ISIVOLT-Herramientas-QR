@@ -1,0 +1,13 @@
+[Unit]
+Description=Copia de seguridad IsiVoltPro PocketBase
+Requires=isivoltpro-pocketbase.service
+After=isivoltpro-pocketbase.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/opt/isivoltpro-pocketbase/backup.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

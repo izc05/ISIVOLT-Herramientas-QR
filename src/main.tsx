@@ -6,6 +6,7 @@ import './styles.css';
 import './responsive.css';
 import './print.css';
 import './ecosystem/ecosystem.css';
+import './ecosystem/ecosystem-responsive.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No se encontró el contenedor principal.');

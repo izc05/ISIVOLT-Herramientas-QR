@@ -47,11 +47,10 @@ const legacyWorkspace = (): AppData => ({
 });
 
 describe('workspaceReset', () => {
-  it('conserva el directorio operativo de técnicos en RC57', () => {
-    expect(hospitalTechnicians).toHaveLength(76);
-    expect(hospitalTechnicians[0]?.code).toBe('TEC-001');
-    expect(hospitalTechnicians[75]?.code).toBe('TEC-076');
-    expect(technicianSpecialties.length).toBeGreaterThan(0);
+  it('inicia RC58 sin un directorio técnico precargado', () => {
+    expect(hospitalTechnicians).toEqual([]);
+    expect(technicianSpecialties).toContain('Mantenimiento');
+    expect(technicianSpecialties).toContain('Electricidad');
   });
 
   it('reconoce únicamente los identificadores históricos de demostración', () => {

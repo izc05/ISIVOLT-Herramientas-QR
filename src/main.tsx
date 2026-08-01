@@ -1,43 +1,27 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import AppRoot from './AppRoot';
+import App from './App';
+import EcosystemSwitcher from './ecosystem/EcosystemSwitcher';
+import OperationalCenter from './ecosystem/OperationalCenter';
+import ScanLauncher from './scan/ScanLauncher';
+import ScanSession from './scan/ScanSession';
 import './styles.css';
-import './core.css';
-import './game-ui.css';
-import './vivid-theme.css';
-import './technician-detail.css';
-import './qr-print.css';
-import './native-scanner.css';
-import './report-center.css';
-import './tool-experience.css';
-import './tool-detail-mobile.css';
-import './tool-detail-compat.css';
-import './stability.css';
-import './components/mobile-tools-menu.css';
-import './features/inventory/inventory-operational.css';
-import './features/inventory/tool-scan-alert.css';
-import './features/management/management.css';
-import './features/management/management-files.css';
-import './features/management/maintenance-board.css';
-import './features/technicians/technician-create.css';
-import './features/nfc/nfc-management.css';
-import './security/security.css';
-import './security/rectification.css';
-import './production/commissioning.css';
-import './boot.css';
-import './mobile-optimization.css';
-import './mobile-optimization-rc4.css';
-import './rc6-mobile.css';
-import './qr-print-rc6.css';
+import './responsive.css';
+import './print.css';
+import './ecosystem/ecosystem.css';
+import './ecosystem/ecosystem-responsive.css';
+import './ecosystem/operational-center.css';
+import './scan/scan.css';
 
 const root = document.getElementById('root');
-
-if (!root) {
-  throw new Error('No se ha encontrado el contenedor principal de la aplicación.');
-}
+if (!root) throw new Error('No se encontró el contenedor principal.');
 
 createRoot(root).render(
   <StrictMode>
-    <AppRoot />
+    <EcosystemSwitcher />
+    <App />
+    <OperationalCenter />
+    <ScanLauncher />
+    <ScanSession />
   </StrictMode>,
 );

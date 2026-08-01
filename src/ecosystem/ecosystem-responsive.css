@@ -1,0 +1,25 @@
+.ecosystem-trigger:focus-visible,
+.ecosystem-panel button:focus-visible {
+  outline: 3px solid rgba(24, 197, 232, .45);
+  outline-offset: 2px;
+}
+
+@media (min-width: 681px) and (max-width: 900px) {
+  .ecosystem-trigger {
+    top: 14px;
+    right: 164px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 680px) {
+  .ecosystem-trigger {
+    top: 14px;
+    right: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .ecosystem-trigger {
+    bottom: 74px;
+  }
+}

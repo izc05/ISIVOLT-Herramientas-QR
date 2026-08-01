@@ -1,0 +1,38 @@
+name: Validar reconstrucción V2
+
+on:
+  push:
+    branches:
+      - rebuild/isivoltpro-herramientas-v2
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: TypeScript y compilación
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+      - name: Comprobar TypeScript
+        run: npm run check
+      - name: Compilar aplicación
+        run: npm run build
+      - name: Guardar compilación para revisión visual
+        uses: actions/upload-artifact@v4
+        with:
+          name: isivoltpro-v2-dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 7

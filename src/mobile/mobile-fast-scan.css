@@ -1,0 +1,329 @@
+.mobile-action-dock,
+.mobile-scan-sheet-backdrop {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  .scan-launcher {
+    display: none !important;
+  }
+
+  body {
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  }
+
+  .workspace main {
+    padding-bottom: 28px;
+  }
+
+  .topbar {
+    min-height: 58px;
+    padding-inline: 12px;
+  }
+
+  .breadcrumbs span,
+  .breadcrumbs i,
+  .breadcrumbs b {
+    display: none;
+  }
+
+  .breadcrumbs strong {
+    display: block;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .8rem;
+  }
+
+  .topbar-actions > button {
+    display: none;
+  }
+
+  .ecosystem-trigger {
+    top: 9px !important;
+    right: 58px !important;
+    bottom: auto !important;
+    width: 40px !important;
+    min-height: 40px !important;
+    justify-content: center;
+    padding: 0 !important;
+    border-radius: 12px;
+  }
+
+  .ecosystem-trigger span,
+  .ecosystem-trigger strong {
+    display: none !important;
+  }
+
+  .page-heading {
+    padding-top: 18px;
+  }
+
+  .page-heading > button {
+    display: none;
+  }
+
+  .operations-hero-copy > p,
+  .operations-hero-actions,
+  .operations-active-module p,
+  .operations-roadmap {
+    display: none;
+  }
+
+  .operations-hero {
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .operations-hero h1 {
+    margin-bottom: 0;
+    font-size: 1.55rem;
+  }
+
+  .operations-active-module {
+    padding: 14px;
+  }
+
+  .operations-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .operations-kpi {
+    min-height: 92px;
+    padding: 13px;
+  }
+
+  .operations-kpi p {
+    display: none;
+  }
+
+  .operations-main-grid {
+    gap: 12px;
+  }
+
+  .mobile-action-dock {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 2200;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.22fr 1fr 1fr;
+    align-items: end;
+    min-height: 68px;
+    padding: 7px 5px 6px;
+    border: 1px solid rgba(196, 214, 235, .94);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 14px 38px rgba(12, 43, 82, .2);
+    backdrop-filter: blur(18px);
+  }
+
+  .mobile-action-dock > button {
+    min-width: 0;
+    min-height: 54px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px 2px;
+    border: 0;
+    border-radius: 13px;
+    color: #7186a2;
+    background: transparent;
+    font-size: .58rem;
+    font-weight: 800;
+  }
+
+  .mobile-action-dock > button.active {
+    color: #075fcf;
+    background: #edf6ff;
+  }
+
+  .mobile-action-dock .mobile-scan-button {
+    position: relative;
+    min-height: 66px;
+    margin-top: -24px;
+    color: #0756c9;
+    background: transparent;
+  }
+
+  .mobile-scan-button > span {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    border: 5px solid white;
+    border-radius: 50%;
+    color: white;
+    background: linear-gradient(145deg, #0784eb, #0756c9);
+    box-shadow: 0 10px 24px rgba(7, 86, 201, .34);
+  }
+
+  .mobile-scan-button > strong {
+    margin-top: 1px;
+    font-size: .63rem;
+  }
+
+  .mobile-scan-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2600;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(5, 25, 55, .54);
+    backdrop-filter: blur(8px);
+  }
+
+  .mobile-scan-sheet {
+    width: 100%;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+    border-radius: 24px 24px 0 0;
+    background: #f7faff;
+    box-shadow: 0 -18px 48px rgba(5, 30, 67, .25);
+  }
+
+  .mobile-scan-sheet header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 2px 2px 17px;
+  }
+
+  .mobile-scan-sheet header small {
+    color: #16a6c3;
+    font-size: .65rem;
+    font-weight: 900;
+    letter-spacing: .09em;
+  }
+
+  .mobile-scan-sheet h2 {
+    margin: 5px 0 4px;
+    color: #102a56;
+    font-size: 1.35rem;
+  }
+
+  .mobile-scan-sheet p {
+    margin: 0;
+    color: #71849e;
+    font-size: .76rem;
+    line-height: 1.45;
+  }
+
+  .mobile-scan-sheet header > button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    border: 1px solid #d5e1ef;
+    border-radius: 12px;
+    color: #536f92;
+    background: white;
+  }
+
+  .mobile-scan-options {
+    display: grid;
+    gap: 11px;
+  }
+
+  .mobile-scan-options > button {
+    min-height: 82px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid #d3e0ef;
+    border-radius: 16px;
+    color: #18375f;
+    background: white;
+    text-align: left;
+    box-shadow: 0 8px 18px rgba(15, 48, 88, .07);
+  }
+
+  .mobile-scan-options > button > span {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 auto;
+    border-radius: 15px;
+    color: white;
+    background: #0866e8;
+  }
+
+  .mobile-scan-options > button:last-child > span {
+    background: #12a47a;
+  }
+
+  .mobile-scan-options strong,
+  .mobile-scan-options small {
+    display: block;
+  }
+
+  .mobile-scan-options strong {
+    font-size: .95rem;
+  }
+
+  .mobile-scan-options small {
+    margin-top: 4px;
+    color: #7a8da6;
+    font-size: .72rem;
+  }
+
+  .scan-session-header {
+    min-height: 60px;
+  }
+
+  .scan-session-brand small,
+  .scan-session-title,
+  .scan-progress span:first-child {
+    display: none;
+  }
+
+  .scan-progress {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .scan-progress span:nth-child(2) i::after,
+  .scan-progress span:nth-child(3) i::after,
+  .scan-progress span:nth-child(4) i::after {
+    content: none;
+  }
+
+  .scan-session-body {
+    padding-top: 14px;
+  }
+
+  .scan-step-heading {
+    margin-bottom: 13px;
+  }
+
+  .scan-step-heading p {
+    font-size: .75rem;
+  }
+
+  .scan-manual-select {
+    margin-top: 10px;
+  }
+
+  .scan-session-footer {
+    position: sticky;
+    bottom: 0;
+  }
+}
+
+@media (max-width: 370px) {
+  .mobile-action-dock > button span {
+    font-size: .52rem;
+  }
+
+  .mobile-scan-button > span {
+    width: 54px;
+    height: 54px;
+  }
+}

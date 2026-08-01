@@ -173,9 +173,14 @@ export function mergeWorkspaceData(local: AppData, remote: AppData): AppData {
   };
 }
 
-const indexByExternalId = (records: PocketBaseRecord[]): Map<string, PocketBaseRecord> => new Map(
-  records.map((record) => [stringValue(record.external_id), record]).filter(([id]) => Boolean(id)),
-);
+const indexByExternalId = (records: PocketBaseRecord[]): Map<string, PocketBaseRecord> => {
+  const result = new Map<string, PocketBaseRecord>();
+  for (const record of records) {
+    const externalId = stringValue(record.external_id);
+    if (externalId) result.set(externalId, record);
+  }
+  return result;
+};
 
 async function upsertMutable(
   collection: string,

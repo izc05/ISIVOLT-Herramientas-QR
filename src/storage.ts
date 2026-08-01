@@ -1,6 +1,7 @@
 import type { AppData } from './types';
 
 const STORAGE_KEY = 'isivoltpro-herramientas-v2:data';
+export const WORKSPACE_DATA_EVENT = 'isivoltpro-v2:data-changed';
 
 export const emptyData = (): AppData => ({
   schemaVersion: 2,
@@ -31,6 +32,7 @@ export const loadData = (): AppData => {
 
 export const saveData = (data: AppData): void => {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  window.dispatchEvent(new CustomEvent<AppData>(WORKSPACE_DATA_EVENT, { detail: data }));
 };
 
 export const clearData = (): AppData => {

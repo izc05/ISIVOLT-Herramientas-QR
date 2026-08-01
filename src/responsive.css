@@ -1,0 +1,125 @@
+/* Ajustes responsive propios de V2. No depende de estilos de la aplicación anterior. */
+
+.sidebar nav button.module-active {
+  margin-top: 12px;
+  border: 1px solid rgba(165, 228, 255, .28);
+  background: rgba(255, 255, 255, .08);
+  box-shadow: none;
+}
+
+.sidebar nav button.module-active:hover {
+  background: rgba(255, 255, 255, .13);
+}
+
+@media (max-width: 700px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .metric-card {
+    min-height: 116px;
+    padding: 16px 14px;
+  }
+
+  .metric-card > span {
+    width: 42px;
+    height: 42px;
+  }
+
+  .metric-card div > strong {
+    font-size: 1.8rem;
+  }
+
+  .tools-table-card .table-scroll {
+    overflow: visible;
+  }
+
+  .tools-table-card table,
+  .tools-table-card tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tools-table-card thead {
+    display: none;
+  }
+
+  .tools-table-card tbody:empty {
+    display: none;
+  }
+
+  .tools-table-card tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 14px;
+    margin: 12px 14px;
+    padding: 16px;
+    border: 1px solid #d9e4f2;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 7px 20px rgba(16, 48, 91, .06);
+  }
+
+  .tools-table-card tbody td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .tools-table-card tbody td:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .tools-table-card tbody td:nth-child(4) {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .tools-table-card tbody td:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .tools-table-card tbody td:nth-child(3),
+  .tools-table-card tbody td:nth-child(5) {
+    grid-column: 1 / -1;
+    color: #60789b;
+    font-size: .82rem;
+  }
+
+  .tools-table-card tbody td:nth-child(3)::before {
+    content: 'Categoría · ';
+    color: #17365f;
+    font-weight: 700;
+  }
+
+  .tools-table-card tbody td:nth-child(5)::before {
+    content: 'Ubicación / responsable · ';
+    color: #17365f;
+    font-weight: 700;
+  }
+
+  .tools-table-card tbody td:nth-child(6) {
+    grid-column: 1;
+  }
+
+  .tools-table-card tbody td:nth-child(7) {
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .row-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 350px) {
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -60,7 +60,8 @@ const combined = Object.values(files).join('\n');
 const suspicious = [
   /eyJ[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}/,
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
-  /(?:password|contraseña)\s*[:=]\s*["'][^"']{8,}["']/i,
+  /(?:^|\n)\s*(?:password|contraseña)\s*:\s*["'][^"']{8,}["']/i,
+  /(?:^|\n)\s*(?:password|contraseña)\s*=\s*["'](?!\$)[^"']{8,}["']/i,
   /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.json/i,
 ];
 for (const pattern of suspicious) {

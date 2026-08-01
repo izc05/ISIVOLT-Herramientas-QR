@@ -24,10 +24,17 @@ export type Technician = {
   category: string;
   phone?: string;
   email?: string;
+  qrPayload?: string;
+  nfcTag?: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;
 };
+
+export type IdentificationMethod = 'manual' | 'qr' | 'nfc' | 'authenticated';
+export type ScanMethod = 'manual' | 'qr' | 'nfc' | 'mixed';
+export type OperatorMode = 'administrator' | 'self-service';
+export type BatchOperation = 'loan' | 'return';
 
 export type MovementType = 'loan' | 'return' | 'tool_created' | 'technician_created' | 'nfc_linked';
 
@@ -37,7 +44,22 @@ export type Movement = {
   occurredAt: string;
   toolId?: string;
   technicianId?: string;
+  batchId?: string;
+  identificationMethod?: IdentificationMethod;
+  scanMethod?: ScanMethod;
   detail: string;
+};
+
+export type BatchTransaction = {
+  id: string;
+  operation: BatchOperation;
+  technicianId: string;
+  toolIds: string[];
+  operatorMode: OperatorMode;
+  identificationMethod: IdentificationMethod;
+  scanMethod: ScanMethod;
+  startedAt: string;
+  completedAt: string;
 };
 
 export type AppData = {
@@ -45,6 +67,7 @@ export type AppData = {
   tools: Tool[];
   technicians: Technician[];
   movements: Movement[];
+  batches: BatchTransaction[];
 };
 
 export type ViewId = 'dashboard' | 'tools' | 'technicians' | 'movements';

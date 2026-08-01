@@ -41,6 +41,8 @@ jobs:
             node --check "$migration"
           done
           test "$found" -eq 1
+      - name: Comprobar seguridad PocketBase
+        run: node scripts/validate-pocketbase-security.mjs
       - name: Compilar aplicación
         run: npm run build
       - name: Comprobar archivos PWA compilados

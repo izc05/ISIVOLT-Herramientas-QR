@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 
-const path = 'pb_migrations/1722512200_harden_isivolt_access.js';
-const source = readFileSync(path, 'utf8');
-const upgrade = source.split('}, (app) => {')[0];
+const accessPath = 'pb_migrations/1722512200_harden_isivolt_access.js';
+const accessSource = readFileSync(accessPath, 'utf8');
+const accessUpgrade = accessSource.split('}, (app) => {')[0];
 
-const requiredFragments = [
+const accessRequirements = [
   '@request.auth.active = true',
   '@request.body.workspace:changed = false',
   '@request.body.external_id:changed = false',
@@ -20,16 +20,45 @@ const requiredFragments = [
   'movements.deleteRule = null',
 ];
 
-const missing = requiredFragments.filter((fragment) => !upgrade.includes(fragment));
+const userPath = 'pb_migrations/1722512300_enable_user_management.js';
+const userSource = readFileSync(userPath, 'utf8');
+const userUpgrade = userSource.split('}, (app) => {')[0];
+
+const userRequirements = [
+  "users.authRule = 'active = true'",
+  'users.createRule =',
+  'users.updateRule =',
+  'users.deleteRule =',
+  'users.manageRule = users.updateRule',
+  '@request.auth.role = "admin"',
+  '(@request.body.role = "coordinator" || @request.body.role = "technician")',
+  '@request.body.workspace:changed = false',
+  '@request.body.email:changed = false',
+  'id != @request.auth.id',
+  'role != "admin"',
+  '@request.body.technician_external_id != ""',
+  '@request.body.technician_external_id = ""',
+];
+
+const missing = [
+  ...accessRequirements.filter((fragment) => !accessUpgrade.includes(fragment)).map((fragment) => `${accessPath}: ${fragment}`),
+  ...userRequirements.filter((fragment) => !userUpgrade.includes(fragment)).map((fragment) => `${userPath}: ${fragment}`),
+];
+
 if (missing.length > 0) {
-  console.error('Faltan restricciones críticas en la migración PocketBase:');
+  console.error('Faltan restricciones críticas en las migraciones PocketBase:');
   for (const fragment of missing) console.error(`- ${fragment}`);
   process.exit(1);
 }
 
-if (upgrade.includes('tools.updateRule = readRule')) {
+if (accessUpgrade.includes('tools.updateRule = readRule')) {
   console.error('La regla de actualización de herramientas no puede volver al permiso general de lectura.');
   process.exit(1);
 }
 
-console.log(`Seguridad PocketBase validada: ${requiredFragments.length} restricciones críticas presentes.`);
+if (userUpgrade.includes('@request.body.role = "admin"')) {
+  console.error('La aplicación no puede crear o promover cuentas administradoras.');
+  process.exit(1);
+}
+
+console.log(`Seguridad PocketBase validada: ${accessRequirements.length + userRequirements.length} restricciones críticas presentes.`);

@@ -1,0 +1,47 @@
+.pwa-prompt {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2400;
+  width: min(460px, calc(100vw - 36px));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #c9dbee;
+  border-radius: 16px;
+  color: #17365f;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 18px 50px rgba(11, 43, 84, .22);
+  backdrop-filter: blur(16px);
+}
+
+.pwa-prompt > span {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: white;
+  background: #0866e8;
+}
+
+.pwa-prompt div { min-width: 0; display: grid; gap: 3px; }
+.pwa-prompt strong { font-size: .82rem; }
+.pwa-prompt small { color: #71849e; font-size: .68rem; line-height: 1.35; }
+.pwa-prompt button { border: 0; border-radius: 10px; font-weight: 800; }
+.pwa-primary { min-height: 38px; padding: 0 13px; color: white; background: #0756c9; }
+.pwa-close { display: grid; place-items: center; width: 36px; height: 36px; color: #687d99; background: #eef3f8; }
+
+@media (max-width: 680px) {
+  .pwa-prompt {
+    left: 10px;
+    right: 10px;
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    width: auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .pwa-prompt .pwa-close { position: absolute; top: -9px; right: -5px; width: 30px; height: 30px; border: 2px solid white; }
+  .pwa-primary { grid-column: 2 / 4; width: 100%; }
+}

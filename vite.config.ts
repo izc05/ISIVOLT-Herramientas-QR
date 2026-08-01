@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/ISIVOLT-Herramientas-QR/',
+  base: '/ISIVOLT-Herramientas-QR/v2/',
   build: {
     outDir: 'dist',
     sourcemap: true,

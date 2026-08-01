@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import AccessMode from './access/AccessMode';
 import App from './App';
 import AdminTools from './admin/AdminTools';
 import CloudStatus from './cloud/CloudStatus';
@@ -24,12 +25,14 @@ import './admin/admin-tools.css';
 import './admin/inventory-admin.css';
 import './cloud/cloud.css';
 import './technician/my-material.css';
+import './access/access-mode.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No se encontró el contenedor principal.');
 
 createRoot(root).render(
   <StrictMode>
+    <AccessMode />
     <EcosystemSwitcher />
     <App />
     <OperationalCenter />

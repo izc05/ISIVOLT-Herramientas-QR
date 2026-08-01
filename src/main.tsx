@@ -25,6 +25,7 @@ import './features/history/movement-history-rc30.css';
 import './features/history/presence-audit-rc40.css';
 import './features/inventory/inventory-operational.css';
 import './features/inventory/tool-scan-alert.css';
+import './features/inventory/tool-quick-create-rc57.css';
 import './features/management/management.css';
 import './features/management/management-files.css';
 import './features/management/maintenance-board.css';
@@ -75,6 +76,13 @@ import './rc54-technician-scan-return-approval.css';
 import './rc55-light-modals-nfc-guide.css';
 import './rc56-nfc-batch-registration.css';
 import './rc56-nfc-runtime-safety.css';
+import './rc57-ecosystem-refresh.css';
+import './rc57-ecosystem-identity.css';
+import './rc57-release-marker.css';
+import './rc57-onboarding.css';
+import './rc57-legacy-cleanup.css';
+import './rc57-workflow-command-center.css';
+import './rc58-clean-ecosystem.css';
 
 const root = document.getElementById('root');
 

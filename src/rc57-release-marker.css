@@ -1,0 +1,27 @@
+.ivp-ecosystem-release {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 1px solid rgba(5, 150, 105, .22);
+  border-radius: 999px;
+  color: #047857;
+  background: rgba(16, 185, 129, .11);
+  font-size: .62rem;
+  font-weight: 900;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+html[data-theme='dark'] .ivp-ecosystem-release {
+  border-color: rgba(94, 234, 174, .26);
+  color: #a7f3d0;
+  background: rgba(5, 150, 105, .16);
+}
+
+@media (max-width: 1480px) {
+  .ivp-ecosystem-release {
+    display: none;
+  }
+}

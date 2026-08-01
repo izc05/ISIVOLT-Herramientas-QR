@@ -8,7 +8,6 @@ import {
   Camera,
   Check,
   CheckCircle2,
-  CreditCard,
   Keyboard,
   Nfc,
   PackageCheck,
@@ -19,7 +18,6 @@ import {
   Smartphone,
   Trash2,
   UserCheck,
-  Users,
   X,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -37,13 +35,16 @@ import type {
 
 export const SCAN_SESSION_EVENT = 'isivoltpro-v2:open-scan-session';
 
+type ScanTarget = 'technician' | 'tool';
+type SessionStep = 'setup' | 'technician' | 'items' | 'review' | 'complete';
+
 type ScanSessionRequest = {
   operation?: BatchOperation;
   mode?: OperatorMode;
+  technicianId?: string;
+  identificationMethod?: IdentificationMethod;
+  startAt?: Exclude<SessionStep, 'complete'>;
 };
-
-type ScanTarget = 'technician' | 'tool';
-type SessionStep = 'setup' | 'technician' | 'items' | 'review' | 'complete';
 
 type BarcodeDetectorInstance = {
   detect(source: unknown): Promise<Array<{ rawValue?: string }>>;
@@ -112,18 +113,28 @@ export default function ScanSession() {
   const activeTechnicians = useMemo(() => data.technicians.filter((technician) => technician.active), [data.technicians]);
   const selectedTechnician = data.technicians.find((technician) => technician.id === technicianId);
   const selectedTools = toolIds.map((id) => data.tools.find((tool) => tool.id === id)).filter((tool): tool is Tool => Boolean(tool));
+  const authenticatedSelfService = operatorMode === 'self-service'
+    && identificationMethod === 'authenticated'
+    && Boolean(selectedTechnician);
 
   const reset = (request: ScanSessionRequest = {}) => {
-    setData(loadData());
+    const snapshot = loadData();
+    const requestedTechnician = request.technicianId
+      ? snapshot.technicians.find((technician) => technician.id === request.technicianId && technician.active)
+      : undefined;
+    const requestedStep = request.startAt ?? 'setup';
+    const safeStep = requestedStep === 'items' && !requestedTechnician ? 'technician' : requestedStep;
+
+    setData(snapshot);
     setOperation(request.operation ?? 'loan');
     setOperatorMode(request.mode ?? 'administrator');
-    setStep('setup');
-    setTechnicianId('');
-    setIdentificationMethod('manual');
+    setStep(safeStep);
+    setTechnicianId(requestedTechnician?.id ?? '');
+    setIdentificationMethod(requestedTechnician ? request.identificationMethod ?? 'authenticated' : 'manual');
     setToolIds([]);
     setScanMethods(new Set());
     setScanInput('');
-    setMessage('');
+    setMessage(requestedTechnician ? `${requestedTechnician.name} identificado mediante la cuenta.` : '');
     setCameraTarget(null);
     setNfcWaiting(null);
     setCompletedBatch(null);
@@ -347,6 +358,29 @@ export default function ScanSession() {
     setNfcWaiting(null);
   };
 
+  const goBack = () => {
+    if (step === 'setup') close();
+    else if (step === 'technician') setStep('setup');
+    else if (step === 'items') {
+      if (authenticatedSelfService) close();
+      else setStep('technician');
+    } else setStep('items');
+  };
+
+  const startAnotherOperation = () => {
+    if (authenticatedSelfService && selectedTechnician) {
+      reset({
+        operation,
+        mode: 'self-service',
+        technicianId: selectedTechnician.id,
+        identificationMethod: 'authenticated',
+        startAt: 'items',
+      });
+      return;
+    }
+    reset({ operation, mode: operatorMode, startAt: 'technician' });
+  };
+
   if (!open) return null;
 
   return createPortal(
@@ -402,7 +436,7 @@ export default function ScanSession() {
 
           {step === 'items' && (
             <div className="scan-items-screen">
-              <div className="scan-step-heading"><span><QrCode size={25} /></span><div><h2>Escanear material</h2><p>{selectedTechnician?.name} · añade todos los artículos antes de finalizar.</p></div><strong>{selectedTools.length}</strong></div>
+              <div className="scan-step-heading"><span><QrCode size={25} /></span><div><h2>Escanear material</h2><p>{selectedTechnician?.name} · {authenticatedSelfService ? 'cuenta identificada automáticamente' : 'añade todos los artículos antes de finalizar'}.</p></div><strong>{selectedTools.length}</strong></div>
               <div className="scan-input-card compact"><label>Código, QR o identificador NFC del artículo</label><div className="scan-input-row"><ScanLine size={19} /><input autoFocus value={scanInput} onChange={(event) => setScanInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') handleScannedValue(scanInput, 'tool', 'manual'); }} placeholder="Ej. ELE-001" /><button type="button" onClick={() => handleScannedValue(scanInput, 'tool', 'manual')}>Añadir</button></div><div className="scan-device-actions"><button type="button" onClick={() => setCameraTarget('tool')}><Camera size={18} /> Escanear QR</button><button type="button" onClick={() => void readNfc('tool')} className={nfcWaiting === 'tool' ? 'waiting' : ''}><Nfc size={18} /> {nfcWaiting === 'tool' ? 'Acerca el NFC…' : 'Leer NFC'}</button></div></div>
               {selectedTools.length === 0 ? <div className="scan-empty-list"><ScanLine size={31} /><strong>Escanea el primer artículo</strong><p>Se comprobará automáticamente que esté disponible o asignado al técnico.</p></div> : <div className="scan-tool-list">{selectedTools.map((tool, index) => <article key={tool.id}><span>{index + 1}</span><div><strong>{tool.name}</strong><small>{tool.code} · {tool.category}</small></div><em>{operation === 'loan' ? 'SALIDA' : 'ENTRADA'}</em><button type="button" onClick={() => removeTool(tool.id)} aria-label={`Quitar ${tool.name}`}><Trash2 size={17} /></button></article>)}</div>}
             </div>
@@ -413,14 +447,14 @@ export default function ScanSession() {
           )}
 
           {step === 'complete' && selectedTechnician && completedBatch && (
-            <div className="scan-complete-screen"><span><CheckCircle2 size={48} /></span><h2>{operationCopy[operation].done}</h2><p>{selectedTools.length} artículo{selectedTools.length === 1 ? '' : 's'} · {selectedTechnician.name}</p><code>{completedBatch.id}</code><div><button type="button" onClick={() => { reset({ operation, mode: operatorMode }); setStep('technician'); }}><RotateCcw size={18} /> Nueva operación</button><button className="primary" type="button" onClick={close}>Finalizar</button></div></div>
+            <div className="scan-complete-screen"><span><CheckCircle2 size={48} /></span><h2>{operationCopy[operation].done}</h2><p>{selectedTools.length} artículo{selectedTools.length === 1 ? '' : 's'} · {selectedTechnician.name}</p><code>{completedBatch.id}</code><div><button type="button" onClick={startAnotherOperation}><RotateCcw size={18} /> Nueva operación</button><button className="primary" type="button" onClick={close}>Finalizar</button></div></div>
           )}
 
           {cameraTarget && <div className="scan-camera"><video ref={videoRef} playsInline muted /><div><ScanLine size={40} /><p>Coloca el QR dentro del recuadro</p></div><button type="button" onClick={() => setCameraTarget(null)}><X size={19} /> Cerrar cámara</button></div>}
           {message && <p className="scan-message" role="status">{message}</p>}
         </main>
 
-        {step !== 'complete' && <footer className="scan-session-footer"><button type="button" onClick={() => { if (step === 'setup') close(); else if (step === 'technician') setStep('setup'); else if (step === 'items') setStep('technician'); else setStep('items'); }}><ArrowLeft size={18} /> {step === 'setup' ? 'Cancelar' : 'Atrás'}</button><button className="primary" type="button" disabled={(step === 'technician' && !selectedTechnician) || (step === 'items' && selectedTools.length === 0)} onClick={() => { if (step === 'setup') { setStartedAt(now()); setStep('technician'); } else if (step === 'technician') setStep('items'); else if (step === 'items') setStep('review'); else finish(); }}>{step === 'review' ? <PackageCheck size={18} /> : <ArrowRight size={18} />}{step === 'setup' ? 'Comenzar' : step === 'technician' ? 'Escanear material' : step === 'items' ? 'Revisar operación' : `Confirmar ${operationCopy[operation].verb}`}</button></footer>}
+        {step !== 'complete' && <footer className="scan-session-footer"><button type="button" onClick={goBack}><ArrowLeft size={18} /> {step === 'setup' || (step === 'items' && authenticatedSelfService) ? 'Cancelar' : 'Atrás'}</button><button className="primary" type="button" disabled={(step === 'technician' && !selectedTechnician) || (step === 'items' && selectedTools.length === 0)} onClick={() => { if (step === 'setup') { setStartedAt(now()); setStep('technician'); } else if (step === 'technician') setStep('items'); else if (step === 'items') setStep('review'); else finish(); }}>{step === 'review' ? <PackageCheck size={18} /> : <ArrowRight size={18} />}{step === 'setup' ? 'Comenzar' : step === 'technician' ? 'Escanear material' : step === 'items' ? 'Revisar operación' : `Confirmar ${operationCopy[operation].verb}`}</button></footer>}
       </section>
     </div>,
     document.body,

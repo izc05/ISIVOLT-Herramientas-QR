@@ -1,0 +1,85 @@
+name: Publicar vista previa V2
+
+on:
+  push:
+    branches:
+      - rebuild/isivoltpro-herramientas-v2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-isivolt-combined
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Preparar aplicación actual y V2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar aplicación actual
+        uses: actions/checkout@v4
+        with:
+          ref: agent/rc31-web-preview
+          path: legacy
+
+      - name: Descargar reconstrucción V2
+        uses: actions/checkout@v4
+        with:
+          ref: rebuild/isivoltpro-herramientas-v2
+          path: v2
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar aplicación actual
+        working-directory: legacy
+        run: npm install --no-audit --no-fund
+
+      - name: Compilar aplicación actual
+        working-directory: legacy
+        run: npm run build
+
+      - name: Instalar reconstrucción V2
+        working-directory: v2
+        run: npm install --no-audit --no-fund
+
+      - name: Comprobar TypeScript V2
+        working-directory: v2
+        run: npm run check
+
+      - name: Compilar reconstrucción V2
+        working-directory: v2
+        run: npm run build
+
+      - name: Combinar ambas aplicaciones
+        run: |
+          mkdir -p site/v2
+          cp -a legacy/dist/. site/
+          cp -a v2/dist/. site/v2/
+          touch site/.nojekyll
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir sitio combinado
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./site
+
+  deploy:
+    name: Publicar vista previa independiente
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}v2/
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Publicar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

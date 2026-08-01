@@ -7,6 +7,7 @@ import CloudStatus from './cloud/CloudStatus';
 import EcosystemSwitcher from './ecosystem/EcosystemSwitcher';
 import OperationalCenter from './ecosystem/OperationalCenter';
 import MobileFastScan from './mobile/MobileFastScan';
+import LoanMonitor from './monitoring/LoanMonitor';
 import PwaInstallPrompt from './pwa/PwaInstallPrompt';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
 import ScanLauncher from './scan/ScanLauncher';
@@ -26,6 +27,7 @@ import './admin/inventory-admin.css';
 import './cloud/cloud.css';
 import './technician/my-material.css';
 import './access/access-mode.css';
+import './monitoring/loan-monitor.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No se encontró el contenedor principal.');
@@ -36,6 +38,7 @@ createRoot(root).render(
     <EcosystemSwitcher />
     <App />
     <OperationalCenter />
+    <LoanMonitor />
     <ScanLauncher />
     <ScanSession />
     <MobileFastScan />

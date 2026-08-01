@@ -31,8 +31,18 @@ jobs:
         run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest','utf8')); console.log('Manifest válido')"
       - name: Validar service worker
         run: node --check public/sw.js
-      - name: Validar migración PocketBase
-        run: node --check pb_migrations/1722512100_isivoltpro_core.js
+      - name: Validar migraciones PocketBase
+        run: |
+          set -euo pipefail
+          found=0
+          for migration in pb_migrations/*.js; do
+            found=1
+            echo "Validando $migration"
+            node --check "$migration"
+          done
+          test "$found" -eq 1
+      - name: Comprobar seguridad PocketBase
+        run: node scripts/validate-pocketbase-security.mjs
       - name: Compilar aplicación
         run: npm run build
       - name: Comprobar archivos PWA compilados

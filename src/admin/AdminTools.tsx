@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  Boxes,
   Check,
   Clipboard,
   DatabaseBackup,
@@ -15,8 +16,9 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { loadData, saveData, WORKSPACE_DATA_EVENT } from '../storage';
 import type { AppData, Technician } from '../types';
+import InventoryAdmin from './InventoryAdmin';
 
-type TabId = 'credential' | 'data';
+type TabId = 'credential' | 'inventory' | 'data';
 
 const technicianPayload = (technician: Technician) => technician.qrPayload ?? `ISIVOLTPRO:TECH:${technician.code}`;
 const csvCell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
@@ -156,7 +158,7 @@ export default function AdminTools() {
   };
 
   const launcher = target ? createPortal(
-    <button className="admin-tools-launcher" type="button" onClick={() => setOpen(true)} title="Administración y credenciales">
+    <button className="admin-tools-launcher" type="button" onClick={() => setOpen(true)} title="Administración, inventario y credenciales">
       <Settings2 size={18} />
       <span>Gestionar</span>
     </button>,
@@ -170,12 +172,13 @@ export default function AdminTools() {
         <div className="admin-tools-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <section className="admin-tools-panel" role="dialog" aria-modal="true" aria-label="Administración IsiVoltPro">
             <header>
-              <div><small>ISIVOLTPRO HERRAMIENTAS</small><h2>Administración</h2><p>Credenciales, edición y copias de seguridad.</p></div>
+              <div><small>ISIVOLTPRO HERRAMIENTAS</small><h2>Administración</h2><p>Inventario, credenciales y copias de seguridad.</p></div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={20} /></button>
             </header>
 
             <nav>
-              <button className={tab === 'credential' ? 'active' : ''} type="button" onClick={() => setTab('credential')}><UserRound size={18} /> Credencial</button>
+              <button className={tab === 'credential' ? 'active' : ''} type="button" onClick={() => setTab('credential')}><UserRound size={18} /> Técnicos</button>
+              <button className={tab === 'inventory' ? 'active' : ''} type="button" onClick={() => setTab('inventory')}><Boxes size={18} /> Inventario</button>
               <button className={tab === 'data' ? 'active' : ''} type="button" onClick={() => setTab('data')}><DatabaseBackup size={18} /> Datos</button>
             </nav>
 
@@ -220,6 +223,10 @@ export default function AdminTools() {
                     ) : <div className="credential-placeholder"><UserRound size={42} /><strong>Credencial personal</strong><p>Selecciona un técnico para mostrar su QR.</p></div>}
                   </div>
                 </div>
+              )}
+
+              {tab === 'inventory' && (
+                <InventoryAdmin data={data} onDataChange={setData} onMessage={setMessage} />
               )}
 
               {tab === 'data' && (

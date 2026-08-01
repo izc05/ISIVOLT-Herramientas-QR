@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import AdminTools from './admin/AdminTools';
+import CloudStatus from './cloud/CloudStatus';
 import EcosystemSwitcher from './ecosystem/EcosystemSwitcher';
 import OperationalCenter from './ecosystem/OperationalCenter';
 import MobileFastScan from './mobile/MobileFastScan';
@@ -19,6 +20,7 @@ import './scan/scan.css';
 import './mobile/mobile-fast-scan.css';
 import './pwa/pwa.css';
 import './admin/admin-tools.css';
+import './cloud/cloud.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No se encontró el contenedor principal.');
@@ -32,6 +34,7 @@ createRoot(root).render(
     <ScanSession />
     <MobileFastScan />
     <AdminTools />
+    <CloudStatus />
     <PwaInstallPrompt />
   </StrictMode>,
 );

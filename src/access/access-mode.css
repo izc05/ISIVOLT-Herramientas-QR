@@ -1,0 +1,38 @@
+body[data-access-role="technician"] .admin-tools-launcher,
+body[data-access-role="technician"] .admin-tools-backdrop,
+body[data-access-role="technician"] .sidebar nav > button:nth-child(3),
+body[data-access-role="technician"] .sidebar nav > button:last-child,
+body[data-access-role="technician"] .page-heading > button,
+body[data-access-role="technician"] .quick-panel,
+body[data-access-role="technician"] .list-card .secondary-button,
+body[data-access-role="technician"] .empty-state button,
+body[data-access-role="technician"] .row-actions button {
+  display: none !important;
+}
+
+body[data-access-role="technician"] .row-actions button:first-child {
+  display: grid !important;
+}
+
+body[data-access-role="technician"] .right-column {
+  grid-template-columns: 1fr;
+}
+
+body[data-access-role="technician"] .workspace-status {
+  margin-top: 0;
+}
+
+body[data-access-role="technician"] .sidebar-footer strong::after {
+  content: ' · Técnico';
+  color: #68e6f5;
+}
+
+body[data-access-role="coordinator"] .sidebar nav > button:last-child {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  body[data-access-role="technician"] .topbar-actions .admin-tools-launcher {
+    display: none !important;
+  }
+}

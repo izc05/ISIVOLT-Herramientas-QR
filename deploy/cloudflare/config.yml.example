@@ -1,0 +1,11 @@
+tunnel: REPLACE_TUNNEL_UUID
+credentials-file: /etc/cloudflared/REPLACE_TUNNEL_UUID.json
+
+ingress:
+  - hostname: datos.REPLACE_DOMAIN
+    service: http://127.0.0.1:8090
+    originRequest:
+      httpHostHeader: datos.REPLACE_DOMAIN
+      connectTimeout: 10s
+      noTLSVerify: false
+  - service: http_status:404

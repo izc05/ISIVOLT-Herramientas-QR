@@ -1,0 +1,28 @@
+[Unit]
+Description=IsiVoltPro PocketBase
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=isivoltpro
+Group=isivoltpro
+WorkingDirectory=/opt/isivoltpro-pocketbase
+ExecStart=/opt/isivoltpro-pocketbase/pocketbase serve --http=127.0.0.1:8090 --dir=/var/lib/isivoltpro-pocketbase/pb_data --migrationsDir=/opt/isivoltpro-pocketbase/pb_migrations
+Restart=on-failure
+RestartSec=4
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictSUIDSGID=true
+ReadWritePaths=/var/lib/isivoltpro-pocketbase
+
+[Install]
+WantedBy=multi-user.target

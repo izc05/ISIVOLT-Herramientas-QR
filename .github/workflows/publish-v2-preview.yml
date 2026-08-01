@@ -10,6 +10,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  issues: write
 
 concurrency:
   group: pages-isivolt-combined
@@ -83,3 +84,17 @@ jobs:
       - name: Publicar en GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Registrar vista previa en la PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW_URL: ${{ steps.deployment.outputs.page_url }}v2/
+          PREVIEW_SHA: ${{ github.sha }}
+        run: |
+          gh issue comment 99 --repo "${{ github.repository }}" --body "🚀 **Vista previa V2 publicada**
+
+          Aplicación actual conservada en la raíz.
+
+          Vista previa independiente: ${PREVIEW_URL}
+
+          Commit V2 publicado: \`${PREVIEW_SHA}\`."

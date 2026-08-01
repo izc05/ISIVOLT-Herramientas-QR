@@ -24,6 +24,7 @@ import './mobile/mobile-fast-scan.css';
 import './pwa/pwa.css';
 import './admin/admin-tools.css';
 import './admin/inventory-admin.css';
+import './admin/account-admin.css';
 import './cloud/cloud.css';
 import './technician/my-material.css';
 import './access/access-mode.css';

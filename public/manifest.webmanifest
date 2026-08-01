@@ -1,0 +1,36 @@
+{
+  "name": "IsiVoltPro Herramientas",
+  "short_name": "IsiVoltPro",
+  "description": "Gestión de herramientas y material mediante QR y NFC.",
+  "id": "/ISIVOLT-Herramientas-QR/",
+  "start_url": "/ISIVOLT-Herramientas-QR/",
+  "scope": "/ISIVOLT-Herramientas-QR/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f8fd",
+  "theme_color": "#0756c9",
+  "lang": "es",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/ISIVOLT-Herramientas-QR/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/ISIVOLT-Herramientas-QR/icons/maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Escanear material",
+      "short_name": "Escanear",
+      "url": "/ISIVOLT-Herramientas-QR/?action=scan",
+      "icons": [{ "src": "/ISIVOLT-Herramientas-QR/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

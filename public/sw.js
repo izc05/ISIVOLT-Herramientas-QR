@@ -1,10 +1,13 @@
-const CACHE_NAME = 'isivoltpro-herramientas-alpha-5-7';
+const CACHE_NAME = 'isivoltpro-herramientas-alpha-5-8';
 const BASE = '/ISIVOLT-Herramientas-QR/';
 const CORE = [
   BASE,
   `${BASE}manifest.webmanifest`,
   `${BASE}icons/icon.svg`,
-  `${BASE}icons/maskable.svg`,
+  `${BASE}icons/icon-192.png`,
+  `${BASE}icons/icon-512.png`,
+  `${BASE}icons/maskable-512.png`,
+  `${BASE}icons/apple-touch-icon.png`,
 ];
 
 self.addEventListener('install', (event) => {

@@ -1,20 +1,17 @@
-name: Preparar candidata de producción
+name: Preparar candidata de producción (histórico · manual)
 
 on:
-  push:
-    branches:
-      - feature/production-1.0
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: prepare-production-${{ github.ref }}
+  group: prepare-production-manual
   cancel-in-progress: true
 
 jobs:
   prepare:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: aplicar candidata de producción') }}
     runs-on: ubuntu-latest
     steps:
       - name: Descargar código

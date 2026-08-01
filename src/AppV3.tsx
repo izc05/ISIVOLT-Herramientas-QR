@@ -6,8 +6,12 @@ import {
   Copy,
   Hash,
   Mail,
+  Pencil,
   Phone,
   Printer,
+  Save,
+  ShieldCheck,
+  UserCog,
   UserRound,
   X,
 } from 'lucide-react';
@@ -15,11 +19,13 @@ import { QRCodeSVG } from 'qrcode.react';
 import AppV2 from './AppV2';
 import QRCodeLabelCenter from './components/QRCodeLabelCenter';
 import ToolDetailSheet from './components/ToolDetailSheet';
-import { hospitalTechnicians } from './data/technicians';
 import type { Technician, Tool } from './domain/types';
-import { loadAppData } from './services/storage';
+import { getCurrentSecurityUser } from './security/session';
+import { loadAppData, saveAppData } from './services/storage';
 
 const normalizeName = (value: string) => value.trim().toLocaleLowerCase('es-ES');
+const normalizeCode = (value: string) => value.trim().toLocaleUpperCase('es-ES');
+const normalizePhone = (value: string) => value.trim().replace(/[()\s.-]/g, '');
 
 const withPrintMode = (className: string) => {
   document.body.classList.add(className);
@@ -31,8 +37,11 @@ const withPrintMode = (className: string) => {
 
 export default function AppV3() {
   const [selectedTechnician, setSelectedTechnician] = useState<Technician | null>(null);
+  const [editingTechnician, setEditingTechnician] = useState<Technician | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editError, setEditError] = useState('');
+  const canEditTechnicians = getCurrentSecurityUser()?.role === 'admin';
 
   useEffect(() => {
     const handleCardClick = (event: MouseEvent) => {
@@ -41,11 +50,12 @@ export default function AppV3() {
 
       const technicianCard = target.closest<HTMLElement>('.technician-card');
       if (technicianCard) {
+        const code = technicianCard.querySelector<HTMLElement>('[data-technician-code], .technician-code')?.textContent?.trim();
         const name = technicianCard.querySelector('h3')?.textContent;
-        if (!name) return;
-        const technician = hospitalTechnicians.find(
-          (item) => normalizeName(item.name) === normalizeName(name),
-        );
+        const technicians = loadAppData().technicians;
+        const technician = code
+          ? technicians.find((item) => normalizeCode(item.code) === normalizeCode(code))
+          : technicians.find((item) => name && normalizeName(item.name) === normalizeName(name));
         if (technician) {
           setSelectedTool(null);
           setSelectedTechnician(technician);
@@ -60,6 +70,7 @@ export default function AppV3() {
       const tool = loadAppData().tools.find((item) => item.code === code);
       if (tool) {
         setSelectedTechnician(null);
+        setEditingTechnician(null);
         setSelectedTool(tool);
       }
     };
@@ -69,16 +80,33 @@ export default function AppV3() {
   }, []);
 
   useEffect(() => {
-    if (!selectedTechnician && !selectedTool) return;
+    const refreshSelected = () => {
+      if (!selectedTechnician) return;
+      const refreshed = loadAppData().technicians.find((item) => item.id === selectedTechnician.id);
+      if (refreshed) setSelectedTechnician(refreshed);
+    };
+    window.addEventListener('isivolt:data-updated', refreshSelected);
+    window.addEventListener('isivolt:management-refresh', refreshSelected);
+    return () => {
+      window.removeEventListener('isivolt:data-updated', refreshSelected);
+      window.removeEventListener('isivolt:management-refresh', refreshSelected);
+    };
+  }, [selectedTechnician?.id]);
+
+  useEffect(() => {
+    if (!selectedTechnician && !selectedTool && !editingTechnician) return;
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setSelectedTechnician(null);
-        setSelectedTool(null);
+        if (editingTechnician) setEditingTechnician(null);
+        else {
+          setSelectedTechnician(null);
+          setSelectedTool(null);
+        }
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [selectedTechnician, selectedTool]);
+  }, [selectedTechnician, selectedTool, editingTechnician]);
 
   const technicianQrPayload = useMemo(
     () => selectedTechnician ? `ISIVOLT:TECH:${selectedTechnician.code}` : '',
@@ -94,6 +122,63 @@ export default function AppV3() {
     } catch {
       setCopied(false);
     }
+  };
+
+  const updateEditField = <Key extends keyof Technician>(field: Key, value: Technician[Key]) => {
+    setEditingTechnician((current) => current ? { ...current, [field]: value } : current);
+  };
+
+  const saveTechnician = () => {
+    if (!editingTechnician) return;
+    setEditError('');
+    const data = loadAppData();
+    const name = editingTechnician.name.trim();
+    const code = normalizeCode(editingTechnician.code);
+    const phone = normalizePhone(editingTechnician.phone ?? '');
+    const email = editingTechnician.email?.trim().toLowerCase() ?? '';
+
+    if (name.length < 3) {
+      setEditError('Escribe el nombre y los apellidos del técnico.');
+      return;
+    }
+    if (code.length < 2) {
+      setEditError('El código interno es obligatorio.');
+      return;
+    }
+    if (data.technicians.some((item) => item.id !== editingTechnician.id && normalizeCode(item.code) === code)) {
+      setEditError('Ya existe otro técnico con ese código interno.');
+      return;
+    }
+    if (email && data.technicians.some((item) => item.id !== editingTechnician.id && item.email?.trim().toLowerCase() === email)) {
+      setEditError('Ese correo ya pertenece a otro técnico.');
+      return;
+    }
+    if (phone && data.technicians.some((item) => item.id !== editingTechnician.id && normalizePhone(item.phone ?? '') === phone)) {
+      setEditError('Ese teléfono ya pertenece a otro técnico.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+    const updated: Technician = {
+      ...editingTechnician,
+      name,
+      code,
+      specialty: editingTechnician.specialty.trim() || 'Mantenimiento',
+      role: editingTechnician.role?.trim() || 'Técnico de mantenimiento',
+      phone: phone || undefined,
+      extension: editingTechnician.extension?.trim() || undefined,
+      email: email || undefined,
+      updatedAt: timestamp,
+    };
+    const next = {
+      ...data,
+      technicians: data.technicians.map((item) => item.id === updated.id ? updated : item),
+    };
+    saveAppData(next);
+    setSelectedTechnician(updated);
+    setEditingTechnician(null);
+    window.dispatchEvent(new CustomEvent('isivolt:management-refresh'));
+    window.dispatchEvent(new CustomEvent('isivolt:app-refresh'));
   };
 
   return (
@@ -112,6 +197,7 @@ export default function AppV3() {
           >
             <motion.section
               className="technician-detail-modal printable-single-qr"
+              data-technician-id={selectedTechnician.id}
               initial={{ opacity: 0, y: 44, scale: 0.9, rotateX: 8 }}
               animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
               exit={{ opacity: 0, y: 24, scale: 0.96 }}
@@ -180,7 +266,7 @@ export default function AppV3() {
                 <div>
                   <small>QR personal escaneable</small>
                   <strong>{technicianQrPayload}</strong>
-                  <p>Identifica al técnico antes de registrar una entrega.</p>
+                  <p>Identifica al técnico cuando una operación la registra administración o almacén.</p>
                   <div className="qr-detail-actions no-print">
                     <motion.button onClick={copyQrPayload} whileTap={{ scale: 0.92 }}>
                       {copied ? <Check size={18} /> : <Copy size={18} />}
@@ -193,9 +279,36 @@ export default function AppV3() {
                 </div>
               </div>
 
+              {canEditTechnicians && (
+                <div className="technician-admin-actions no-print">
+                  <button type="button" onClick={() => { setEditError(''); setEditingTechnician({ ...selectedTechnician }); }}><Pencil size={18} /> Editar técnico</button>
+                  <button type="button" onClick={() => document.querySelector<HTMLButtonElement>('.technician-account-manager-launcher')?.click()}><UserCog size={18} /> Gestionar acceso</button>
+                </div>
+              )}
+
               <p className="technician-detail-note no-print">
-                Los datos proceden del directorio aportado. Conviene revisar en el Excel los correos o teléfonos incompletos o repetidos.
+                Estado: {selectedTechnician.active ? 'activo' : 'inactivo'} · Los cambios quedan incluidos en la sincronización y en las copias de seguridad.
               </p>
+            </motion.section>
+          </motion.div>
+        )}
+
+        {editingTechnician && (
+          <motion.div className="technician-edit-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingTechnician(null)}>
+            <motion.section className="technician-edit-modal" initial={{ opacity: 0, y: 30, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: .97 }} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Editar técnico">
+              <header><div><span><Pencil size={22} /></span><div><small>Administración</small><h2>Editar técnico</h2><p>Actualiza su ficha sin cambiar el historial ni sus asignaciones.</p></div></div><button type="button" onClick={() => setEditingTechnician(null)} aria-label="Cerrar"><X size={20} /></button></header>
+              <div className="technician-edit-grid">
+                <label className="wide"><span>Nombre y apellidos</span><input value={editingTechnician.name} onChange={(event) => updateEditField('name', event.target.value)} /></label>
+                <label><span>Código interno</span><input value={editingTechnician.code} onChange={(event) => updateEditField('code', event.target.value.toUpperCase())} /></label>
+                <label><span>Especialidad</span><input value={editingTechnician.specialty} onChange={(event) => updateEditField('specialty', event.target.value)} /></label>
+                <label className="wide"><span>Cargo</span><input value={editingTechnician.role ?? ''} onChange={(event) => updateEditField('role', event.target.value)} /></label>
+                <label><span>Teléfono</span><input type="tel" inputMode="tel" value={editingTechnician.phone ?? ''} onChange={(event) => updateEditField('phone', event.target.value)} /></label>
+                <label><span>Extensión</span><input inputMode="numeric" value={editingTechnician.extension ?? ''} onChange={(event) => updateEditField('extension', event.target.value)} /></label>
+                <label className="wide"><span>Correo corporativo</span><input type="email" value={editingTechnician.email ?? ''} onChange={(event) => updateEditField('email', event.target.value)} /></label>
+                <label className="technician-active-toggle wide"><input type="checkbox" checked={editingTechnician.active} onChange={(event) => updateEditField('active', event.target.checked)} /><span><ShieldCheck size={18} /><strong>Técnico activo</strong><small>Puede recibir herramientas y mantener una cuenta vinculada.</small></span></label>
+              </div>
+              {editError && <p className="technician-edit-error">{editError}</p>}
+              <footer><button type="button" onClick={() => setEditingTechnician(null)}>Cancelar</button><button type="button" className="primary" onClick={saveTechnician}><Save size={18} /> Guardar cambios</button></footer>
             </motion.section>
           </motion.div>
         )}

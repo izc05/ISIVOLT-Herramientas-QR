@@ -1,20 +1,17 @@
-name: Restaurar candidata 1.0.0-rc.1
+name: Restaurar candidata 1.0.0-rc.1 (histórico · manual)
 
 on:
-  push:
-    branches:
-      - fix/restore-rc1-apk
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: restore-rc1-${{ github.ref }}
+  group: restore-rc1-manual
   cancel-in-progress: true
 
 jobs:
   restore:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: restaurar integración rc1') }}
     runs-on: ubuntu-latest
     steps:
       - name: Descargar código

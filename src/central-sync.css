@@ -1,0 +1,125 @@
+.central-sync-indicator {
+  position: fixed;
+  top: max(0.75rem, env(safe-area-inset-top));
+  right: max(0.75rem, env(safe-area-inset-right));
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  max-width: min(22rem, calc(100vw - 1.5rem));
+  min-height: 3rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.94);
+  color: #f8fafc;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.24);
+  backdrop-filter: blur(14px);
+}
+
+.central-sync-icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  border-radius: 0.65rem;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.central-sync-copy {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.central-sync-copy strong {
+  font-size: 0.78rem;
+  line-height: 1.1;
+}
+
+.central-sync-copy small {
+  overflow: hidden;
+  color: rgba(248, 250, 252, 0.72);
+  font-size: 0.68rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.central-sync-count {
+  display: grid;
+  place-items: center;
+  min-width: 1.55rem;
+  height: 1.55rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.16);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.central-sync-indicator button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0.65rem;
+  background: rgba(248, 250, 252, 0.12);
+  color: inherit;
+  cursor: pointer;
+}
+
+.central-sync-indicator button:hover,
+.central-sync-indicator button:focus-visible {
+  background: rgba(248, 250, 252, 0.22);
+}
+
+.central-sync-local,
+.central-sync-offline,
+.central-sync-auth-required {
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+.central-sync-ready,
+.central-sync-syncing {
+  border-color: rgba(56, 189, 248, 0.55);
+}
+
+.central-sync-synced {
+  border-color: rgba(74, 222, 128, 0.55);
+}
+
+.central-sync-conflict,
+.central-sync-error {
+  border-color: rgba(251, 146, 60, 0.68);
+}
+
+.central-sync-spin {
+  animation: central-sync-rotate 1s linear infinite;
+}
+
+@keyframes central-sync-rotate {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 760px) {
+  .central-sync-indicator {
+    top: calc(max(0.5rem, env(safe-area-inset-top)) + 3.7rem);
+    right: max(0.5rem, env(safe-area-inset-right));
+    max-width: calc(100vw - 1rem);
+  }
+
+  .central-sync-copy small {
+    max-width: 13rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .central-sync-spin {
+    animation: none;
+  }
+}

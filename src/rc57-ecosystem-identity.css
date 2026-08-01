@@ -1,0 +1,231 @@
+:root {
+  --ivp-navy-950: #071522;
+  --ivp-navy-900: #0b2137;
+  --ivp-navy-800: #0f2742;
+  --ivp-blue-600: #2563eb;
+  --ivp-cyan-500: #06b6d4;
+  --ivp-violet-600: #7c3aed;
+  --ivp-radius-sm: 12px;
+  --ivp-radius-md: 16px;
+  --ivp-radius-lg: 22px;
+  --ivp-gradient: linear-gradient(135deg, #22d3ee 0%, #2563eb 52%, #7c3aed 100%);
+}
+
+/* Firma común: marca principal + módulo activo. */
+.core-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.core-topbar .brand-button {
+  order: 0;
+  flex: 0 0 auto;
+}
+
+.ivp-ecosystem-context {
+  order: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 8px 11px;
+  border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+  border-radius: 14px;
+  color: inherit;
+  background: color-mix(in srgb, var(--panel-strong) 92%, transparent);
+  box-shadow: 0 8px 22px rgba(15, 39, 66, .05);
+}
+
+.ivp-ecosystem-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--ivp-gradient);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, .18);
+}
+
+.ivp-ecosystem-brand,
+.ivp-ecosystem-module {
+  display: grid;
+  gap: 1px;
+  line-height: 1.05;
+}
+
+.ivp-ecosystem-context small {
+  color: var(--muted);
+  font-size: .61rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.ivp-ecosystem-context strong {
+  font-size: .82rem;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+}
+
+.ivp-ecosystem-chevron {
+  flex: 0 0 auto;
+  color: var(--muted);
+  opacity: .58;
+}
+
+.ivp-ecosystem-technology,
+.ivp-ecosystem-view {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  font-size: .66rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+.ivp-ecosystem-technology {
+  padding: 6px 8px;
+  color: #075985;
+  background: #cffafe;
+}
+
+.ivp-ecosystem-view {
+  padding: 6px 9px;
+  color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 10%, transparent);
+}
+
+.core-topbar .header-search {
+  order: 2;
+  margin-left: auto;
+}
+
+.core-topbar .profile-button {
+  order: 3;
+}
+
+/* El lateral identifica el producto sin competir con el logotipo principal. */
+.professional-brand {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch !important;
+  gap: 10px;
+}
+
+.ivp-sidebar-module {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border: 1px solid rgba(103, 232, 249, .18);
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(34, 211, 238, .12), rgba(37, 99, 235, .13));
+}
+
+.ivp-sidebar-module > span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  color: #cffafe;
+  background: rgba(34, 211, 238, .13);
+}
+
+.ivp-sidebar-module div {
+  min-width: 0;
+}
+
+.ivp-sidebar-module small,
+.ivp-sidebar-module strong,
+.ivp-sidebar-module p {
+  display: block;
+  margin: 0;
+}
+
+.ivp-sidebar-module small {
+  color: #91a9bd;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.ivp-sidebar-module strong {
+  margin-top: 2px;
+  color: #fff;
+  font-size: .84rem;
+}
+
+.ivp-sidebar-module p {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #a9bfd2;
+  font-size: .62rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* El ecosistema es profesional: se retiran adornos de gamificación. */
+.game-scan-sweep,
+.particle-field,
+.card-shimmer,
+.hud-corner,
+.button-aura,
+.nav-scan-ring {
+  display: none !important;
+}
+
+.success-toast b {
+  display: none !important;
+}
+
+.game-ambient .orb {
+  opacity: .08 !important;
+}
+
+.game-card,
+.game-panel,
+.game-modal,
+.game-movement {
+  transform-style: flat !important;
+}
+
+@media (max-width: 1280px) {
+  .ivp-ecosystem-brand,
+  .ivp-ecosystem-chevron,
+  .ivp-ecosystem-view {
+    display: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .ivp-ecosystem-context {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .ivp-sidebar-module {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card,
+  .game-panel,
+  .game-modal,
+  .game-movement,
+  .professional-navigation button,
+  .primary-button,
+  .scan-main-button {
+    transition: none !important;
+    animation: none !important;
+  }
+}

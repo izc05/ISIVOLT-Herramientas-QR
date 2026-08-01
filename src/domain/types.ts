@@ -27,11 +27,20 @@ export type MovementAccessoryCheck = {
   notes?: string;
 };
 
+export type StationProof = {
+  stationId: string;
+  nonce: string;
+  verifiedAt: string;
+};
+
 export type Tool = {
   id: string;
   code: string;
   qrCode: string;
   nfcUid?: string;
+  nfcUpdatedAt?: string;
+  nfcUpdatedBy?: string;
+  nfcTechTypes?: string[];
   name: string;
   category: string;
   brand?: string;
@@ -63,6 +72,9 @@ export type Technician = {
   id: string;
   code: string;
   nfcUid?: string;
+  nfcUpdatedAt?: string;
+  nfcUpdatedBy?: string;
+  nfcTechTypes?: string[];
   barcodeValue?: string;
   name: string;
   specialty: string;
@@ -94,6 +106,9 @@ export type Movement = {
   workOrder?: string;
   workLocation?: string;
   accessoryChecks?: MovementAccessoryCheck[];
+  stationId?: string;
+  stationNonce?: string;
+  stationVerifiedAt?: string;
   reversedMovementId?: string;
   syncStatus?: MovementSyncStatus;
 };

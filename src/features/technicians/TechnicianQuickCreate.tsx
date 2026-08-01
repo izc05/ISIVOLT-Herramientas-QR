@@ -48,6 +48,10 @@ export default function TechnicianQuickCreate({ onSaved }: Props) {
   };
 
   useEffect(() => {
+    const openCreate = () => {
+      setError('');
+      setOpen(true);
+    };
     const intercept = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const button = target?.closest('button');
@@ -55,11 +59,14 @@ export default function TechnicianQuickCreate({ onSaved }: Props) {
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      setError('');
-      setOpen(true);
+      openCreate();
     };
     document.addEventListener('click', intercept, true);
-    return () => document.removeEventListener('click', intercept, true);
+    window.addEventListener('isivolt:technician-create-open', openCreate);
+    return () => {
+      document.removeEventListener('click', intercept, true);
+      window.removeEventListener('isivolt:technician-create-open', openCreate);
+    };
   }, []);
 
   const save = () => {

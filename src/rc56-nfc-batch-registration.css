@@ -1,0 +1,233 @@
+/* RC56 · registro NFC en lote y protecciones de vinculación */
+
+.nfc-management-center {
+  grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr) auto !important;
+}
+
+.nfc-batch-summary {
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nfc-management-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.nfc-batch-summary > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid rgba(127, 161, 178, .25);
+  border-radius: 11px;
+  color: rgba(232, 244, 247, .76);
+  background: rgba(14, 29, 38, .55);
+  cursor: pointer;
+  font: inherit;
+  font-size: .74rem;
+  font-weight: 760;
+  transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.nfc-batch-summary > button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(90, 231, 198, .38);
+  color: #effff9;
+}
+
+.nfc-batch-summary > button.active {
+  border-color: rgba(90, 231, 198, .5);
+  color: #dffff5;
+  background: rgba(28, 157, 126, .16);
+  box-shadow: inset 0 0 0 1px rgba(90, 231, 198, .08);
+}
+
+.nfc-batch-session {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 7px;
+  align-items: center;
+  min-width: 112px;
+  margin-left: auto;
+  padding: 7px 10px;
+  border: 1px solid rgba(86, 229, 198, .22);
+  border-radius: 12px;
+  color: #bff8e9;
+  background: rgba(19, 113, 92, .11);
+}
+
+.nfc-batch-session > svg {
+  grid-row: 1 / span 2;
+  color: #5de4c5;
+}
+
+.nfc-batch-session strong {
+  line-height: 1;
+  font-size: 1rem;
+}
+
+.nfc-batch-session small {
+  color: rgba(220, 244, 238, .58);
+  font-size: .62rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.nfc-batch-complete {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin: 9px 22px 0;
+  padding: 10px 13px;
+  border: 1px solid rgba(93, 228, 197, .28);
+  border-radius: 13px;
+  color: #dffff6;
+  background: linear-gradient(135deg, rgba(27, 153, 123, .15), rgba(23, 102, 118, .08));
+}
+
+.nfc-batch-complete > svg {
+  color: #5de4c5;
+}
+
+.nfc-batch-complete strong,
+.nfc-batch-complete span {
+  display: block;
+}
+
+.nfc-batch-complete strong {
+  font-size: .82rem;
+}
+
+.nfc-batch-complete span {
+  margin-top: 2px;
+  color: rgba(224, 245, 239, .62);
+  font-size: .7rem;
+  line-height: 1.35;
+}
+
+.nfc-management-list article.linked-now {
+  border-color: rgba(86, 229, 198, .52) !important;
+  background: linear-gradient(135deg, rgba(27, 153, 123, .13), rgba(18, 43, 51, .8)) !important;
+  box-shadow: inset 0 0 0 1px rgba(86, 229, 198, .08), 0 8px 24px rgba(1, 18, 22, .16);
+}
+
+.nfc-management-list article.linked-now em {
+  color: #69e9cb !important;
+}
+
+[data-theme='light'] .nfc-batch-summary > button,
+.theme-light .nfc-batch-summary > button {
+  border-color: rgba(28, 82, 103, .2);
+  color: #365c69;
+  background: #fff;
+}
+
+[data-theme='light'] .nfc-batch-summary > button:hover,
+.theme-light .nfc-batch-summary > button:hover {
+  border-color: rgba(17, 130, 108, .38);
+  color: #0c594d;
+}
+
+[data-theme='light'] .nfc-batch-summary > button.active,
+.theme-light .nfc-batch-summary > button.active {
+  border-color: rgba(17, 130, 108, .38);
+  color: #0b5e50;
+  background: rgba(33, 169, 139, .1);
+}
+
+[data-theme='light'] .nfc-batch-session,
+.theme-light .nfc-batch-session {
+  border-color: rgba(21, 130, 108, .22);
+  color: #0e6657;
+  background: rgba(38, 169, 142, .08);
+}
+
+[data-theme='light'] .nfc-batch-session small,
+.theme-light .nfc-batch-session small {
+  color: #58747a;
+}
+
+[data-theme='light'] .nfc-batch-complete,
+.theme-light .nfc-batch-complete {
+  border-color: rgba(21, 130, 108, .24);
+  color: #144c44;
+  background: linear-gradient(135deg, rgba(38, 169, 142, .09), rgba(49, 126, 151, .05));
+}
+
+[data-theme='light'] .nfc-batch-complete span,
+.theme-light .nfc-batch-complete span {
+  color: #58747a;
+}
+
+[data-theme='light'] .nfc-management-list article.linked-now,
+.theme-light .nfc-management-list article.linked-now {
+  border-color: rgba(21, 130, 108, .36) !important;
+  background: linear-gradient(135deg, rgba(38, 169, 142, .1), #fff) !important;
+  box-shadow: inset 0 0 0 1px rgba(21, 130, 108, .04), 0 8px 22px rgba(25, 64, 78, .08);
+}
+
+@media (max-width: 700px) {
+  .nfc-management-center {
+    grid-template-rows: auto auto auto auto auto auto minmax(0, 1fr) auto !important;
+  }
+
+  .nfc-batch-summary {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+  }
+
+  .nfc-management-counts {
+    grid-column: 1 / -1;
+  }
+
+  .nfc-batch-session {
+    margin-left: 0;
+  }
+
+  .nfc-batch-summary > button {
+    min-height: 40px;
+  }
+
+  .nfc-batch-complete {
+    margin-inline: 14px;
+  }
+}
+
+@media (max-width: 430px) {
+  .nfc-batch-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .nfc-management-counts,
+  .nfc-batch-session,
+  .nfc-batch-summary > button {
+    grid-column: 1;
+  }
+
+  .nfc-batch-session,
+  .nfc-batch-summary > button {
+    width: 100%;
+  }
+
+  .nfc-batch-session {
+    grid-template-columns: auto auto 1fr;
+    grid-template-rows: auto;
+    justify-content: start;
+  }
+
+  .nfc-batch-session > svg {
+    grid-row: auto;
+  }
+
+  .nfc-batch-session small {
+    justify-self: start;
+  }
+}

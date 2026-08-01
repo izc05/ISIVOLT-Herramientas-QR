@@ -1,146 +1,149 @@
 # Hoja de ruta técnica
 
-## Principios
+## Prioridad actual: servidor local gratuito y piloto multiusuario
 
-- Uso rápido desde un móvil de almacén.
-- Funcionamiento local sin conexión.
-- Movimientos inmutables y auditables.
+La aplicación seguirá publicándose en GitHub Pages como vista previa. La implantación real se servirá desde el mini PC mediante HTTPS, con PocketBase como servidor central y SQLite como base de datos. No se utiliza Supabase, Firebase ni ningún servicio mensual.
+
+### Bloque 1 — Publicación web
+
+- [x] Rama web independiente `agent/rc31-web-preview`.
+- [x] GitHub Pages mediante Actions y HTTPS.
+- [x] Persistencia local sin iniciar SQLite Android.
+- [x] Diseño profesional responsive para escritorio y móvil.
+- [ ] Piloto completo en móvil, tablet y ordenador.
+- [ ] Publicación de producción desde el mini PC bajo una única URL HTTPS.
+
+### Bloque 2 — Cámara web
+
+- [x] Permiso solicitado mediante acción expresa.
+- [x] Preferencia por cámara trasera.
+- [x] Visor responsive y cancelación segura.
+- [x] `BarcodeDetector` como primera opción.
+- [x] ZXing como alternativa para QR y códigos lineales.
+- [x] Integración con técnico, herramienta y registro de tarjetas.
+- [x] Selección manual permanente.
+- [x] Liberación del stream al detectar, cancelar o salir.
+- [x] Pruebas de permisos, cámara ausente y cámara ocupada.
+- [ ] QR de herramienta validado físicamente en Android Chrome.
+- [ ] Tarjeta corporativa horizontal validada.
+- [ ] Tarjeta corporativa vertical validada.
+
+### Bloque 3 — Higiene del repositorio
+
+- [ ] Limitar workflows históricos a sus ramas originales.
+- [ ] Evitar automatizaciones Android durante la ruta web.
+- [ ] Cerrar o archivar PR antiguos sustituidos por RC30–RC41.
+- [ ] Archivar migraciones Supabase como diseño histórico no desplegable.
+- [ ] Actualizar versión y documentación pública tras integrar la cadena estable.
+
+### Bloque 4 — Servidor central gratuito
+
+- [x] PocketBase fijado y reproducible desde una base vacía.
+- [x] SQLite central con usuarios, entidades, movimientos, eventos y dispositivos.
+- [x] API autoritativa: los móviles no escriben directamente en las colecciones.
+- [x] Movimiento transaccional e idempotente mediante `operationId`.
+- [x] Cola offline de operaciones pendientes.
+- [x] Descarga incremental mediante cursor.
+- [x] Resolución explícita de conflictos.
+- [x] Diagnóstico y reintento seguro.
+- [x] Prueba real de login, préstamo, reintento duplicado y sincronización.
+- [ ] Prueba concurrente con dos usuarios y dos dispositivos.
+- [ ] Restauración de una copia validada en un entorno temporal.
+
+### Bloque 5 — Usuarios y gestión central
+
+- [x] Roles Administrador, Almacén, Coordinador y Técnico.
+- [x] Permisos locales reales por técnico.
+- [x] Identidad técnica vinculada y selección propia.
+- [x] Autenticación PocketBase desde la aplicación.
+- [x] Centro de cola offline y conflictos.
+- [ ] Alta y edición de usuarios desde un panel ISIVOLT simplificado.
+- [ ] Inventario global compartido validado con dos sesiones.
+- [ ] Alertas y vencimientos centrales.
+- [ ] Kits o maletines de herramientas.
+
+### Bloque 6 — Punto de entrega físico
+
+- [x] Ficha de herramienta centrada en escritorio.
+- [x] Modo opcional de QR firmado y rotatorio.
+- [x] Verificación ECDSA P-256, estación y caducidad.
+- [x] Bloqueo central al guardar sin pase presencial.
+- [x] Servicio generador de QR en el mini PC.
+- [x] Pantalla completa del punto de entrega.
+- [x] Consumo único del nonce ligado a `operationId`.
+- [x] Auditoría JSONL del mini PC.
+- [x] Evidencia presencial incorporada al movimiento y a la cola offline.
+- [x] Evidencia presencial conservada por PocketBase.
+- [ ] HTTPS reconocido por los móviles para el canje reforzado.
+- [ ] Instalación física en el mini PC real.
+- [ ] Piloto en la red Wi‑Fi del almacén.
+- [ ] Evaluar aprobación adicional desde el puesto fijo.
+
+### Bloque 7 — Auditoría presencial visible
+
+- [x] Clasificación validada, sin evidencia, parcial y no aplicable.
+- [x] Filtro presencial en historial avanzado.
+- [x] Punto, fecha y nonce visibles por movimiento.
+- [x] Evidencia incluida en CSV.
+- [x] Resumen presencial dentro de la ficha de herramienta.
+- [x] Tratamiento neutral de registros históricos anteriores al sistema.
+- [ ] Panel central con tendencias y operaciones que requieren revisión.
+- [ ] Reglas configurables de alerta sin acusación automática.
+
+### Bloque 8 — Instalación y operación del mini PC
+
+- [x] Instalador Ubuntu para amd64 y arm64.
+- [x] Usuario de servicio sin acceso interactivo.
+- [x] Servicio `systemd` endurecido.
+- [x] Copia diaria automática con retención.
+- [x] Despliegue de la web en `pb_public`.
+- [x] Proxy HTTPS Caddy preparado.
+- [ ] Instalar certificado local de confianza en los móviles del piloto.
+- [ ] Probar apagado, reinicio y recuperación automática.
+- [ ] Ejecutar y restaurar la primera copia real.
+- [ ] Documentar IP, DNS y credenciales en sobre/custodia administrativa.
+
+## Principios conservados
+
+- Coste de software y servicios: 0 € mensuales.
+- Uso rápido desde móvil.
+- Funcionamiento local cuando no existe conexión.
+- El mini PC es la fuente central de verdad.
+- Movimientos inmutables, idempotentes y auditables.
 - Interfaz móvil clara, rápida y accesible.
 - Datos protegidos mediante validaciones, transacciones y copias.
-- Arquitectura preparada para sincronización futura.
+- Presencia física verificable sin depender únicamente de la contraseña Wi‑Fi.
+- Ausencia de evidencia no equivale automáticamente a fraude.
+- Ninguna clave de administrador se entrega al navegador.
 
-## RC24 — Recuperación y seguridad operativa
+## Evolución de la arquitectura
 
-Seguimiento: PR #42.
+- RC36: perfiles locales y técnico vinculado.
+- RC37: cola, sincronización transaccional y centro de conflictos; su adaptador Supabase queda sustituido.
+- RC38: modal de herramienta centrado y barrera de QR firmado.
+- RC39: servicio real del mini PC, canje único y evidencia en movimientos.
+- RC40: auditoría visual, filtros presenciales y resumen por herramienta.
+- RC41: PocketBase y SQLite en el mini PC como arquitectura central definitiva.
 
-- [x] Recuperar un motor único de movimientos para QR, NFC y selección manual.
-- [x] Añadir `operationId` compartido por lote.
-- [x] Impedir confirmaciones dobles y operaciones repetidas.
-- [x] Persistir `operationId` mediante migración SQLite v4.
-- [x] Cola secuencial de escrituras SQLite.
-- [x] Recuperar el estado local si la aplicación se cierra durante un guardado.
-- [x] Esperar la confirmación persistente antes de mostrar la operación como completada.
-- [x] Revisión final del lote antes de guardar.
-- [x] Estado individual por herramienta en devoluciones múltiples.
-- [x] Identificación empezando por técnico o por herramienta.
-- [x] Confirmación al cancelar una operación preparada.
-- [x] APK paralela con identificador independiente para probar junto a RC23.
-- [ ] Prueba física completa en Android.
-- [ ] Verificar cierre inmediato tras guardar y recuperación al abrir.
-- [ ] Verificar actualización conservando datos.
-- [ ] Confirmar equivalencia visual y funcional con todos los módulos de RC23.
-
-## 0.6 — Prototipo funcional
+## Núcleo profesional ya construido
 
 - [x] React, TypeScript, Vite y Motion.
-- [x] Interfaz responsive y navegación móvil.
 - [x] Directorio de técnicos.
-- [x] Inventario y estados básicos.
+- [x] Inventario, fotografías y estados.
 - [x] Entregas y devoluciones múltiples.
-- [x] QR reales e impresión A4.
-- [x] Cámara Android mediante ML Kit.
-- [x] Fotografías de herramientas.
-- [x] Excel y copias JSON.
-- [x] SQLite como respaldo inicial del estado completo.
-- [x] Sonido, vibración y animaciones.
-- [x] APK debug automática.
+- [x] QR, impresión y escáner web.
+- [x] Excel, CSV y copias JSON.
+- [x] Persistencia offline y cola local.
+- [x] Restricciones, transacciones e idempotencia central.
+- [x] Accesorios y mantenimiento.
+- [x] Usuarios, roles, PIN y auditoría.
+- [x] Historial avanzado, alertas y exportaciones.
+- [x] Servicio local independiente para el punto físico.
 
-## 0.6.2 — Estabilización
+## Regreso futuro a Android
 
-Seguimiento: issue #18.
-
-- [x] Versión centralizada para app, Excel, copias y artefacto Android.
-- [x] Entrada manual como respaldo del lector QR.
-- [x] Corregir el flujo Android para no bloquear `scan()` por permiso de cámara.
-- [x] Validación básica de códigos e identificadores duplicados.
-- [x] Limpieza de responsables y estados incoherentes.
-- [x] Protección reforzada del reinicio de demostración.
-- [x] Registro local de errores y pantalla de diagnóstico.
-- [x] Validación estructural reforzada de copias.
-- [x] Motor de reglas y servicio único de movimientos creados.
-- [x] Pruebas unitarias iniciales del dominio.
-- [x] Conectar las operaciones QR, NFC y manuales al motor único en RC24.
-- [ ] Checklist físico de cámara, fotos, Excel y restauración.
-
-## 0.7 — Núcleo de datos profesional
-
-Seguimiento: issue #14.
-
-- [x] Tablas SQLite reales para herramientas, técnicos y movimientos.
-- [x] Categorías, ubicaciones, accesorios, usuarios y ajustes.
-- [x] Migraciones versionadas mediante `schema_migrations` y `PRAGMA user_version`.
-- [x] Mapeadores y servicios tipados de persistencia.
-- [x] Transacciones con commit y rollback.
-- [x] Restricciones UNIQUE, CHECK y claves foráneas.
-- [x] Servicio único de entrega, devolución e incidencia.
-- [x] Movimientos inmutables mediante triggers.
-- [x] Nuevas fotografías guardadas mediante Filesystem en Android.
-- [x] Identificador estable del dispositivo.
-- [x] Copia y restauración compatibles con migraciones y reemplazo transaccional.
-- [x] Diagnóstico de salud de SQLite.
-- [x] Validación de migraciones sobre SQLite real en CI.
-- [x] Identificador de lote persistente en SQLite v4.
-- [ ] Migrar las fotografías antiguas Base64 y hacerlas portables en las copias.
-- [ ] Implementar rectificaciones desde la interfaz sin modificar el movimiento original.
-
-## 0.8 — Gestión completa
-
-Seguimiento: issue #15.
-
-- [x] Centro de gestión adaptado a móvil.
-- [x] Edición completa y baja lógica de herramientas.
-- [x] Edición, activación y baja controlada de técnicos.
-- [x] Importación y actualización desde Excel.
-- [x] Plantilla Excel e informe de gestión.
-- [x] Definición y control de accesorios.
-- [x] Alertas de accesorios faltantes o dañados.
-- [x] Reservas por técnico.
-- [x] Estados de reparación, repuestos, calibración, extravío y fuera de servicio.
-- [x] Expedientes de incidencias, inspecciones, reparaciones, repuestos y costes.
-- [x] Revisiones y calibraciones programadas.
-- [x] Alertas offline por retrasos y vencimientos.
-- [x] Indicadores operativos básicos.
-- [ ] Checklist de accesorios integrado dentro de cada salida y devolución.
-- [ ] Tablero global para editar y cerrar expedientes de mantenimiento.
-- [ ] Estadísticas avanzadas por uso, técnico, categoría e incidencias.
-
-## 0.9 — Seguridad y auditoría
-
-Seguimiento: issue #16.
-
-- [x] Usuarios locales.
-- [x] Roles Administrador, Almacén y Técnico.
-- [x] PIN local.
-- [x] Operador real en cada movimiento.
-- [x] Área de administración protegida.
-- [x] Rectificaciones sin modificar el movimiento original.
-- [x] Registro de auditoría visible.
-- [x] Bloqueo por inactividad.
-- [ ] Opción biométrica.
-- [ ] Exportación completa y unificada de auditoría.
-
-## 1.0 — Producción
-
-Seguimiento: issue #17.
-
-- [x] Pruebas unitarias, integración y flujos principales automatizados.
-- [ ] Pruebas físicas en varios teléfonos Android.
-- [ ] APK release firmada con clave privada.
-- [ ] AAB opcional.
-- [x] Icono y splash definidos.
-- [x] VersionCode y versionName automáticos.
-- [ ] Actualizaciones conservando datos verificadas físicamente.
-- [x] Manual de usuario y administrador inicial.
-- [ ] Piloto con inventario reducido.
-- [ ] Plan de copias y recuperación completo.
-- [ ] Versión estable 1.0.
-
-## Siguiente fase funcional
-
-- Fecha prevista de devolución.
-- OT y ubicación de destino.
-- Checklist de accesorios por salida y entrada.
-- Transferencia directa entre técnicos.
-- Inventario físico por escaneo.
-- Kits de herramientas.
-- Estadísticas de uso, retrasos, incidencias y costes.
+- [ ] Evaluar primero instalación como PWA.
+- [ ] Recuperar APK cuando la web multiusuario esté estable.
+- [ ] Persistir evidencia de estación en SQLite Android mediante una migración posterior.
+- [ ] Mantener ML Kit, NFC e impresión nativa como mejoras opcionales.
+- [ ] Publicar una sola versión estable sin cadenas de RC paralelas.

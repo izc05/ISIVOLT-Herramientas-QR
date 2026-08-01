@@ -1,0 +1,510 @@
+/* RC44 · sistema visual profesional unificado */
+
+:root {
+  --rc44-content-max: 1660px;
+  --rc44-surface: rgba(8, 22, 38, .92);
+  --rc44-surface-strong: rgba(5, 15, 28, .97);
+  --rc44-line: rgba(153, 211, 235, .12);
+  --rc44-line-strong: rgba(92, 219, 255, .24);
+  --rc44-text: #edf8ff;
+  --rc44-muted: #91a9ba;
+  --rc44-radius-lg: 22px;
+  --rc44-radius-md: 15px;
+  --rc44-shadow: 0 18px 46px rgba(0, 0, 0, .28);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  color: var(--rc44-text);
+  background:
+    radial-gradient(circle at 24% -8%, rgba(14, 111, 205, .16), transparent 34rem),
+    radial-gradient(circle at 92% 16%, rgba(15, 188, 168, .08), transparent 28rem),
+    #030b16;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid rgba(91, 225, 255, .5);
+  outline-offset: 3px;
+}
+
+.core-topbar,
+.core-app-shell > main {
+  transition: margin 180ms ease, width 180ms ease;
+}
+
+.page-heading h1,
+.command-hero h1,
+.tool-sheet-title h2 {
+  text-wrap: balance;
+}
+
+.page-heading p,
+.command-hero p,
+.tool-sheet-title p {
+  color: var(--rc44-muted);
+}
+
+.primary-button,
+.scan-main-button,
+.tool-card-actions button,
+.tool-sheet-footer button {
+  min-height: 44px;
+}
+
+.primary-button,
+.scan-main-button {
+  border-radius: var(--rc44-radius-md);
+  box-shadow: 0 12px 28px rgba(15, 132, 194, .22), inset 0 1px rgba(255, 255, 255, .14);
+}
+
+.stat-card,
+.actions-panel,
+.activity-panel,
+.tool-card,
+.technician-card,
+.movement-history {
+  border-color: var(--rc44-line) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .045), var(--rc44-shadow) !important;
+}
+
+.core-stats .stat-card {
+  min-height: 146px;
+  padding: 17px;
+  border-radius: var(--rc44-radius-lg);
+}
+
+.core-stats .stat-card > strong {
+  margin-top: 14px;
+  font-size: clamp(1.9rem, 3vw, 2.35rem);
+}
+
+.core-stats .stat-card h3 {
+  font-size: .88rem;
+}
+
+.core-stats .stat-card p {
+  max-width: 24ch;
+  line-height: 1.45;
+}
+
+.core-content-grid {
+  gap: 14px;
+}
+
+.actions-panel,
+.activity-panel {
+  border-radius: var(--rc44-radius-lg) !important;
+}
+
+.tool-grid,
+.technician-grid.game-technician-grid {
+  align-items: stretch;
+}
+
+.tool-card.rc34-tool-card,
+.technician-card.rc34-technician-card {
+  height: 100%;
+  border-radius: 18px;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .04), 0 12px 30px rgba(0, 0, 0, .22) !important;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.tool-card.rc34-tool-card:hover,
+.technician-card.rc34-technician-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--category-accent, var(--specialty-accent, #35c6ff)) 52%, rgba(255,255,255,.1));
+  box-shadow: inset 0 1px rgba(255,255,255,.055), 0 18px 38px rgba(0,0,0,.28) !important;
+}
+
+.tool-card.rc34-tool-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-card.rc34-tool-card .rc34-tool-media {
+  flex: 0 0 auto;
+  background: rgba(4, 13, 24, .94);
+}
+
+.tool-card.rc34-tool-card .tool-card-body {
+  flex: 0 0 auto;
+}
+
+.tool-card.rc34-tool-card .tool-details {
+  flex: 1 1 auto;
+}
+
+.tool-card.rc34-tool-card .tool-operation-times {
+  margin-top: auto;
+}
+
+.tool-card.rc34-tool-card .tool-card-actions {
+  margin-top: auto;
+}
+
+.tool-card.rc34-tool-card .tool-card-body h3,
+.technician-card.rc34-technician-card h3 {
+  color: #f5fbff;
+  font-weight: 780;
+  letter-spacing: -.018em;
+}
+
+.tool-card.rc34-tool-card .tool-card-body p,
+.technician-card.rc34-technician-card p,
+.tool-details dt {
+  color: var(--rc44-muted);
+}
+
+.tool-card.rc34-tool-card .tool-details div {
+  min-height: 26px;
+  align-items: center;
+}
+
+.tool-card.rc34-tool-card .tool-card-actions button,
+.rc34-unlock-button {
+  border-radius: 11px !important;
+}
+
+.status-badge,
+.rc34-category-pill,
+.record-counter {
+  letter-spacing: .025em;
+}
+
+.rc34-category-filter {
+  gap: 8px;
+  margin-top: 0;
+}
+
+.rc34-category-filter button {
+  min-height: 40px;
+  border-color: var(--rc44-line);
+  background: rgba(5, 17, 31, .86);
+}
+
+.rc34-category-filter button.active {
+  box-shadow: 0 9px 24px color-mix(in srgb, var(--category-accent) 14%, transparent);
+}
+
+/* Ficha centrada: contenido equilibrado y acciones estables. */
+.tool-sheet-backdrop {
+  overscroll-behavior: contain;
+}
+
+.tool-sheet {
+  background:
+    radial-gradient(circle at 88% 0%, rgba(24, 207, 224, .075), transparent 28rem),
+    linear-gradient(155deg, rgba(8, 25, 43, .99), rgba(3, 11, 22, .995)) !important;
+}
+
+.tool-sheet-scroll {
+  scrollbar-gutter: stable;
+}
+
+.tool-sheet-image {
+  background: rgba(3, 11, 21, .92) !important;
+}
+
+.tool-sheet-facts article,
+.tool-qr-card,
+.tool-history-section {
+  border-color: var(--rc44-line) !important;
+  background: rgba(255, 255, 255, .024) !important;
+}
+
+.tool-sheet-facts article strong,
+.tool-history-section strong {
+  color: #f2fbff;
+}
+
+.tool-sheet-footer {
+  border-top: 1px solid var(--rc44-line) !important;
+  background: rgba(3, 11, 22, .92) !important;
+  backdrop-filter: blur(18px);
+}
+
+.tool-sheet-footer > button {
+  border-radius: 13px !important;
+}
+
+/* Historial más legible. */
+.movement-history,
+.core-movement-list {
+  color: var(--rc44-text);
+}
+
+.core-movement-list > * {
+  border-color: rgba(255, 255, 255, .055) !important;
+}
+
+/* Escritorio */
+@media (min-width: 1100px) {
+  :root {
+    --professional-sidebar-width: 236px;
+  }
+
+  .professional-sidebar {
+    gap: 11px;
+    padding: 16px 12px;
+    border-right-color: var(--rc44-line);
+    box-shadow: 12px 0 44px rgba(0, 0, 0, .22);
+  }
+
+  .professional-navigation button {
+    min-height: 50px;
+    border-radius: 12px;
+  }
+
+  .professional-navigation button.active {
+    box-shadow: inset 3px 0 #3bd7ff, 0 8px 22px rgba(0, 0, 0, .14);
+  }
+
+  .core-topbar {
+    min-height: 72px;
+    padding-inline: 28px;
+    border-bottom: 1px solid rgba(255, 255, 255, .045);
+    background: rgba(3, 12, 23, .72);
+    backdrop-filter: blur(20px);
+  }
+
+  .core-topbar .header-search {
+    width: min(680px, 58vw);
+    min-height: 46px;
+    border-radius: 13px;
+  }
+
+  .core-app-shell > main {
+    width: min(var(--rc44-content-max), calc(100vw - var(--professional-sidebar-width) - 56px));
+    margin-inline: calc(var(--professional-sidebar-width) + 28px) 28px;
+    padding-inline: 0;
+  }
+
+  .command-hero {
+    padding-top: 30px;
+  }
+
+  .command-hero h1 {
+    max-width: 18ch;
+  }
+
+  .core-stats {
+    gap: 12px;
+  }
+
+  .tool-grid {
+    grid-template-columns: repeat(auto-fill, minmax(218px, 1fr));
+    gap: 14px;
+  }
+
+  .technician-grid.game-technician-grid {
+    grid-template-columns: repeat(auto-fill, minmax(224px, 1fr));
+    gap: 14px;
+  }
+
+  .tool-sheet-backdrop {
+    padding: 30px 30px 30px calc(var(--professional-sidebar-width) + 30px) !important;
+  }
+
+  .tool-sheet {
+    width: min(1060px, calc(100vw - var(--professional-sidebar-width) - 76px)) !important;
+    max-height: calc(100dvh - 60px) !important;
+  }
+
+  .tool-sheet-scroll {
+    padding: 30px 30px 26px !important;
+  }
+
+  .tool-sheet-hero {
+    grid-template-columns: 236px minmax(0, 1fr) !important;
+    align-items: center !important;
+  }
+
+  .tool-sheet-image,
+  .tool-sheet-image img,
+  .tool-sheet-image > div {
+    height: 220px !important;
+    min-height: 220px !important;
+  }
+
+  .tool-sheet-title h2 {
+    font-size: clamp(2rem, 3vw, 3.1rem) !important;
+  }
+
+  .tool-qr-card {
+    align-items: center;
+  }
+}
+
+@media (min-width: 1740px) {
+  .core-app-shell > main {
+    margin-right: auto;
+  }
+
+  .tool-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .technician-grid.game-technician-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Tableta */
+@media (min-width: 761px) and (max-width: 1099px) {
+  .core-app-shell > main {
+    width: min(100% - 32px, 980px);
+    margin-inline: auto;
+  }
+
+  .core-topbar {
+    padding-inline: 18px;
+  }
+
+  .tool-grid,
+  .technician-grid.game-technician-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .core-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Móvil */
+@media (max-width: 760px) {
+  .core-topbar {
+    min-height: 62px;
+    padding-inline: 12px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, .045);
+    background: rgba(3, 12, 23, .86);
+    backdrop-filter: blur(18px);
+  }
+
+  .core-app-shell > main {
+    width: 100%;
+    padding-inline: 12px !important;
+  }
+
+  .command-hero {
+    padding-top: 18px !important;
+  }
+
+  .command-hero h1 {
+    font-size: clamp(2rem, 10vw, 2.9rem) !important;
+  }
+
+  .scan-main-button {
+    min-height: 70px !important;
+    border-radius: 18px !important;
+  }
+
+  .core-stats {
+    gap: 8px !important;
+  }
+
+  .core-stats .stat-card {
+    min-height: 116px !important;
+    padding: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .core-stats .stat-card > strong {
+    margin-top: 8px !important;
+    font-size: 1.7rem !important;
+  }
+
+  .page-heading h1 {
+    font-size: clamp(1.8rem, 9vw, 2.5rem) !important;
+  }
+
+  .rc34-category-filter {
+    margin-inline: -12px;
+    padding-inline: 12px;
+  }
+
+  .tool-card.rc34-tool-card.tool-card-compact,
+  .technician-card.rc34-technician-card {
+    border-radius: 16px !important;
+    box-shadow: inset 0 1px rgba(255,255,255,.04), 0 10px 24px rgba(0,0,0,.2) !important;
+  }
+
+  .game-bottom-nav {
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    border-color: var(--rc44-line) !important;
+    background: rgba(4, 15, 28, .94) !important;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, .42) !important;
+    backdrop-filter: blur(22px);
+  }
+
+  .game-bottom-nav > button,
+  .game-bottom-nav > .professional-mobile-more {
+    min-width: 44px !important;
+    min-height: 52px !important;
+  }
+
+  .tool-sheet {
+    border-radius: 24px 24px 0 0 !important;
+  }
+
+  .tool-sheet-footer {
+    gap: 8px !important;
+    padding: 11px 12px calc(11px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .core-app-shell > main {
+    padding-inline: 9px !important;
+  }
+
+  .rc34-category-filter {
+    margin-inline: -9px;
+    padding-inline: 9px;
+  }
+
+  .core-stats .stat-card {
+    min-height: 108px !important;
+  }
+
+  .tool-card.rc34-tool-card.tool-card-compact {
+    grid-template-columns: 94px minmax(0, 1fr) !important;
+  }
+
+  .tool-card.rc34-tool-card.tool-card-compact .rc34-tool-media,
+  .tool-card.rc34-tool-card.tool-card-compact .tool-media-trigger {
+    width: 94px !important;
+    height: 120px !important;
+    min-height: 120px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  .tool-card.rc34-tool-card:hover,
+  .technician-card.rc34-technician-card:hover,
+  .primary-button:hover:not(:disabled) {
+    transform: none !important;
+  }
+}

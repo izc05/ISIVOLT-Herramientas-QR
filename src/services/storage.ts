@@ -1,5 +1,10 @@
 import { seedData } from '../data/seed';
 import type { AppData, Movement } from '../domain/types';
+import {
+  assertAuthorizedDataChange,
+  isTrustedRemoteChange,
+} from '../security/operationAuthorization';
+import { getCurrentSecurityUser } from '../security/session';
 import { enforceAppDataIntegrity, type IntegrityIssue } from './dataIntegrity';
 import { getDeviceId } from './deviceIdentity';
 import { recordAppError } from './errorLog';
@@ -9,6 +14,7 @@ import {
   recordNativeStorageEvent,
   writeNativeAppData,
 } from './nativeDatabase';
+import { attachStationProofToNewMovements } from './stationPresence/enforce';
 
 const STORAGE_KEY = 'isivolt-herramientas-qr:v1';
 const PENDING_NATIVE_WRITE_KEY = 'isivolt-herramientas-qr:pending-native-write:v1';
@@ -237,7 +243,11 @@ export const saveAppData = (
   options: { replaceNative?: boolean } = {},
 ): void => {
   const previous = readLocalDataWithoutFallback();
-  const clean = prepareData(data);
+  const candidate = isTrustedRemoteChange()
+    ? data
+    : attachStationProofToNewMovements(previous, data);
+  assertAuthorizedDataChange(previous, candidate, getCurrentSecurityUser());
+  const clean = prepareData(candidate);
   const replaceNative = options.replaceNative === true || hasRemovedIds(previous, clean);
 
   try {

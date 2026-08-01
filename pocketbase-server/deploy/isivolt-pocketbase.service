@@ -1,0 +1,29 @@
+[Unit]
+Description=ISIVOLT Herramientas QR - PocketBase central
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=isivolt
+Group=isivolt
+WorkingDirectory=/opt/isivolt-pocketbase
+EnvironmentFile=-/etc/isivolt-pocketbase.env
+ExecStart=/opt/isivolt-pocketbase/pocketbase --dir=/var/lib/isivolt-pocketbase serve --http=127.0.0.1:8090
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/lib/isivolt-pocketbase
+
+[Install]
+WantedBy=multi-user.target

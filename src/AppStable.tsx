@@ -3,6 +3,7 @@ import { AlertTriangle, Bug, Database, ShieldCheck, Trash2, X } from 'lucide-rea
 import AppV6 from './AppV6';
 import { APP_VERSION } from './config/app';
 import MovementHistoryCenter from './features/history/MovementHistoryCenter';
+import ToolQuickCreateRC57 from './features/inventory/ToolQuickCreateRC57';
 import ManagementCenter from './features/management/ManagementCenter';
 import ManagementFiles from './features/management/ManagementFiles';
 import NativeBackController from './features/navigation/NativeBackController';
@@ -72,6 +73,7 @@ export default function AppStable() {
       <MovementHistoryCenter />
       <ManagementCenter onSaved={refreshApplication} />
       <ManagementFiles />
+      <ToolQuickCreateRC57 onSaved={refreshApplication} />
       <TechnicianQuickCreate onSaved={refreshApplication} />
       <TechnicianBarcodeCenter />
 

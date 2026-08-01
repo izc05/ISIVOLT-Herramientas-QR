@@ -1,0 +1,434 @@
+/* RC42 · limpieza visual móvil y scroll natural */
+
+html,
+body,
+#root {
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+.rc34-category-filter,
+.core-movement-list,
+.tool-sheet-scroll,
+.tool-photo-modal,
+.mobile-tools-sheet > div,
+.professional-sidebar,
+.native-scan-console,
+.professional-more-panel,
+.central-sync-panel {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.rc34-category-filter::-webkit-scrollbar,
+.core-movement-list::-webkit-scrollbar,
+.tool-sheet-scroll::-webkit-scrollbar,
+.tool-photo-modal::-webkit-scrollbar,
+.mobile-tools-sheet > div::-webkit-scrollbar,
+.professional-sidebar::-webkit-scrollbar,
+.native-scan-console::-webkit-scrollbar,
+.professional-more-panel::-webkit-scrollbar,
+.central-sync-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Las fotografías identifican el activo completo: nunca se recortan. */
+.tool-media-trigger img,
+.rc34-tool-media img,
+.tool-sheet-image img,
+.tool-photo-preview > img,
+.tool-detail-photo-panel img,
+.native-tool-thumb img {
+  object-fit: contain !important;
+  object-position: center !important;
+  background: #07111f;
+}
+
+.rc34-tool-card:hover .rc34-tool-media img {
+  transform: none !important;
+}
+
+/* El editor de fotografía siempre queda por encima de la ficha y de la cabecera. */
+.tool-photo-backdrop {
+  z-index: 32000 !important;
+}
+
+.tool-sheet-backdrop,
+.technician-detail-backdrop,
+.native-scan-backdrop,
+.modal-backdrop {
+  z-index: 31000 !important;
+}
+
+.tool-photo-close,
+.tool-sheet-close,
+.technician-detail-close,
+.native-scan-close,
+.modal-close {
+  z-index: 32010 !important;
+}
+
+.tool-photo-modal {
+  max-height: calc(100dvh - 24px) !important;
+  overscroll-behavior: contain;
+}
+
+.tool-photo-preview {
+  min-height: 220px;
+  height: auto !important;
+  display: grid;
+  place-items: center;
+}
+
+.tool-photo-preview > img {
+  width: 100%;
+  height: auto !important;
+  max-height: min(48dvh, 460px);
+}
+
+body.modal-open .web-mode-banner,
+body.modal-open .central-sync-indicator,
+body.modal-open .core-bottom-nav,
+body.modal-open .professional-mobile-more,
+body.modal-open .mobile-tools-menu {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (min-width: 1100px) {
+  /* La página principal usa la rueda del ratón sin barras internas descolocadas. */
+  .core-movement-list {
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+  }
+
+  .tool-sheet-scroll,
+  .professional-sidebar {
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 1099px) {
+  /* El estado central queda accesible desde Más, sin dos avisos flotantes. */
+  .web-mode-banner,
+  .central-sync-indicator {
+    display: none !important;
+  }
+
+  .core-app-shell main {
+    padding-top: 0 !important;
+  }
+
+  /* Más pasa a ser un elemento real de la barra inferior. */
+  .core-bottom-nav .professional-mobile-more {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    width: 58px !important;
+    height: 56px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    color: #8fa5b8 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .core-bottom-nav .professional-mobile-more:active,
+  .core-bottom-nav .professional-mobile-more[aria-expanded='true'] {
+    color: #fff !important;
+    background: linear-gradient(180deg, rgba(40, 215, 255, .1), rgba(40, 215, 255, .025)) !important;
+  }
+
+  .core-bottom-nav .professional-mobile-more span {
+    font-size: .56rem !important;
+    font-weight: 800 !important;
+  }
+
+  .core-bottom-nav {
+    padding-right: 7px !important;
+  }
+
+  .mobile-tools-menu {
+    right: 10px !important;
+    bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .mobile-tools-menu.open {
+    z-index: 30000 !important;
+  }
+
+  .mobile-tools-sheet {
+    max-height: min(78dvh, 650px) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .core-app-shell {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .core-topbar {
+    gap: 9px !important;
+  }
+
+  .core-topbar .brand {
+    min-width: 0;
+  }
+
+  .core-topbar .brand small {
+    display: none;
+  }
+
+  .header-search {
+    min-height: 42px !important;
+    padding-inline: 12px !important;
+  }
+
+  .command-hero {
+    padding-top: 22px !important;
+  }
+
+  .command-hero h1 {
+    margin-top: 8px !important;
+    font-size: clamp(2.2rem, 11vw, 3.25rem) !important;
+  }
+
+  .command-hero .hero-date {
+    margin-top: 8px !important;
+    font-size: .9rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .scan-main-button {
+    min-height: 76px !important;
+    margin-top: 18px !important;
+  }
+
+  .status-line {
+    min-height: 48px !important;
+    margin-top: 14px !important;
+    padding: 10px 13px !important;
+    font-size: .72rem !important;
+  }
+
+  .core-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .core-stats .stat-card {
+    min-height: 128px !important;
+    padding: 14px !important;
+  }
+
+  .core-stats .stat-card > strong {
+    margin-top: 10px !important;
+    font-size: 1.85rem !important;
+  }
+
+  .core-stats .stat-card p,
+  .core-stats .mini-trend {
+    display: none !important;
+  }
+
+  /* Inicio deja solo lo imprescindible; el resto está en navegación y Más. */
+  .core-content-grid .actions-panel {
+    display: none !important;
+  }
+
+  .core-content-grid {
+    grid-template-columns: 1fr !important;
+    margin-top: 14px !important;
+  }
+
+  .page-section {
+    padding-top: 18px !important;
+  }
+
+  .page-heading {
+    margin-bottom: 14px !important;
+  }
+
+  .tool-grid,
+  .technician-grid.game-technician-grid {
+    grid-template-columns: 1fr !important;
+    gap: 11px !important;
+  }
+
+  .tool-card.rc34-tool-card {
+    display: grid !important;
+    grid-template-columns: 116px minmax(0, 1fr) !important;
+    grid-template-areas:
+      'media body'
+      'media details'
+      'actions actions' !important;
+    column-gap: 11px !important;
+    padding: 10px !important;
+  }
+
+  .rc34-tool-card .rc34-tool-media {
+    grid-area: media;
+    width: 116px !important;
+    height: 100% !important;
+    min-height: 158px !important;
+    margin: 0 !important;
+  }
+
+  .rc34-tool-card .tool-card-body {
+    grid-area: body;
+    align-self: end;
+    min-width: 0;
+    padding: 8px 38px 5px 2px !important;
+  }
+
+  .rc34-tool-card .tool-card-body h3 {
+    min-height: 0 !important;
+    font-size: 1rem !important;
+  }
+
+  .rc34-tool-card .tool-details {
+    grid-area: details;
+    align-self: start;
+    padding: 6px 2px !important;
+    border-bottom: 0 !important;
+  }
+
+  .rc34-tool-card .tool-card-actions {
+    grid-area: actions;
+    min-height: 42px !important;
+  }
+
+  .rc34-tool-card .tool-card-actions button {
+    min-height: 40px !important;
+    font-size: .76rem !important;
+  }
+
+  .rc34-tool-card .tool-card-top {
+    top: 14px !important;
+    right: 14px !important;
+  }
+
+  .rc34-category-filter {
+    margin-bottom: 12px !important;
+    padding-bottom: 2px !important;
+  }
+
+  .tool-sheet-scroll {
+    padding: max(14px, env(safe-area-inset-top)) 14px 20px !important;
+  }
+
+  .tool-sheet-close {
+    top: max(10px, env(safe-area-inset-top)) !important;
+    right: 10px !important;
+    width: 46px !important;
+    height: 46px !important;
+    background: rgba(4, 12, 25, .96) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45) !important;
+  }
+
+  .tool-sheet-image,
+  .tool-sheet-image img,
+  .tool-sheet-image > div {
+    min-height: 250px !important;
+    height: 250px !important;
+  }
+
+  .tool-sheet-image img {
+    padding: 8px;
+  }
+
+  .tool-photo-backdrop {
+    padding: 0 !important;
+    align-items: end !important;
+  }
+
+  .tool-photo-modal {
+    width: 100% !important;
+    max-height: 100dvh !important;
+    padding: max(18px, env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom)) !important;
+    border-width: 1px 0 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+  }
+
+  .tool-photo-close {
+    position: sticky !important;
+    top: 0 !important;
+    float: right;
+    margin: -4px -2px 0 8px;
+    width: 44px !important;
+    height: 44px !important;
+    background: rgba(4, 9, 24, .94) !important;
+  }
+
+  .tool-photo-preview {
+    min-height: 240px !important;
+  }
+
+  .tool-photo-preview > img {
+    max-height: 42dvh !important;
+    padding: 8px;
+  }
+
+  .tool-photo-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .game-bottom-nav {
+    width: calc(100% - 16px) !important;
+    max-width: 520px !important;
+    min-height: 74px !important;
+    padding-inline: 4px !important;
+  }
+
+  .game-bottom-nav > button:not(.nav-scan-button),
+  .game-bottom-nav > .professional-mobile-more {
+    width: min(50px, 14vw) !important;
+    height: 55px !important;
+  }
+
+  .game-bottom-nav > button:not(.nav-scan-button) span,
+  .game-bottom-nav > .professional-mobile-more span {
+    font-size: .5rem !important;
+  }
+
+  .game-bottom-nav .nav-scan-button {
+    width: 66px !important;
+  }
+
+  /* La regla anterior ocultaba el último elemento; ahora el último es Más. */
+  .core-bottom-nav > button:last-child {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .tool-card.rc34-tool-card {
+    grid-template-columns: 104px minmax(0, 1fr) !important;
+  }
+
+  .rc34-tool-card .rc34-tool-media {
+    width: 104px !important;
+    min-height: 150px !important;
+  }
+
+  .game-bottom-nav > button:not(.nav-scan-button),
+  .game-bottom-nav > .professional-mobile-more {
+    width: 46px !important;
+  }
+
+  .game-bottom-nav .nav-scan-button {
+    width: 62px !important;
+  }
+}

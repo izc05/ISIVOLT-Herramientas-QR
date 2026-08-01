@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import AppRoot from './AppRoot';
+import AppRootRC52 from './AppRootRC52';
 import './styles.css';
 import './core.css';
 import './game-ui.css';
@@ -8,16 +8,24 @@ import './vivid-theme.css';
 import './technician-detail.css';
 import './qr-print.css';
 import './native-scanner.css';
+import './web-barcode-scanner.css';
+import './fast-scan-rc33.css';
+import './central-sync.css';
+import './central-sync-indicator-rc37.css';
+import './central-sync-center.css';
 import './report-center.css';
 import './tool-experience.css';
 import './tool-detail-mobile.css';
 import './tool-detail-compat.css';
 import './stability.css';
 import './components/mobile-tools-menu.css';
+import './components/account-settings.css';
 import './features/history/movement-history.css';
 import './features/history/movement-history-rc30.css';
+import './features/history/presence-audit-rc40.css';
 import './features/inventory/inventory-operational.css';
 import './features/inventory/tool-scan-alert.css';
+import './features/inventory/tool-quick-create-rc57.css';
 import './features/management/management.css';
 import './features/management/management-files.css';
 import './features/management/maintenance-board.css';
@@ -30,8 +38,11 @@ import './features/personalization/greeting-settings.css';
 import './features/technicians/technician-create.css';
 import './features/technicians/technician-barcode.css';
 import './features/technicians/technician-visual-rc29.css';
+import './features/technicians/technician-accounts.css';
 import './features/nfc/nfc-management.css';
+import './features/station/station-presence.css';
 import './security/security.css';
+import './security/role-experience.css';
 import './security/rectification.css';
 import './production/commissioning.css';
 import './boot.css';
@@ -39,6 +50,39 @@ import './mobile-optimization.css';
 import './mobile-optimization-rc4.css';
 import './rc6-mobile.css';
 import './qr-print-rc6.css';
+import './rc34-responsive-inventory.css';
+import './professional-shell-rc35.css';
+import './professional-more-rc35.css';
+import './professional-tool-panel-rc35.css';
+import './rc36-lifecycle.css';
+import './rc36-edit-filters.css';
+import './rc42-visual-polish.css';
+import './rc43-mobile-layout.css';
+import './rc44-professional-system.css';
+import './rc44-screen-polish.css';
+import './rc45-inventory-layout.css';
+import './rc46-dashboard-identity.css';
+import './rc47-access-role-workspaces.css';
+import './rc48-responsive-light-theme.css';
+import './rc49-1-responsive-structure.css';
+import './rc49-2-layer-cleanup.css';
+import './rc49-3-light-theme-finish.css';
+import './rc49-4-status-finish.css';
+import './rc50-visual-fixes.css';
+import './rc51-identity-technician-workflow.css';
+import './rc52-admin-access-clarity.css';
+import './rc53-local-registration-pilot.css';
+import './rc54-technician-scan-return-approval.css';
+import './rc55-light-modals-nfc-guide.css';
+import './rc56-nfc-batch-registration.css';
+import './rc56-nfc-runtime-safety.css';
+import './rc57-ecosystem-refresh.css';
+import './rc57-ecosystem-identity.css';
+import './rc57-release-marker.css';
+import './rc57-onboarding.css';
+import './rc57-legacy-cleanup.css';
+import './rc57-workflow-command-center.css';
+import './rc58-clean-ecosystem.css';
 
 const root = document.getElementById('root');
 
@@ -48,6 +92,6 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <AppRoot />
+    <AppRootRC52 />
   </StrictMode>,
 );

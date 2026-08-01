@@ -45,6 +45,7 @@ const LOCKOUT_MS = 60_000;
 const roleLabel: Record<UserRole, string> = {
   admin: 'Administrador',
   warehouse: 'Responsable de almacén',
+  coordinator: 'Coordinador',
   technician: 'Técnico',
 };
 
@@ -309,6 +310,21 @@ export default function SecurityController() {
       return setError('Debe permanecer al menos un administrador activo.');
     }
 
+    if (draft.role === 'technician') {
+      if (!draft.technicianId) return setError('Selecciona la ficha técnica que utilizará este usuario.');
+      const linkedTechnician = technicians.find((item) => item.id === draft.technicianId && item.active);
+      if (!linkedTechnician) return setError('La ficha técnica seleccionada no existe o está inactiva.');
+      const duplicatedLink = users.some((item) =>
+        item.id !== existing?.id
+        && item.active
+        && item.role === 'technician'
+        && item.technicianId === draft.technicianId,
+      );
+      if (draft.active && duplicatedLink) {
+        return setError('Esta ficha técnica ya está vinculada a otro usuario técnico activo.');
+      }
+    }
+
     setBusy(true);
     try {
       const pinHash = draft.pin ? await hashPin(draft.pin) : existing?.pinHash;
@@ -442,8 +458,11 @@ export default function SecurityController() {
                   <div className="security-section-heading"><h2>{draft.id ? 'Editar usuario' : 'Nuevo usuario'}</h2><button onClick={() => setDraft(null)}><X size={18} /></button></div>
                   <div className="security-user-grid">
                     <label>Nombre<input value={draft.name} onChange={(event) => setDraft((current) => current && ({ ...current, name: event.target.value }))} /></label>
-                    <label>Rol<select value={draft.role} onChange={(event) => setDraft((current) => current && ({ ...current, role: event.target.value as UserRole }))}>{Object.entries(roleLabel).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
-                    {draft.role === 'technician' && <label className="wide">Técnico vinculado<select value={draft.technicianId ?? ''} onChange={(event) => setDraft((current) => current && ({ ...current, technicianId: event.target.value || undefined }))}><option value="">Sin vincular</option>{technicians.map((technician) => <option value={technician.id} key={technician.id}>{technician.name}</option>)}</select></label>}
+                    <label>Rol<select value={draft.role} onChange={(event) => {
+                      const role = event.target.value as UserRole;
+                      setDraft((current) => current && ({ ...current, role, technicianId: role === 'technician' ? current.technicianId : undefined }));
+                    }}>{Object.entries(roleLabel).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+                    {draft.role === 'technician' && <label className="wide">Técnico vinculado<select value={draft.technicianId ?? ''} onChange={(event) => setDraft((current) => current && ({ ...current, technicianId: event.target.value || undefined }))}><option value="">Selecciona técnico</option>{technicians.filter((technician) => technician.active).map((technician) => <option value={technician.id} key={technician.id}>{technician.name} · {technician.code}</option>)}</select></label>}
                     <label>PIN {draft.id && <small>(vacío = conservar)</small>}<input type="password" inputMode="numeric" maxLength={8} value={draft.pin} onChange={(event) => setDraft((current) => current && ({ ...current, pin: event.target.value.replace(/\D/g, '') }))} /></label>
                     <label>Repetir PIN<input type="password" inputMode="numeric" maxLength={8} value={draft.confirmPin} onChange={(event) => setDraft((current) => current && ({ ...current, confirmPin: event.target.value.replace(/\D/g, '') }))} /></label>
                     <label className="security-active-toggle wide"><input type="checkbox" checked={draft.active} onChange={(event) => setDraft((current) => current && ({ ...current, active: event.target.checked }))} /><span>Usuario activo</span></label>

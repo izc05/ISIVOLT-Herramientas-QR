@@ -1,0 +1,24 @@
+# Sustituye el nombre por el DNS local elegido para el mini PC.
+# Los móviles deben confiar una sola vez en la CA local de Caddy.
+almacen.isivolt.local {
+  tls internal
+
+  encode zstd gzip
+
+  # Servicio de QR rotatorio y canje único de RC39.
+  handle_path /station/* {
+    reverse_proxy 127.0.0.1:8787
+  }
+
+  # PocketBase sirve API, panel y la aplicación web desde pb_public.
+  handle {
+    reverse_proxy 127.0.0.1:8090
+  }
+
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+    Permissions-Policy "camera=(self), geolocation=(), microphone=()"
+    -Server
+  }
+}

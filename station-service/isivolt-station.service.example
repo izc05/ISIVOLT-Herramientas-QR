@@ -1,0 +1,23 @@
+[Unit]
+Description=ISIVOLT punto de entrega protegido
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=isivolt-station
+Group=isivolt-station
+WorkingDirectory=/opt/isivolt/station-service
+EnvironmentFile=/etc/isivolt-station.env
+ExecStart=/usr/bin/node /opt/isivolt/station-service/src/server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/isivolt-station
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

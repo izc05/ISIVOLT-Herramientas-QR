@@ -21,6 +21,7 @@ import './scan/scan.css';
 import './mobile/mobile-fast-scan.css';
 import './pwa/pwa.css';
 import './admin/admin-tools.css';
+import './admin/inventory-admin.css';
 import './cloud/cloud.css';
 import './technician/my-material.css';
 

@@ -13,21 +13,21 @@
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/ISIVOLT-Herramientas-QR/icons/icon.svg",
+      "src": "/ISIVOLT-Herramientas-QR/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/ISIVOLT-Herramientas-QR/icons/icon.svg",
+      "src": "/ISIVOLT-Herramientas-QR/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/ISIVOLT-Herramientas-QR/icons/maskable.svg",
+      "src": "/ISIVOLT-Herramientas-QR/icons/maskable-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
@@ -36,7 +36,7 @@
       "name": "Escanear material",
       "short_name": "Escanear",
       "url": "/ISIVOLT-Herramientas-QR/?action=scan",
-      "icons": [{ "src": "/ISIVOLT-Herramientas-QR/icons/icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/ISIVOLT-Herramientas-QR/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

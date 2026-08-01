@@ -45,6 +45,14 @@ jobs:
         run: node scripts/validate-pocketbase-security.mjs
       - name: Comprobar aislamiento de caché
         run: node scripts/validate-storage-isolation.mjs
+      - name: Validar kit de despliegue
+        run: |
+          set -euo pipefail
+          bash -n deploy/pocketbase/install.sh
+          bash -n deploy/pocketbase/create-admin.sh
+          bash -n deploy/pocketbase/backup.sh
+          bash -n deploy/check-deployment.sh
+          node scripts/validate-deployment-kit.mjs
       - name: Compilar aplicación e iconos
         run: npm run build
       - name: Comprobar PWA y diagnóstico

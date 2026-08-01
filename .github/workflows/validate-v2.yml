@@ -29,3 +29,10 @@ jobs:
         run: npm run check
       - name: Compilar aplicación
         run: npm run build
+      - name: Guardar compilación para revisión visual
+        uses: actions/upload-artifact@v4
+        with:
+          name: isivoltpro-v2-dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 7

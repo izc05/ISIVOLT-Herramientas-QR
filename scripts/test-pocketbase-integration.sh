@@ -8,6 +8,8 @@ SUPERUSER_EMAIL="ci-superuser@isivoltpro.invalid"
 SUPERUSER_PASSWORD="CiPocketBase!59382746"
 APP_EMAIL="ci-admin@isivoltpro.invalid"
 APP_PASSWORD="CiIsiVoltPro!59382746"
+TECH_EMAIL="ci-technician@isivoltpro.invalid"
+TECH_PASSWORD="CiTechnician!59382746"
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_DIR="$(mktemp -d)"
 PB_DATA="$TMP_DIR/pb_data"
@@ -26,6 +28,22 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
+
+json_value() {
+  local file="$1"
+  local expression="$2"
+  node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync(process.argv[1])); const v=(${expression}); if(v===undefined||v===null||v==='') process.exit(1); process.stdout.write(String(v));" "$file"
+}
+
+expect_denied() {
+  local status="$1"
+  local label="$2"
+  if [[ "$status" =~ ^2 ]]; then
+    echo "La operación debía ser rechazada: $label" >&2
+    exit 1
+  fi
+  echo "Permiso rechazado correctamente ($status): $label"
+}
 
 curl --fail --location --retry 3 \
   --output "$TMP_DIR/pocketbase.zip" \
@@ -72,7 +90,7 @@ curl --silent --show-error --fail \
   "$BASE_URL/api/collections/_superusers/auth-with-password" \
   >"$TMP_DIR/superuser-auth.json"
 
-SUPERUSER_TOKEN="$(node -e "const f=require('fs'); const d=JSON.parse(f.readFileSync(process.argv[1])); if(!d.token) process.exit(1); process.stdout.write(d.token)" "$TMP_DIR/superuser-auth.json")"
+SUPERUSER_TOKEN="$(json_value "$TMP_DIR/superuser-auth.json" 'd.token')"
 
 curl --silent --show-error --fail \
   -H "Authorization: $SUPERUSER_TOKEN" \
@@ -127,15 +145,121 @@ curl --silent --show-error --fail \
   "$BASE_URL/api/collections/isivolt_users/auth-with-password" \
   >"$TMP_DIR/app-auth.json"
 
+APP_TOKEN="$(json_value "$TMP_DIR/app-auth.json" 'd.token')"
 node - "$TMP_DIR/app-auth.json" <<'NODE'
 const fs = require('fs');
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
-if (!payload.token) throw new Error('La cuenta administradora IsiVoltPro no ha recibido token');
 if (payload.record?.role !== 'admin') throw new Error('El rol de la cuenta de prueba no es admin');
 if (payload.record?.workspace !== 'ci') throw new Error('El workspace de la cuenta de prueba es incorrecto');
 if (payload.record?.active !== true) throw new Error('La cuenta de prueba no está activa');
 console.log('Autenticación real de isivolt_users verificada.');
 NODE
+
+NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+curl --silent --show-error --fail \
+  -X POST -H "Authorization: $APP_TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"workspace\":\"ci\",\"external_id\":\"tech-ci-001\",\"code\":\"TEC-CI-001\",\"name\":\"Técnico CI\",\"category\":\"Mantenimiento\",\"active\":true,\"qr_payload\":\"ISIVOLTPRO:TECH:TEC-CI-001\",\"source_created\":\"$NOW\",\"source_updated\":\"$NOW\"}" \
+  "$BASE_URL/api/collections/isivolt_technicians/records" >"$TMP_DIR/technician.json"
+
+curl --silent --show-error --fail \
+  -X POST -H "Authorization: $APP_TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"workspace\":\"ci\",\"external_id\":\"tool-ci-001\",\"code\":\"TOOL-CI-001\",\"name\":\"Multímetro CI\",\"category\":\"Medida\",\"location\":\"Almacén\",\"qr_payload\":\"ISIVOLTPRO:TOOL:TOOL-CI-001\",\"status\":\"available\",\"source_created\":\"$NOW\",\"source_updated\":\"$NOW\"}" \
+  "$BASE_URL/api/collections/isivolt_tools/records" >"$TMP_DIR/tool.json"
+TOOL_RECORD_ID="$(json_value "$TMP_DIR/tool.json" 'd.id')"
+
+curl --silent --show-error --fail \
+  -X POST -H "Authorization: $APP_TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"email\":\"$TECH_EMAIL\",\"password\":\"$TECH_PASSWORD\",\"passwordConfirm\":\"$TECH_PASSWORD\",\"display_name\":\"Técnico CI\",\"role\":\"technician\",\"workspace\":\"ci\",\"technician_external_id\":\"tech-ci-001\",\"active\":true,\"verified\":true}" \
+  "$BASE_URL/api/collections/isivolt_users/records" >"$TMP_DIR/tech-user.json"
+TECH_USER_RECORD_ID="$(json_value "$TMP_DIR/tech-user.json" 'd.id')"
+
+curl --silent --show-error --fail \
+  -H 'Content-Type: application/json' \
+  -d "{\"identity\":\"$TECH_EMAIL\",\"password\":\"$TECH_PASSWORD\"}" \
+  "$BASE_URL/api/collections/isivolt_users/auth-with-password" >"$TMP_DIR/tech-auth.json"
+TECH_TOKEN="$(json_value "$TMP_DIR/tech-auth.json" 'd.token')"
+
+curl --silent --show-error --fail \
+  -H "Authorization: $TECH_TOKEN" \
+  "$BASE_URL/api/collections/isivolt_tools/records?perPage=50" >"$TMP_DIR/tech-tools-before.json"
+node - "$TMP_DIR/tech-tools-before.json" <<'NODE'
+const fs = require('fs');
+const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+if (!payload.items.some((item) => item.external_id === 'tool-ci-001' && item.status === 'available')) {
+  throw new Error('El técnico no puede consultar la herramienta disponible');
+}
+NODE
+
+curl --silent --show-error --fail \
+  -X PATCH -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"status\":\"loaned\",\"technician_external_id\":\"tech-ci-001\",\"source_updated\":\"$NOW\"}" \
+  "$BASE_URL/api/collections/isivolt_tools/records/$TOOL_RECORD_ID" >"$TMP_DIR/tool-loaned.json"
+node - "$TMP_DIR/tool-loaned.json" <<'NODE'
+const fs = require('fs');
+const tool = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+if (tool.status !== 'loaned' || tool.technician_external_id !== 'tech-ci-001') {
+  throw new Error('El autoservicio no asignó la herramienta al técnico autenticado');
+}
+NODE
+
+FORBIDDEN_EDIT_STATUS="$(curl --silent --show-error --output "$TMP_DIR/forbidden-edit.json" --write-out '%{http_code}' \
+  -X PATCH -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Nombre manipulado"}' \
+  "$BASE_URL/api/collections/isivolt_tools/records/$TOOL_RECORD_ID")"
+expect_denied "$FORBIDDEN_EDIT_STATUS" 'el técnico no puede editar el nombre de la herramienta'
+
+BATCH_ID="batch-ci-001"
+curl --silent --show-error --fail \
+  -X POST -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"workspace\":\"ci\",\"external_id\":\"$BATCH_ID\",\"operation\":\"loan\",\"technician_external_id\":\"tech-ci-001\",\"tool_ids\":[\"tool-ci-001\"],\"operator_mode\":\"self-service\",\"identification_method\":\"authenticated\",\"scan_method\":\"qr\",\"started_at\":\"$NOW\",\"completed_at\":\"$NOW\"}" \
+  "$BASE_URL/api/collections/isivolt_batches/records" >"$TMP_DIR/batch.json"\BATCH_RECORD_ID="$(json_value "$TMP_DIR/batch.json" 'd.id')"
+
+curl --silent --show-error --fail \
+  -X POST -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"workspace\":\"ci\",\"external_id\":\"move-ci-001\",\"type\":\"loan\",\"occurred_at\":\"$NOW\",\"tool_external_id\":\"tool-ci-001\",\"technician_external_id\":\"tech-ci-001\",\"batch_external_id\":\"$BATCH_ID\",\"identification_method\":\"authenticated\",\"scan_method\":\"qr\",\"detail\":\"Préstamo CI\"}" \
+  "$BASE_URL/api/collections/isivolt_movements/records" >"$TMP_DIR/movement.json"
+MOVEMENT_RECORD_ID="$(json_value "$TMP_DIR/movement.json" 'd.id')"
+
+FORBIDDEN_BATCH_STATUS="$(curl --silent --show-error --output "$TMP_DIR/forbidden-batch.json" --write-out '%{http_code}' \
+  -X PATCH -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"scan_method":"manual"}' \
+  "$BASE_URL/api/collections/isivolt_batches/records/$BATCH_RECORD_ID")"
+expect_denied "$FORBIDDEN_BATCH_STATUS" 'los lotes son inmutables'
+
+FORBIDDEN_MOVEMENT_STATUS="$(curl --silent --show-error --output "$TMP_DIR/forbidden-movement.json" --write-out '%{http_code}' \
+  -X PATCH -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"detail":"Alterado"}' \
+  "$BASE_URL/api/collections/isivolt_movements/records/$MOVEMENT_RECORD_ID")"
+expect_denied "$FORBIDDEN_MOVEMENT_STATUS" 'los movimientos son inmutables'
+
+FORBIDDEN_DELETE_STATUS="$(curl --silent --show-error --output "$TMP_DIR/forbidden-delete.json" --write-out '%{http_code}' \
+  -X DELETE -H "Authorization: $TECH_TOKEN" \
+  "$BASE_URL/api/collections/isivolt_tools/records/$TOOL_RECORD_ID")"
+expect_denied "$FORBIDDEN_DELETE_STATUS" 'el técnico no puede eliminar herramientas'
+
+curl --silent --show-error --fail \
+  -X PATCH -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
+  -d "{\"status\":\"available\",\"technician_external_id\":\"\",\"source_updated\":\"$NOW\"}" \
+  "$BASE_URL/api/collections/isivolt_tools/records/$TOOL_RECORD_ID" >"$TMP_DIR/tool-returned.json"
+node - "$TMP_DIR/tool-returned.json" <<'NODE'
+const fs = require('fs');
+const tool = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+if (tool.status !== 'available' || tool.technician_external_id !== '') {
+  throw new Error('La devolución autenticada no dejó la herramienta disponible');
+}
+NODE
+
+curl --silent --show-error --fail \
+  -X PATCH -H "Authorization: $APP_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"display_name":"Técnico CI","role":"technician","technician_external_id":"tech-ci-001","active":false}' \
+  "$BASE_URL/api/collections/isivolt_users/records/$TECH_USER_RECORD_ID" >"$TMP_DIR/tech-disabled.json"
+
+DISABLED_AUTH_STATUS="$(curl --silent --show-error --output "$TMP_DIR/disabled-auth.json" --write-out '%{http_code}' \
+  -H 'Content-Type: application/json' \
+  -d "{\"identity\":\"$TECH_EMAIL\",\"password\":\"$TECH_PASSWORD\"}" \
+  "$BASE_URL/api/collections/isivolt_users/auth-with-password")"
+expect_denied "$DISABLED_AUTH_STATUS" 'una cuenta desactivada no puede autenticarse'
 
 UNAUTHORIZED_STATUS="$(curl --silent --output /dev/null --write-out '%{http_code}' "$BASE_URL/api/collections")"
 if [[ "$UNAUTHORIZED_STATUS" != "401" ]]; then
@@ -143,4 +267,5 @@ if [[ "$UNAUTHORIZED_STATUS" != "401" ]]; then
   exit 1
 fi
 
+echo "Reglas reales verificadas: alta, préstamo propio, bloqueos, lote, movimiento, devolución y desactivación."
 echo "Integración PocketBase ${PB_VERSION} superada en una base temporal."

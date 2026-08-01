@@ -1,6 +1,11 @@
 name: Publicar vista previa V2
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/pages-v2-preview.yml
   workflow_run:
     workflows:
       - Validar reconstrucción V2
@@ -25,6 +30,8 @@ jobs:
     name: Preparar aplicación actual y V2
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    outputs:
+      v2_sha: ${{ steps.v2-ref.outputs.sha }}
     steps:
       - name: Descargar aplicación actual
         uses: actions/checkout@v4
@@ -37,6 +44,10 @@ jobs:
         with:
           ref: rebuild/isivoltpro-herramientas-v2
           path: v2
+
+      - name: Registrar commit exacto de V2
+        id: v2-ref
+        run: echo "sha=$(git -C v2 rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Preparar Node.js
         uses: actions/setup-node@v4
@@ -94,7 +105,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PREVIEW_URL: ${{ steps.deployment.outputs.page_url }}v2/
-          PREVIEW_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          PREVIEW_SHA: ${{ needs.build.outputs.v2_sha }}
         run: |
           gh issue comment 99 --repo "${{ github.repository }}" --body "🚀 **Vista previa V2 publicada**
 

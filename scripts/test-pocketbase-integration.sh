@@ -213,7 +213,8 @@ BATCH_ID="batch-ci-001"
 curl --silent --show-error --fail \
   -X POST -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
   -d "{\"workspace\":\"ci\",\"external_id\":\"$BATCH_ID\",\"operation\":\"loan\",\"technician_external_id\":\"tech-ci-001\",\"tool_ids\":[\"tool-ci-001\"],\"operator_mode\":\"self-service\",\"identification_method\":\"authenticated\",\"scan_method\":\"qr\",\"started_at\":\"$NOW\",\"completed_at\":\"$NOW\"}" \
-  "$BASE_URL/api/collections/isivolt_batches/records" >"$TMP_DIR/batch.json"\BATCH_RECORD_ID="$(json_value "$TMP_DIR/batch.json" 'd.id')"
+  "$BASE_URL/api/collections/isivolt_batches/records" >"$TMP_DIR/batch.json"
+BATCH_RECORD_ID="$(json_value "$TMP_DIR/batch.json" 'd.id')"
 
 curl --silent --show-error --fail \
   -X POST -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \

@@ -11,6 +11,7 @@ const statusLabel: Record<EcosystemModule['status'], string> = {
 export default function EcosystemSwitcher() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const ActiveModuleIcon = activeEcosystemModule.icon;
 
   useEffect(() => {
     document.documentElement.dataset.isivoltEcosystem = 'true';
@@ -45,11 +46,12 @@ export default function EcosystemSwitcher() {
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-label="Abrir ecosistema IsiVoltPro"
         onClick={() => { setOpen((current) => !current); setMessage(''); }}
       >
         <Grid3X3 size={18} />
         <span>Ecosistema</span>
-        <strong>9</strong>
+        <strong>{ecosystemModules.length}</strong>
       </button>
 
       {open && (
@@ -68,7 +70,7 @@ export default function EcosystemSwitcher() {
             </header>
 
             <div className="ecosystem-current">
-              <span className="ecosystem-current-icon"><activeEcosystemModule.icon size={23} /></span>
+              <span className="ecosystem-current-icon"><ActiveModuleIcon size={23} /></span>
               <div>
                 <small>MÓDULO ACTIVO</small>
                 <strong>{activeEcosystemModule.name}</strong>
@@ -110,7 +112,7 @@ export default function EcosystemSwitcher() {
               })}
             </div>
 
-            {message && <p className="ecosystem-message">{message}</p>}
+            {message && <p className="ecosystem-message" role="status">{message}</p>}
 
             <footer className="ecosystem-panel-footer">
               <span />

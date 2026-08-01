@@ -1,0 +1,11 @@
+[Unit]
+Description=Copia diaria IsiVoltPro PocketBase
+
+[Timer]
+OnCalendar=*-*-* 03:20:00
+RandomizedDelaySec=15m
+Persistent=true
+Unit=isivoltpro-pocketbase-backup.service
+
+[Install]
+WantedBy=timers.target

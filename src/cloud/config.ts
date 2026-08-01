@@ -2,6 +2,8 @@ const URL_STORAGE_KEY = 'isivoltpro:pocketbase-url';
 const TOKEN_STORAGE_KEY = 'isivoltpro:pocketbase-token';
 const PROFILE_STORAGE_KEY = 'isivoltpro:pocketbase-profile';
 
+export const CLOUD_PROFILE_EVENT = 'isivoltpro:cloud-profile-changed';
+
 const normalizeUrl = (value: string): string => value.trim().replace(/\/+$/, '');
 
 export const getPocketBaseUrl = (): string => {
@@ -55,6 +57,7 @@ export const getCloudProfile = (): CloudProfile | null => {
 export const saveCloudProfile = (profile: CloudProfile | null): void => {
   if (profile) window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
   else window.localStorage.removeItem(PROFILE_STORAGE_KEY);
+  window.dispatchEvent(new CustomEvent<CloudProfile | null>(CLOUD_PROFILE_EVENT, { detail: profile }));
 };
 
 export const clearCloudSession = (): void => {

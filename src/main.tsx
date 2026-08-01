@@ -10,6 +10,7 @@ import PwaInstallPrompt from './pwa/PwaInstallPrompt';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
 import ScanLauncher from './scan/ScanLauncher';
 import ScanSession, { SCAN_SESSION_EVENT } from './scan/ScanSession';
+import MyMaterial from './technician/MyMaterial';
 import './styles.css';
 import './responsive.css';
 import './print.css';
@@ -21,6 +22,7 @@ import './mobile/mobile-fast-scan.css';
 import './pwa/pwa.css';
 import './admin/admin-tools.css';
 import './cloud/cloud.css';
+import './technician/my-material.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No se encontró el contenedor principal.');
@@ -35,6 +37,7 @@ createRoot(root).render(
     <MobileFastScan />
     <AdminTools />
     <CloudStatus />
+    <MyMaterial />
     <PwaInstallPrompt />
   </StrictMode>,
 );

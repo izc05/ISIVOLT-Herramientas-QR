@@ -26,6 +26,7 @@ import './ecosystem/ecosystem-responsive.css';
 import './ecosystem/operational-center.css';
 import './scan/scan.css';
 import './scan/scan-feedback.css';
+import './scan/scan-recovery.css';
 import './mobile/mobile-fast-scan.css';
 import './mobile/mobile-utility-menu.css';
 import './pwa/pwa.css';

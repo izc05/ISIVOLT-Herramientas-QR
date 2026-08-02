@@ -10,6 +10,11 @@ const types = read('src/types.ts');
 const storage = read('src/storage.ts');
 const sync = read('src/cloud/sync.ts');
 const migration = read('pb_migrations/1722512400_expand_data_model_v3.js');
+const protectedStart = migration.indexOf('const protectedFields = [');
+const protectedEnd = migration.indexOf('].map((field)', protectedStart);
+const protectedFieldsBlock = protectedStart >= 0 && protectedEnd > protectedStart
+  ? migration.slice(protectedStart, protectedEnd)
+  : '';
 
 for (const fragment of [
   "ToolKind = 'returnable-tool'",
@@ -38,6 +43,8 @@ for (const fragment of [
   if (!storage.includes(fragment)) fail(`la migración local no contiene ${fragment}`);
 }
 
+if (!protectedFieldsBlock) fail('no se encuentra la lista de campos protegidos');
+
 for (const field of [
   'tool_kind',
   'service_state',
@@ -53,7 +60,7 @@ for (const field of [
 ]) {
   if (!sync.includes(field)) fail(`sincronización no contiene ${field}`);
   if (!migration.includes(`name: '${field}'`)) fail(`PocketBase no crea ${field}`);
-  if (!migration.includes(`@request.body.${field}:changed = false`)) fail(`el técnico podría modificar ${field}`);
+  if (!protectedFieldsBlock.includes(`'${field}'`)) fail(`el técnico podría modificar ${field}`);
 }
 
 for (const field of ['technician_status', 'company', 'department', 'notes', 'photo_refs']) {

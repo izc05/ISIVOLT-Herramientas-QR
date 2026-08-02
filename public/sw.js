@@ -1,4 +1,4 @@
-const CACHE_NAME = 'isivoltpro-herramientas-alpha-5-9';
+const CACHE_NAME = 'isivoltpro-herramientas-alpha-6-0';
 const BASE = '/ISIVOLT-Herramientas-QR/';
 const CORE = [
   BASE,

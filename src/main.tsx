@@ -8,6 +8,7 @@ import ReleaseDiagnostics from './diagnostics/ReleaseDiagnostics';
 import EcosystemSwitcher from './ecosystem/EcosystemSwitcher';
 import OperationalCenter from './ecosystem/OperationalCenter';
 import MobileFastScan from './mobile/MobileFastScan';
+import MobileUtilityMenu from './mobile/MobileUtilityMenu';
 import LoanMonitor from './monitoring/LoanMonitor';
 import PwaInstallPrompt from './pwa/PwaInstallPrompt';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
@@ -22,6 +23,7 @@ import './ecosystem/ecosystem-responsive.css';
 import './ecosystem/operational-center.css';
 import './scan/scan.css';
 import './mobile/mobile-fast-scan.css';
+import './mobile/mobile-utility-menu.css';
 import './pwa/pwa.css';
 import './admin/admin-tools.css';
 import './admin/inventory-admin.css';
@@ -46,6 +48,7 @@ createRoot(root).render(
     <ScanLauncher />
     <ScanSession />
     <MobileFastScan />
+    <MobileUtilityMenu />
     <AdminTools />
     <CloudStatus />
     <ReleaseDiagnostics />

@@ -1,0 +1,100 @@
+.nfc-programmer {
+  margin-top: 18px;
+  padding: 17px;
+  border: 1px solid #cfe0ef;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff, #f3f9ff);
+  box-shadow: 0 10px 24px rgba(21, 55, 97, .07);
+}
+
+.nfc-programmer > header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.nfc-programmer > header > span {
+  display: grid;
+  place-items: center;
+  width: 47px;
+  height: 47px;
+  border-radius: 13px;
+  color: #0756c9;
+  background: #e9f4ff;
+  box-shadow: inset 0 -3px 0 #35d1eb;
+}
+
+.nfc-programmer header div { min-width: 0; }
+.nfc-programmer header small { display: block; color: #169bb9; font-size: .62rem; font-weight: 900; letter-spacing: .09em; }
+.nfc-programmer header strong { display: block; margin-top: 3px; color: #17365f; }
+.nfc-programmer header p { margin: 3px 0 0; color: #71849e; font-size: .7rem; }
+.nfc-programmer header em { padding: 6px 9px; border-radius: 999px; color: #7b8da5; background: #eef2f6; font-size: .58rem; font-style: normal; font-weight: 900; }
+.nfc-programmer header em.linked { color: #08795a; background: #e7f8f1; }
+
+.nfc-payload {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 9px 10px 9px 13px;
+  border: 1px solid #d7e3ef;
+  border-radius: 10px;
+  background: white;
+}
+.nfc-payload code { overflow: hidden; color: #45688d; text-overflow: ellipsis; white-space: nowrap; font-size: .68rem; }
+.nfc-payload button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #c9d9e8; border-radius: 8px; color: #0756c9; background: #f5faff; }
+
+.nfc-read-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid #cddfec;
+  border-radius: 10px;
+  color: #28668a;
+  background: #eff9ff;
+}
+.nfc-read-result.verified { border-color: #9ed9c5; color: #08795a; background: #eaf9f3; }
+.nfc-read-result.conflict { border-color: #efc7a1; color: #9b5c16; background: #fff7e9; }
+.nfc-read-result div { min-width: 0; }
+.nfc-read-result small { display: block; font-size: .58rem; font-weight: 900; letter-spacing: .08em; }
+.nfc-read-result strong { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .72rem; }
+.nfc-read-result p { margin: 4px 0 0; font-size: .68rem; }
+
+.nfc-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 13px;
+}
+.nfc-actions button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid #c9d9e8;
+  border-radius: 9px;
+  color: #315b84;
+  background: white;
+  font-size: .68rem;
+  font-weight: 820;
+}
+.nfc-actions button.primary { border-color: #0756c9; color: white; background: #0756c9; }
+.nfc-actions button.danger { border-color: #efcbd1; color: #b04454; background: #fff6f7; }
+.nfc-actions button:disabled { cursor: not-allowed; opacity: .5; }
+.nfc-note { margin: 11px 0 0; color: #7a8da5; font-size: .66rem; line-height: 1.45; }
+
+@media (max-width: 760px) {
+  .nfc-programmer > header { grid-template-columns: auto minmax(0, 1fr); }
+  .nfc-programmer header em { grid-column: 1 / -1; justify-self: start; }
+  .nfc-actions { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 430px) {
+  .nfc-actions { grid-template-columns: 1fr; }
+}

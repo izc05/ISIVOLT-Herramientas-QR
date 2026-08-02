@@ -36,6 +36,7 @@ import './admin/account-admin.css';
 import './admin/catalog-admin.css';
 import './admin/entity-details.css';
 import './photos/photo-manager.css';
+import './nfc/nfc-programmer.css';
 import './cloud/cloud.css';
 import './technician/my-material.css';
 import './access/access-mode.css';

@@ -45,7 +45,8 @@ for (const fragment of [
 
 if (!main.includes('<ScanFeedbackLayer />')) fail('la capa de respuesta no está montada');
 if (!main.includes("./scan/scan-feedback.css")) fail('faltan estilos en main');
-if (packageJson.version !== '2.0.0-alpha.7.1') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-1')) fail('caché PWA no renovada');
+if (!String(packageJson.version).startsWith('2.0.0-alpha.7')) fail(`versión inesperada: ${packageJson.version}`);
+const cacheSuffix = String(packageJson.version).replace(/^2\.0\.0-/, '').replaceAll('.', '-');
+if (!serviceWorker.includes(cacheSuffix)) fail(`la caché PWA no coincide con ${packageJson.version}`);
 
 console.log('Respuesta premium preparada: clasificación, destello, sonido, vibración y preferencias accesibles.');

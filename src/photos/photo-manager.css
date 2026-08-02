@@ -1,0 +1,26 @@
+.photo-manager { margin-top: 15px; border: 1px solid #d7e2ef; border-radius: 14px; background: #fbfdff; overflow: hidden; }
+.photo-manager > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 14px; border-bottom: 1px solid #e3ebf4; background: #fff; }
+.photo-manager header strong { display: block; color: #173c66; }
+.photo-manager header p { margin: 3px 0 0; color: #7b8fa7; font-size: .68rem; }
+.photo-actions { display: flex; gap: 7px; }
+.photo-actions button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 10px; border: 1px solid #cbdbea; border-radius: 9px; color: #0756c9; background: #f5faff; font-weight: 800; }
+.photo-actions button:disabled { opacity: .45; cursor: not-allowed; }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; padding: 12px; }
+.photo-grid article { position: relative; min-height: 120px; overflow: hidden; border: 2px solid transparent; border-radius: 12px; background: #eaf1f8; }
+.photo-grid article.primary { border-color: #0b63ce; box-shadow: 0 0 0 3px rgba(11,99,206,.12); }
+.photo-grid img { display: block; width: 100%; height: 135px; object-fit: cover; }
+.photo-missing { display: grid; place-items: center; align-content: center; gap: 6px; height: 135px; color: #8094ad; font-size: .7rem; }
+.photo-overlay { position: absolute; inset: auto 7px 7px auto; display: flex; gap: 6px; }
+.photo-overlay button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,.5); border-radius: 9px; color: white; background: rgba(8,34,68,.78); backdrop-filter: blur(8px); }
+.photo-overlay button.selected { color: #ffd75e; }
+.photo-overlay button:last-child:hover { background: #b82f3c; }
+.photo-empty { display: grid; place-items: center; gap: 7px; min-height: 145px; padding: 22px; color: #7b90a8; text-align: center; }
+.photo-empty strong { color: #365778; }
+.photo-empty p { margin: 0; font-size: .72rem; }
+
+@media (max-width: 620px) {
+  .photo-manager > header { display: grid; }
+  .photo-actions { width: 100%; }
+  .photo-actions button { flex: 1; justify-content: center; }
+  .photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

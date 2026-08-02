@@ -44,5 +44,33 @@ for (const fragment of ['testCamera', '/api/health', 'navigator.storage', 'NDEFR
   if (!diagnostics.includes(fragment)) fail(`el diagnóstico no contiene ${fragment}`);
 }
 
+const mobileMenu = requireFile('src/mobile/MobileUtilityMenu.tsx').toString('utf8');
+for (const fragment of [
+  '.admin-tools-launcher',
+  '.cloud-status-trigger',
+  '.diagnostics-trigger',
+  '.ecosystem-trigger',
+  'role !== \'technician\'',
+  'Accesos rápidos',
+]) {
+  if (!mobileMenu.includes(fragment)) fail(`el menú móvil no contiene ${fragment}`);
+}
+
+const mobileMenuCss = requireFile('src/mobile/mobile-utility-menu.css').toString('utf8');
+for (const fragment of [
+  '@media (max-width: 760px)',
+  '.topbar-actions > .admin-tools-launcher',
+  '.topbar-actions > .cloud-status-trigger',
+  '.topbar-actions > .diagnostics-trigger',
+  '.ecosystem-trigger',
+  'display: none !important',
+  '.mobile-utility-launcher',
+]) {
+  if (!mobileMenuCss.includes(fragment)) fail(`la corrección de cabecera móvil no contiene ${fragment}`);
+}
+
+const main = requireFile('src/main.tsx').toString('utf8');
+if (!main.includes('<MobileUtilityMenu />')) fail('MobileUtilityMenu no está montado en la aplicación');
+
 requireFile('dist/sw.js');
-console.log('PWA y diagnóstico preparados: iconos, manifiesto, metadatos, caché y comprobaciones correctos.');
+console.log('PWA, diagnóstico y cabecera móvil preparados: iconos, caché y accesos sin superposición correctos.');

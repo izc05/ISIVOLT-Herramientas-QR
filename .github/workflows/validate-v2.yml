@@ -35,6 +35,8 @@ jobs:
         run: node scripts/validate-catalogs-locations.mjs
       - name: Validar fichas y fotografías
         run: node scripts/validate-entity-details-photos.mjs
+      - name: Validar respuesta premium del escáner
+        run: node scripts/validate-scan-feedback.mjs
       - name: Validar manifiesto PWA
         run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest','utf8')); console.log('Manifest válido')"
       - name: Validar service worker

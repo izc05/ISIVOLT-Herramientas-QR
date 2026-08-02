@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type LucideIcon } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ChevronRight,
@@ -8,6 +8,7 @@ import {
   MoreHorizontal,
   Settings2,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 
 type UtilityAction = {

@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
   Printer,
   Settings2,
+  Tags,
   Upload,
   UserRound,
   UsersRound,
@@ -23,9 +24,10 @@ import {
 import { loadData, normalizeAppData, saveData, WORKSPACE_DATA_EVENT } from '../storage';
 import type { AppData, Technician } from '../types';
 import AccountAdmin from './AccountAdmin';
+import CatalogAdmin from './CatalogAdmin';
 import InventoryAdmin from './InventoryAdmin';
 
-type TabId = 'credential' | 'inventory' | 'users' | 'data';
+type TabId = 'credential' | 'inventory' | 'catalogs' | 'users' | 'data';
 
 const technicianPayload = (technician: Technician) => technician.qrPayload ?? `ISIVOLTPRO:TECH:${technician.code}`;
 const csvCell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
@@ -87,23 +89,36 @@ export default function AdminTools() {
     [data.technicians, technicianId],
   );
 
+  const activeTechnicianCategories = useMemo(
+    () => (data.technicianCategories ?? []).filter((entry) => entry.active).sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [data.technicianCategories],
+  );
+
   const saveTechnician = () => {
     if (!draft) return;
+    const categoryEntry = activeTechnicianCategories.find((entry) => entry.id === draft.categoryId)
+      ?? activeTechnicianCategories.find((entry) => entry.name === draft.category);
     const updatedAt = new Date().toISOString();
+    const normalized: Technician = {
+      ...draft,
+      name: draft.name.trim(),
+      categoryId: categoryEntry?.id ?? draft.categoryId,
+      category: categoryEntry?.name ?? draft.category.trim(),
+      updatedAt,
+    };
     const next = {
       ...data,
-      technicians: data.technicians.map((technician) => technician.id === draft.id
-        ? { ...draft, name: draft.name.trim(), category: draft.category.trim(), updatedAt }
-        : technician),
+      technicians: data.technicians.map((technician) => technician.id === normalized.id ? normalized : technician),
     };
     saveData(next);
     setData(next);
+    setDraft(normalized);
     setMessage('Ficha del técnico actualizada.');
   };
 
   const toggleTechnician = () => {
     if (!draft) return;
-    setDraft({ ...draft, active: !draft.active });
+    setDraft({ ...draft, active: !draft.active, status: draft.active ? 'inactive' : 'active' });
   };
 
   const copyPayload = async () => {
@@ -182,13 +197,14 @@ export default function AdminTools() {
         <div className="admin-tools-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <section className="admin-tools-panel" role="dialog" aria-modal="true" aria-label="Administración IsiVoltPro">
             <header>
-              <div><small>ISIVOLTPRO HERRAMIENTAS</small><h2>Administración</h2><p>Inventario, técnicos, usuarios y copias de seguridad.</p></div>
+              <div><small>ISIVOLTPRO HERRAMIENTAS</small><h2>Administración</h2><p>Inventario, técnicos, catálogos, usuarios y copias de seguridad.</p></div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={20} /></button>
             </header>
 
             <nav>
               <button className={tab === 'credential' ? 'active' : ''} type="button" onClick={() => setTab('credential')}><UserRound size={18} /> Técnicos</button>
               <button className={tab === 'inventory' ? 'active' : ''} type="button" onClick={() => setTab('inventory')}><Boxes size={18} /> Inventario</button>
+              <button className={tab === 'catalogs' ? 'active' : ''} type="button" onClick={() => setTab('catalogs')}><Tags size={18} /> Catálogos</button>
               {cloudProfile?.role === 'admin' && <button className={tab === 'users' ? 'active' : ''} type="button" onClick={() => setTab('users')}><UsersRound size={18} /> Usuarios</button>}
               <button className={tab === 'data' ? 'active' : ''} type="button" onClick={() => setTab('data')}><DatabaseBackup size={18} /> Datos</button>
             </nav>
@@ -208,10 +224,19 @@ export default function AdminTools() {
                       <>
                         <div className="admin-form-grid">
                           <label>Nombre<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
-                          <label>Categoría<input value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} /></label>
+                          <label>Especialidad
+                            <select value={draft.categoryId ?? ''} onChange={(event) => {
+                              const category = activeTechnicianCategories.find((entry) => entry.id === event.target.value);
+                              setDraft({ ...draft, categoryId: category?.id, category: category?.name ?? draft.category });
+                            }}>
+                              <option value="">Sin especialidad vinculada</option>
+                              {activeTechnicianCategories.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
+                            </select>
+                          </label>
                           <label>Teléfono<input value={draft.phone ?? ''} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} /></label>
                           <label>Correo<input type="email" value={draft.email ?? ''} onChange={(event) => setDraft({ ...draft, email: event.target.value })} /></label>
                         </div>
+                        {activeTechnicianCategories.length === 0 && <p className="admin-message">Crea primero una especialidad en la pestaña Catálogos.</p>}
                         <label className="admin-toggle"><input type="checkbox" checked={draft.active} onChange={toggleTechnician} /><span /> Técnico activo</label>
                         <button className="admin-primary" type="button" onClick={saveTechnician}><Check size={18} /> Guardar cambios</button>
                       </>
@@ -238,6 +263,10 @@ export default function AdminTools() {
 
               {tab === 'inventory' && (
                 <InventoryAdmin data={data} onDataChange={setData} onMessage={setMessage} />
+              )}
+
+              {tab === 'catalogs' && (
+                <CatalogAdmin data={data} onDataChange={setData} onMessage={setMessage} />
               )}
 
               {tab === 'users' && cloudProfile?.role === 'admin' && (

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BriefcaseBusiness, Check, UserRound } from 'lucide-react';
+import NfcProgrammer from '../nfc/NfcProgrammer';
 import PhotoManager from '../photos/PhotoManager';
 import { saveData } from '../storage';
 import type {
@@ -52,6 +53,8 @@ const optionalNumber = (value: string): number | undefined => {
   const number = Number(value);
   return Number.isFinite(number) ? number : undefined;
 };
+
+const technicianPayload = (technician: Technician) => technician.qrPayload ?? `ISIVOLTPRO:TECH:${technician.code}`;
 
 export default function EntityDetailsAdmin({ data, onDataChange, onMessage }: EntityDetailsAdminProps) {
   const [mode, setMode] = useState<EntityMode>('tool');
@@ -194,6 +197,16 @@ export default function EntityDetailsAdmin({ data, onDataChange, onMessage }: En
             <label className="entity-wide">Descripción<textarea rows={3} value={toolDraft.description ?? ''} onChange={(event) => setToolDraft({ ...toolDraft, description: event.target.value })} /></label>
             <label className="entity-wide">Observaciones<textarea rows={3} value={toolDraft.notes ?? ''} onChange={(event) => setToolDraft({ ...toolDraft, notes: event.target.value })} /></label>
           </div>
+          <NfcProgrammer
+            data={data}
+            entityType="tool"
+            entityId={toolDraft.id}
+            label={`${toolDraft.code} · ${toolDraft.name}`}
+            payload={toolDraft.qrPayload || `ISIVOLTPRO:TOOL:${toolDraft.code}`}
+            linkedValue={toolDraft.nfcTag}
+            onLinked={(nfcTag) => setToolDraft({ ...toolDraft, nfcTag })}
+            onMessage={onMessage}
+          />
           <PhotoManager entityId={toolDraft.id} photos={toolDraft.photos ?? []} onChange={(photos) => setToolDraft({ ...toolDraft, photos })} onMessage={onMessage} />
           <button className="admin-primary" type="button" onClick={saveTool}><Check size={18} /> Guardar ficha completa</button>
         </section>
@@ -212,12 +225,22 @@ export default function EntityDetailsAdmin({ data, onDataChange, onMessage }: En
             <label>Correo<input type="email" value={technicianDraft.email ?? ''} onChange={(event) => setTechnicianDraft({ ...technicianDraft, email: event.target.value })} /></label>
             <label className="entity-wide">Observaciones<textarea rows={4} value={technicianDraft.notes ?? ''} onChange={(event) => setTechnicianDraft({ ...technicianDraft, notes: event.target.value })} /></label>
           </div>
+          <NfcProgrammer
+            data={data}
+            entityType="technician"
+            entityId={technicianDraft.id}
+            label={`${technicianDraft.code} · ${technicianDraft.name}`}
+            payload={technicianPayload(technicianDraft)}
+            linkedValue={technicianDraft.nfcTag}
+            onLinked={(nfcTag) => setTechnicianDraft({ ...technicianDraft, nfcTag })}
+            onMessage={onMessage}
+          />
           <PhotoManager entityId={technicianDraft.id} photos={technicianDraft.photos ?? []} onChange={(photos) => setTechnicianDraft({ ...technicianDraft, photos })} onMessage={onMessage} />
           <button className="admin-primary" type="button" onClick={saveTechnician}><Check size={18} /> Guardar ficha completa</button>
         </section>
       )}
 
-      {!selectedId && <div className="entity-details-empty"><BriefcaseBusiness size={38} /><strong>Selecciona una ficha</strong><p>Consulta y edita fotografías, estado, datos técnicos y mantenimiento.</p></div>}
+      {!selectedId && <div className="entity-details-empty"><BriefcaseBusiness size={38} /><strong>Selecciona una ficha</strong><p>Consulta y edita fotografías, estado, datos técnicos, mantenimiento y NFC.</p></div>}
     </div>
   );
 }

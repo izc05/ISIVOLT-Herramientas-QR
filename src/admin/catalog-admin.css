@@ -1,0 +1,49 @@
+.catalog-admin { display: grid; gap: 16px; }
+.catalog-kind-switch { display: flex; gap: 8px; padding: 6px; border: 1px solid #d7e2ef; border-radius: 14px; background: #fff; }
+.catalog-kind-switch button { flex: 1; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 10px; color: #68809c; background: transparent; font-weight: 850; }
+.catalog-kind-switch button.active { color: #0756c9; background: #eaf4ff; box-shadow: inset 0 0 0 1px #cde3f8; }
+.catalog-admin-layout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(310px, .92fr); gap: 16px; }
+.catalog-list-card,
+.catalog-editor-card { border: 1px solid #d7e2ef; border-radius: 17px; background: #fff; box-shadow: 0 10px 24px rgba(22,54,96,.07); }
+.catalog-list-card > header,
+.catalog-editor-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 17px 18px; border-bottom: 1px solid #e3ebf4; }
+.catalog-list-card header strong,
+.catalog-editor-card header strong { display: block; color: #183c66; }
+.catalog-list-card header p,
+.catalog-editor-card header p { margin: 4px 0 0; color: #74879f; font-size: .72rem; }
+.catalog-list-card header button { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; border: 1px solid #c9daec; border-radius: 9px; color: #0756c9; background: #f5faff; font-weight: 800; }
+.catalog-list { display: grid; gap: 8px; max-height: 520px; padding: 12px; overflow: auto; }
+.catalog-list article { display: grid; grid-template-columns: minmax(0, 1fr) 40px; align-items: stretch; border: 1px solid #dbe5ef; border-radius: 12px; overflow: hidden; background: #fbfdff; }
+.catalog-list article.inactive { opacity: .62; }
+.catalog-entry-main { display: grid; grid-template-columns: 13px minmax(0, 1fr) auto; align-items: center; gap: 11px; min-width: 0; padding: 12px; border: 0; color: #21466f; background: transparent; text-align: left; }
+.catalog-entry-main:hover { background: #f0f7ff; }
+.catalog-color { width: 11px; height: 34px; border-radius: 999px; }
+.catalog-entry-main div { min-width: 0; }
+.catalog-entry-main strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catalog-entry-main small { display: block; margin-top: 3px; color: #7890aa; font-size: .68rem; }
+.catalog-entry-main em { padding: 5px 8px; border-radius: 999px; color: #2b668e; background: #eaf6ff; font-size: .62rem; font-style: normal; font-weight: 900; }
+.catalog-power { display: grid; place-items: center; border: 0; border-left: 1px solid #e1e9f2; color: #6b819a; background: #f7faff; }
+.catalog-power:hover { color: #c23939; background: #fff0f0; }
+.catalog-empty { margin: 0; padding: 45px 18px; color: #7c90a8; text-align: center; }
+.catalog-editor-card { align-self: start; }
+.catalog-editor-card > header { display: block; }
+.catalog-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 17px 18px 0; }
+.catalog-form-grid label { display: grid; gap: 7px; color: #466487; font-size: .72rem; font-weight: 800; }
+.catalog-form-grid input,
+.catalog-form-grid select,
+.catalog-form-grid textarea { width: 100%; min-height: 43px; padding: 9px 11px; border: 1px solid #cbd9e8; border-radius: 10px; color: #17365f; background: #fbfdff; font: inherit; }
+.catalog-form-grid input[type='color'] { padding: 5px; }
+.catalog-form-grid textarea { resize: vertical; }
+.catalog-wide { grid-column: 1 / -1; }
+.catalog-editor-card .admin-primary { width: calc(100% - 36px); margin: 16px 18px 18px; }
+
+@media (max-width: 760px) {
+  .catalog-kind-switch { overflow-x: auto; }
+  .catalog-kind-switch button { min-width: max-content; padding-inline: 13px; }
+  .catalog-admin-layout { grid-template-columns: 1fr; }
+  .catalog-list { max-height: 360px; }
+  .catalog-form-grid { grid-template-columns: 1fr; }
+  .catalog-wide { grid-column: auto; }
+  .catalog-entry-main { grid-template-columns: 11px minmax(0,1fr); }
+  .catalog-entry-main em { grid-column: 2; justify-self: start; }
+}

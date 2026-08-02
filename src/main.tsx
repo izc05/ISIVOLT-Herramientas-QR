@@ -30,6 +30,7 @@ import './pwa/pwa.css';
 import './admin/admin-tools.css';
 import './admin/inventory-admin.css';
 import './admin/account-admin.css';
+import './admin/catalog-admin.css';
 import './cloud/cloud.css';
 import './technician/my-material.css';
 import './access/access-mode.css';

@@ -31,6 +31,8 @@ jobs:
         run: node scripts/validate-device-security.mjs
       - name: Validar modelo de datos V3
         run: node scripts/validate-data-model-v3.mjs
+      - name: Validar catálogos y ubicaciones
+        run: node scripts/validate-catalogs-locations.mjs
       - name: Validar manifiesto PWA
         run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest','utf8')); console.log('Manifest válido')"
       - name: Validar service worker
@@ -57,6 +59,7 @@ jobs:
           bash -n deploy/pocketbase/backup.sh
           bash -n deploy/check-deployment.sh
           bash -n scripts/test-pocketbase-integration.sh
+          bash -n scripts/test-pocketbase-catalogs.sh
           node scripts/validate-deployment-kit.mjs
       - name: Compilar aplicación e iconos
         run: npm run build
@@ -73,7 +76,7 @@ jobs:
   pocketbase-integration:
     name: PocketBase real y migraciones
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
@@ -85,3 +88,7 @@ jobs:
         env:
           PB_VERSION: 0.39.9
         run: bash scripts/test-pocketbase-integration.sh
+      - name: Probar catálogos y ubicaciones con PocketBase real
+        env:
+          PB_VERSION: 0.39.9
+        run: bash scripts/test-pocketbase-catalogs.sh

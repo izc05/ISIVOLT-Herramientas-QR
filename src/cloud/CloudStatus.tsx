@@ -22,6 +22,7 @@ import {
   WORKSPACE_DATA_EVENT,
 } from '../storage';
 import type { AppData } from '../types';
+import { synchronizeCatalogs } from './catalogSync';
 import {
   clearCloudSession,
   getCloudProfile,
@@ -76,13 +77,16 @@ export default function CloudStatus() {
     setState('connecting');
     setError('');
     try {
-      const result = await synchronizeWorkspace(data, activeProfile);
+      const coreResult = await synchronizeWorkspace(data, activeProfile);
+      const catalogResult = await synchronizeCatalogs(coreResult.data, activeProfile);
       ignoreNextDataEvent.current = true;
-      saveData(result.data);
+      saveData(catalogResult.data);
       setState('synced');
+      const uploaded = coreResult.uploaded + catalogResult.uploaded;
+      const downloaded = coreResult.downloaded + catalogResult.downloaded;
       setMessage(
-        result.uploaded || result.downloaded
-          ? `${result.uploaded} cambios enviados · ${result.downloaded} recibidos.`
+        uploaded || downloaded
+          ? `${uploaded} cambios enviados · ${downloaded} recibidos.`
           : 'Todos los datos están actualizados.',
       );
     } catch (syncError) {
@@ -230,7 +234,7 @@ export default function CloudStatus() {
 
             {message && <p className="cloud-feedback success"><CheckCircle2 size={16} /> {message}</p>}
             {error && <p className="cloud-feedback error"><CloudOff size={16} /> {error}</p>}
-            <footer><p>Cada cuenta y espacio de trabajo conserva una caché independiente. El modo local también permanece separado para evitar mezclar datos entre usuarios.</p></footer>
+            <footer><p>Cada cuenta y espacio de trabajo conserva una caché independiente. El inventario, los catálogos y las ubicaciones se sincronizan en el mismo proceso.</p></footer>
           </section>
         </div>,
         document.body,

@@ -60,7 +60,8 @@ for (const fragment of [
 
 if (!admin.includes("tab === 'details'") || !admin.includes('<BookOpen size={18} /> Fichas')) fail('la pestaña Fichas no está integrada');
 if (!main.includes("./photos/photo-manager.css") || !main.includes("./admin/entity-details.css")) fail('faltan estilos de fichas o fotografías');
-if (packageJson.version !== '2.0.0-alpha.7.0') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-0')) fail('caché PWA no renovada');
+if (!String(packageJson.version).startsWith('2.0.0-alpha.')) fail(`versión inesperada: ${packageJson.version}`);
+const cacheSuffix = String(packageJson.version).replace(/^2\.0\.0-/, '').replaceAll('.', '-');
+if (!serviceWorker.includes(cacheSuffix)) fail(`la caché PWA no coincide con ${packageJson.version}`);
 
 console.log('Fichas completas preparadas: IndexedDB, compresión, cámara, galería, estados, mantenimiento y fotografía principal.');

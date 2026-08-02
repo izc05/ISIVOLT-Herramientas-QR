@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  BookOpen,
   Boxes,
   Check,
   Clipboard,
@@ -25,9 +26,10 @@ import { loadData, normalizeAppData, saveData, WORKSPACE_DATA_EVENT } from '../s
 import type { AppData, Technician } from '../types';
 import AccountAdmin from './AccountAdmin';
 import CatalogAdmin from './CatalogAdmin';
+import EntityDetailsAdmin from './EntityDetailsAdmin';
 import InventoryAdmin from './InventoryAdmin';
 
-type TabId = 'credential' | 'inventory' | 'catalogs' | 'users' | 'data';
+type TabId = 'credential' | 'inventory' | 'details' | 'catalogs' | 'users' | 'data';
 
 const technicianPayload = (technician: Technician) => technician.qrPayload ?? `ISIVOLTPRO:TECH:${technician.code}`;
 const csvCell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
@@ -130,7 +132,7 @@ export default function AdminTools() {
   const exportBackup = () => {
     const date = new Date().toISOString().slice(0, 10);
     downloadFile(`isivoltpro-copia-${date}.json`, JSON.stringify(data, null, 2), 'application/json');
-    setMessage('Copia de seguridad descargada.');
+    setMessage('Copia de datos descargada. Las fotografías locales permanecen en este dispositivo.');
   };
 
   const exportTools = () => {
@@ -176,7 +178,7 @@ export default function AdminTools() {
       saveData(parsed);
       setData(parsed);
       setTechnicianId('');
-      setMessage(`Copia restaurada: ${parsed.tools.length} artículos y ${parsed.technicians.length} técnicos.`);
+      setMessage(`Copia restaurada: ${parsed.tools.length} artículos y ${parsed.technicians.length} técnicos. Las fotografías deben existir en este dispositivo o en PocketBase.`);
     } catch {
       setMessage('No se ha podido importar: el archivo no es una copia válida de IsiVoltPro.');
     }
@@ -197,13 +199,14 @@ export default function AdminTools() {
         <div className="admin-tools-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <section className="admin-tools-panel" role="dialog" aria-modal="true" aria-label="Administración IsiVoltPro">
             <header>
-              <div><small>ISIVOLTPRO HERRAMIENTAS</small><h2>Administración</h2><p>Inventario, técnicos, catálogos, usuarios y copias de seguridad.</p></div>
+              <div><small>ISIVOLTPRO HERRAMIENTAS</small><h2>Administración</h2><p>Inventario, fichas, técnicos, catálogos, usuarios y copias de seguridad.</p></div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={20} /></button>
             </header>
 
             <nav>
               <button className={tab === 'credential' ? 'active' : ''} type="button" onClick={() => setTab('credential')}><UserRound size={18} /> Técnicos</button>
               <button className={tab === 'inventory' ? 'active' : ''} type="button" onClick={() => setTab('inventory')}><Boxes size={18} /> Inventario</button>
+              <button className={tab === 'details' ? 'active' : ''} type="button" onClick={() => setTab('details')}><BookOpen size={18} /> Fichas</button>
               <button className={tab === 'catalogs' ? 'active' : ''} type="button" onClick={() => setTab('catalogs')}><Tags size={18} /> Catálogos</button>
               {cloudProfile?.role === 'admin' && <button className={tab === 'users' ? 'active' : ''} type="button" onClick={() => setTab('users')}><UsersRound size={18} /> Usuarios</button>}
               <button className={tab === 'data' ? 'active' : ''} type="button" onClick={() => setTab('data')}><DatabaseBackup size={18} /> Datos</button>
@@ -261,21 +264,14 @@ export default function AdminTools() {
                 </div>
               )}
 
-              {tab === 'inventory' && (
-                <InventoryAdmin data={data} onDataChange={setData} onMessage={setMessage} />
-              )}
-
-              {tab === 'catalogs' && (
-                <CatalogAdmin data={data} onDataChange={setData} onMessage={setMessage} />
-              )}
-
-              {tab === 'users' && cloudProfile?.role === 'admin' && (
-                <AccountAdmin data={data} onMessage={setMessage} />
-              )}
+              {tab === 'inventory' && <InventoryAdmin data={data} onDataChange={setData} onMessage={setMessage} />}
+              {tab === 'details' && <EntityDetailsAdmin data={data} onDataChange={setData} onMessage={setMessage} />}
+              {tab === 'catalogs' && <CatalogAdmin data={data} onDataChange={setData} onMessage={setMessage} />}
+              {tab === 'users' && cloudProfile?.role === 'admin' && <AccountAdmin data={data} onMessage={setMessage} />}
 
               {tab === 'data' && (
                 <div className="admin-data-grid">
-                  <article><DatabaseBackup size={24} /><div><strong>Copia completa</strong><p>Técnicos, inventario, lotes y movimientos.</p></div><button type="button" onClick={exportBackup}><Download size={17} /> Descargar JSON</button></article>
+                  <article><DatabaseBackup size={24} /><div><strong>Copia de datos</strong><p>Técnicos, inventario, lotes y movimientos. Las fotos locales permanecen en IndexedDB.</p></div><button type="button" onClick={exportBackup}><Download size={17} /> Descargar JSON</button></article>
                   <article><FileSpreadsheet size={24} /><div><strong>Inventario</strong><p>{data.tools.length} artículos registrados.</p></div><button type="button" onClick={exportTools}><Download size={17} /> Exportar CSV</button></article>
                   <article><FileSpreadsheet size={24} /><div><strong>Historial</strong><p>{data.movements.length} movimientos registrados.</p></div><button type="button" onClick={exportMovements}><Download size={17} /> Exportar CSV</button></article>
                   <article><Upload size={24} /><div><strong>Restaurar copia</strong><p>Sustituye los datos locales por una copia JSON validada.</p></div><button type="button" onClick={() => importRef.current?.click()}><Upload size={17} /> Seleccionar archivo</button><input ref={importRef} type="file" accept="application/json,.json" hidden onChange={(event) => void importBackup(event.target.files?.[0])} /></article>

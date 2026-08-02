@@ -1,0 +1,58 @@
+.entity-details-admin { display: grid; gap: 16px; }
+.entity-mode-switch { display: flex; gap: 8px; padding: 6px; border: 1px solid #d7e2ef; border-radius: 14px; background: #fff; }
+.entity-mode-switch button { flex: 1; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 10px; color: #67809c; background: transparent; font-weight: 850; }
+.entity-mode-switch button.active { color: #0756c9; background: #eaf4ff; box-shadow: inset 0 0 0 1px #cde3f8; }
+.entity-selector-card,
+.entity-details-card,
+.entity-details-empty { border: 1px solid #d7e2ef; border-radius: 17px; background: #fff; box-shadow: 0 10px 24px rgba(22,54,96,.07); }
+.entity-selector-card { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px; align-items: end; padding: 16px; }
+.entity-selector-card label { display: grid; gap: 7px; color: #466487; font-size: .72rem; font-weight: 800; }
+.entity-selector-card select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid #cbd9e8; border-radius: 10px; color: #17365f; background: #fbfdff; }
+.entity-summary { display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 3px 8px; color: #6e839d; }
+.entity-summary span { color: #0756c9; font-size: 1.15rem; font-weight: 900; }
+.entity-summary small { font-size: .66rem; }
+.entity-details-card { padding: 18px; }
+.entity-details-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin: -18px -18px 16px; padding: 18px; border-bottom: 1px solid #e2eaf3; background: linear-gradient(120deg,#f8fbff,#edf6ff); border-radius: 17px 17px 0 0; }
+.entity-details-card header small { color: #0b63ce; font-weight: 900; letter-spacing: .08em; }
+.entity-details-card header h3 { margin: 4px 0 3px; color: #173c66; font-size: 1.25rem; }
+.entity-details-card header p { margin: 0; color: #7388a2; font-size: .74rem; }
+.entity-state { padding: 7px 10px; border-radius: 999px; font-size: .66rem; font-weight: 900; white-space: nowrap; }
+.entity-state.state-ready,
+.entity-state.state-active { color: #197143; background: #e7f8ef; }
+.entity-state.state-reserved,
+.entity-state.state-vacation { color: #1d5f9d; background: #e7f2ff; }
+.entity-state.state-review,
+.entity-state.state-absent { color: #6d4db5; background: #f0eaff; }
+.entity-state.state-repair,
+.entity-state.state-leave { color: #8a5b0d; background: #fff3d7; }
+.entity-state.state-lost,
+.entity-state.state-blocked { color: #a12d3a; background: #ffe8eb; }
+.entity-state.state-retired,
+.entity-state.state-inactive { color: #5d6877; background: #edf0f4; }
+.entity-form-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.entity-form-grid label { display: grid; gap: 7px; color: #466487; font-size: .72rem; font-weight: 800; }
+.entity-form-grid input,
+.entity-form-grid select,
+.entity-form-grid textarea { width: 100%; min-height: 43px; padding: 9px 11px; border: 1px solid #cbd9e8; border-radius: 10px; color: #17365f; background: #fbfdff; font: inherit; }
+.entity-form-grid textarea { resize: vertical; }
+.entity-wide { grid-column: 1 / -1; }
+.entity-details-card > .admin-primary { margin-top: 16px; }
+.entity-details-empty { min-height: 300px; display: grid; place-items: center; align-content: center; gap: 9px; padding: 30px; color: #7b8fa7; text-align: center; }
+.entity-details-empty strong { color: #365778; font-size: 1rem; }
+.entity-details-empty p { margin: 0; }
+
+@media (max-width: 800px) {
+  .entity-form-grid { grid-template-columns: 1fr 1fr; }
+  .entity-wide { grid-column: 1 / -1; }
+}
+
+@media (max-width: 560px) {
+  .entity-mode-switch { overflow-x: auto; }
+  .entity-mode-switch button { min-width: max-content; padding-inline: 12px; }
+  .entity-selector-card { grid-template-columns: 1fr; }
+  .entity-summary { grid-template-columns: auto 1fr; }
+  .entity-form-grid { grid-template-columns: 1fr; }
+  .entity-wide { grid-column: auto; }
+  .entity-details-card > header { display: grid; }
+  .entity-state { justify-self: start; }
+}

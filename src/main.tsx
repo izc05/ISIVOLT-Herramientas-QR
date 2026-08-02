@@ -14,6 +14,8 @@ import PwaInstallPrompt from './pwa/PwaInstallPrompt';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
 import ScanLauncher from './scan/ScanLauncher';
 import ScanSession, { SCAN_SESSION_EVENT } from './scan/ScanSession';
+import DeviceSecurityGate from './security/DeviceSecurityGate';
+import SecurityCenter from './security/SecurityCenter';
 import MyMaterial from './technician/MyMaterial';
 import './styles.css';
 import './responsive.css';
@@ -34,6 +36,7 @@ import './access/access-mode.css';
 import './monitoring/loan-monitor.css';
 import './diagnostics/release-diagnostics.css';
 import './diagnostics/release-diagnostics-mobile.css';
+import './security/device-security.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No se encontró el contenedor principal.');
@@ -41,6 +44,7 @@ if (!root) throw new Error('No se encontró el contenedor principal.');
 createRoot(root).render(
   <StrictMode>
     <AccessMode />
+    <DeviceSecurityGate />
     <EcosystemSwitcher />
     <App />
     <OperationalCenter />
@@ -52,6 +56,7 @@ createRoot(root).render(
     <AdminTools />
     <CloudStatus />
     <ReleaseDiagnostics />
+    <SecurityCenter />
     <MyMaterial />
     <PwaInstallPrompt />
   </StrictMode>,

@@ -67,7 +67,8 @@ for (const fragment of [
 }
 
 if (!main.includes("./scan/scan-recovery.css")) fail('los estilos de recuperación no están montados');
-if (packageJson.version !== '2.0.0-alpha.7.2') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-2')) fail('caché PWA no renovada');
+if (!String(packageJson.version).startsWith('2.0.0-alpha.7')) fail(`versión inesperada: ${packageJson.version}`);
+const cacheSuffix = String(packageJson.version).replace(/^2\.0\.0-/, '').replaceAll('.', '-');
+if (!serviceWorker.includes(cacheSuffix)) fail(`la caché PWA no coincide con ${packageJson.version}`);
 
 console.log('Escaneo persistente preparado: borrador por cuenta, recuperación, alta rápida, selección manual y devolución parcial.');

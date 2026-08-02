@@ -40,8 +40,8 @@ function loadPreferences(): FeedbackPreferences {
 function classifyMessage(message: string): FeedbackKind | null {
   const normalized = message.toLocaleLowerCase('es-ES');
   if (!normalized) return null;
-  if (normalized.includes('registrado') || normalized.includes('devolución registrada')) return 'complete';
   if (normalized.includes('añadido') || normalized.includes('identificado correctamente') || normalized.includes('seleccionado manualmente')) return 'success';
+  if (normalized.includes('préstamo registrado') || normalized.includes('devolución registrada')) return 'complete';
   if (normalized.includes('ya está incluido') || normalized.includes('no está disponible') || normalized.includes('no figura prestado') || normalized.includes('requiere android')) return 'warning';
   if (normalized.includes('no se ha encontrado') || normalized.includes('no se ha podido') || normalized.includes('no contiene')) return 'error';
   return null;

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ArrowLeft,
-  Backspace,
   KeyRound,
   LoaderCircle,
   LockKeyhole,
@@ -312,7 +311,7 @@ export default function DeviceSecurityGate() {
               {digits.map((digit, index) => digit ? (
                 <button type="button" key={`${digit}-${index}`} onClick={() => addDigit(digit)} disabled={busy || isBlocked}>{digit}</button>
               ) : <span key={`empty-${index}`} />)}
-              <button className="erase" type="button" onClick={erase} disabled={busy || isBlocked} aria-label="Borrar última cifra"><Backspace size={21} /></button>
+              <button className="erase" type="button" onClick={erase} disabled={busy || isBlocked} aria-label="Borrar última cifra"><span aria-hidden="true">⌫</span></button>
             </div>
 
             {message && <p className="device-security-message" role="status">{message}</p>}

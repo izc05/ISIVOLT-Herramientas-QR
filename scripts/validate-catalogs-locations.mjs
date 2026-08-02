@@ -67,7 +67,8 @@ for (const fragment of [
 
 if (!cloudStatus.includes('synchronizeCatalogs(coreResult.data, activeProfile)')) fail('CloudStatus no sincroniza catálogos');
 if (!main.includes("./admin/catalog-admin.css")) fail('faltan estilos de catálogos');
-if (packageJson.version !== '2.0.0-alpha.6.2') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-6-2')) fail('caché PWA no renovada');
+if (!String(packageJson.version).startsWith('2.0.0-alpha.')) fail(`versión inesperada: ${packageJson.version}`);
+const cacheSuffix = String(packageJson.version).replace(/^2\.0\.0-/, '').replaceAll('.', '-');
+if (!serviceWorker.includes(cacheSuffix)) fail(`la caché PWA no coincide con ${packageJson.version}`);
 
 console.log('Catálogos preparados: edición, jerarquía, selectores, importación y sincronización central.');

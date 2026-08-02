@@ -12,6 +12,7 @@ import MobileUtilityMenu from './mobile/MobileUtilityMenu';
 import LoanMonitor from './monitoring/LoanMonitor';
 import PwaInstallPrompt from './pwa/PwaInstallPrompt';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
+import ScanFeedbackLayer from './scan/ScanFeedbackLayer';
 import ScanLauncher from './scan/ScanLauncher';
 import ScanSession, { SCAN_SESSION_EVENT } from './scan/ScanSession';
 import DeviceSecurityGate from './security/DeviceSecurityGate';
@@ -24,6 +25,7 @@ import './ecosystem/ecosystem.css';
 import './ecosystem/ecosystem-responsive.css';
 import './ecosystem/operational-center.css';
 import './scan/scan.css';
+import './scan/scan-feedback.css';
 import './mobile/mobile-fast-scan.css';
 import './mobile/mobile-utility-menu.css';
 import './pwa/pwa.css';
@@ -54,6 +56,7 @@ createRoot(root).render(
     <LoanMonitor />
     <ScanLauncher />
     <ScanSession />
+    <ScanFeedbackLayer />
     <MobileFastScan />
     <MobileUtilityMenu />
     <AdminTools />

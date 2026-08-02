@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { Bell, CheckCircle2, CircleAlert, CircleX, Settings2, Volume2, VolumeX, Vibrate } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
@@ -54,7 +54,7 @@ function feedbackCopy(kind: FeedbackKind, message: string): Omit<FeedbackState, 
   return { kind, title: 'Lectura rechazada', detail: message };
 }
 
-function playTone(kind: FeedbackKind, audioContextRef: React.MutableRefObject<AudioContext | null>) {
+function playTone(kind: FeedbackKind, audioContextRef: MutableRefObject<AudioContext | null>) {
   const AudioContextConstructor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioContextConstructor) return;
   const context = audioContextRef.current ?? new AudioContextConstructor();
@@ -62,18 +62,18 @@ function playTone(kind: FeedbackKind, audioContextRef: React.MutableRefObject<Au
   void context.resume();
   const oscillator = context.createOscillator();
   const gain = context.createGain();
-  const now = context.currentTime;
+  const moment = context.currentTime;
   const frequency = kind === 'success' ? 880 : kind === 'complete' ? 660 : kind === 'warning' ? 420 : 220;
   oscillator.type = kind === 'error' ? 'square' : 'sine';
-  oscillator.frequency.setValueAtTime(frequency, now);
-  if (kind === 'complete') oscillator.frequency.exponentialRampToValueAtTime(990, now + 0.16);
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.12, now + 0.015);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === 'complete' ? 0.28 : 0.16));
+  oscillator.frequency.setValueAtTime(frequency, moment);
+  if (kind === 'complete') oscillator.frequency.exponentialRampToValueAtTime(990, moment + 0.16);
+  gain.gain.setValueAtTime(0.0001, moment);
+  gain.gain.exponentialRampToValueAtTime(0.12, moment + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, moment + (kind === 'complete' ? 0.28 : 0.16));
   oscillator.connect(gain);
   gain.connect(context.destination);
-  oscillator.start(now);
-  oscillator.stop(now + (kind === 'complete' ? 0.3 : 0.18));
+  oscillator.start(moment);
+  oscillator.stop(moment + (kind === 'complete' ? 0.3 : 0.18));
 }
 
 function vibrate(kind: FeedbackKind) {
@@ -91,6 +91,7 @@ export default function ScanFeedbackLayer() {
   const [headerTarget, setHeaderTarget] = useState<Element | null>(null);
   const previousMessage = useRef('');
   const previousCount = useRef(0);
+  const completeShown = useRef(false);
   const feedbackSequence = useRef(0);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -116,6 +117,7 @@ export default function ScanFeedbackLayer() {
       if (!header) {
         previousMessage.current = '';
         previousCount.current = 0;
+        completeShown.current = false;
         setSettingsOpen(false);
         return;
       }
@@ -124,7 +126,10 @@ export default function ScanFeedbackLayer() {
       if (message && message !== previousMessage.current) {
         previousMessage.current = message;
         const kind = classifyMessage(message);
-        if (kind) emit(kind, message);
+        if (kind) {
+          emit(kind, message);
+          if (kind === 'complete') completeShown.current = true;
+        }
       }
 
       const count = document.querySelectorAll('.scan-tool-list article').length;
@@ -133,9 +138,12 @@ export default function ScanFeedbackLayer() {
       }
       previousCount.current = count;
 
-      if (document.querySelector('.scan-complete-screen') && !message) {
+      const completed = Boolean(document.querySelector('.scan-complete-screen'));
+      if (completed && !completeShown.current) {
+        completeShown.current = true;
         emit('complete', 'El lote se ha guardado correctamente.');
       }
+      if (!completed) completeShown.current = false;
     };
 
     const observer = new MutationObserver(inspect);

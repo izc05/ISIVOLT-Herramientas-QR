@@ -20,7 +20,7 @@ import {
   getCloudProfile,
   type CloudProfile,
 } from '../cloud/config';
-import { loadData, saveData, WORKSPACE_DATA_EVENT } from '../storage';
+import { loadData, normalizeAppData, saveData, WORKSPACE_DATA_EVENT } from '../storage';
 import type { AppData, Technician } from '../types';
 import AccountAdmin from './AccountAdmin';
 import InventoryAdmin from './InventoryAdmin';
@@ -40,14 +40,7 @@ function downloadFile(filename: string, content: string, type: string) {
 }
 
 function validateBackup(value: unknown): AppData | null {
-  if (!value || typeof value !== 'object') return null;
-  const data = value as Partial<AppData>;
-  if (data.schemaVersion !== 2
-    || !Array.isArray(data.tools)
-    || !Array.isArray(data.technicians)
-    || !Array.isArray(data.movements)
-    || !Array.isArray(data.batches)) return null;
-  return data as AppData;
+  return normalizeAppData(value);
 }
 
 export default function AdminTools() {

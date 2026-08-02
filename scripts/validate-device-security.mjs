@@ -52,7 +52,8 @@ if (!main.includes('<DeviceSecurityGate />') || !main.includes('<SecurityCenter 
 if (!main.includes("./security/device-security.css")) fail('faltan los estilos de seguridad');
 if (!mobileMenu.includes("id: 'security'") || !mobileMenu.includes("selector: '.security-center-trigger'")) fail('el menú móvil no incluye Seguridad');
 if (!css.includes('z-index: 12000') || !css.includes('@media (max-width: 760px)')) fail('el bloqueo no tiene prioridad o adaptación móvil');
-if (packageJson.version !== '2.0.0-alpha.6.0') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-6-0')) fail('la caché PWA no se ha renovado');
+if (!String(packageJson.version).startsWith('2.0.0-alpha.6')) fail(`versión inesperada: ${packageJson.version}`);
+const cacheSuffix = String(packageJson.version).replace(/^2\.0\.0-/, '').replaceAll('.', '-');
+if (!serviceWorker.includes(cacheSuffix)) fail(`la caché PWA no coincide con ${packageJson.version}`);
 
 console.log('Seguridad del dispositivo preparada: PIN derivado, aislamiento por cuenta, bloqueo progresivo y autobloqueo.');

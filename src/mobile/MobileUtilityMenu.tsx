@@ -5,6 +5,7 @@ import {
   Cloud,
   Grid3X3,
   HeartPulse,
+  LockKeyhole,
   MoreHorizontal,
   Settings2,
   X,
@@ -28,6 +29,13 @@ const actions: UtilityAction[] = [
     selector: '.admin-tools-launcher',
     Icon: Settings2,
     managerOnly: true,
+  },
+  {
+    id: 'security',
+    label: 'Seguridad y PIN',
+    detail: 'Cambiar PIN, autobloqueo y bloquear ahora.',
+    selector: '.security-center-trigger',
+    Icon: LockKeyhole,
   },
   {
     id: 'cloud',

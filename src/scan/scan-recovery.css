@@ -1,0 +1,202 @@
+.scan-session:has(.scan-recovery-screen) {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.scan-recovery-screen {
+  max-width: 620px;
+  min-height: 430px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  margin: 0 auto;
+  padding: 32px;
+  text-align: center;
+}
+
+.scan-recovery-screen > span {
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  border-radius: 22px;
+  color: #0756c9;
+  background: #e9f4ff;
+  box-shadow: inset 0 -4px 0 #35d1eb;
+}
+
+.scan-recovery-screen > small,
+.scan-receipt > small {
+  color: #169bb9;
+  font-size: .67rem;
+  font-weight: 900;
+  letter-spacing: .11em;
+}
+
+.scan-recovery-screen h2 { margin: 2px 0; color: #102a56; }
+.scan-recovery-screen > p { max-width: 520px; margin: 0; color: #6f829d; line-height: 1.55; }
+.scan-recovery-screen dl,
+.scan-receipt dl {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin: 16px 0 8px;
+}
+.scan-recovery-screen dl > div,
+.scan-receipt dl > div {
+  padding: 12px;
+  border: 1px solid #dce6f1;
+  border-radius: 11px;
+  background: white;
+}
+.scan-recovery-screen dt,
+.scan-receipt dt { color: #7a8ea8; font-size: .65rem; }
+.scan-recovery-screen dd,
+.scan-receipt dd { margin: 5px 0 0; color: #17365f; font-size: .78rem; font-weight: 850; overflow-wrap: anywhere; }
+.scan-recovery-screen > div { display: flex; gap: 10px; margin-top: 8px; }
+.scan-recovery-screen button,
+.scan-receipt button,
+.scan-quick-tool button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 43px;
+  padding: 0 15px;
+  border: 1px solid #cbdbea;
+  border-radius: 10px;
+  color: #31577f;
+  background: white;
+  font-weight: 820;
+}
+.scan-recovery-screen button.primary,
+.scan-receipt button.primary,
+.scan-quick-tool button.primary { border-color: #0756c9; color: white; background: #0756c9; }
+
+.scan-manual-browser {
+  margin-top: 14px;
+  border: 1px solid #d2dfed;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 8px 20px rgba(18, 52, 92, .06);
+}
+.scan-manual-browser summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 16px;
+  color: #28557f;
+  cursor: pointer;
+  font-size: .76rem;
+  font-weight: 850;
+  list-style: none;
+}
+.scan-manual-browser summary::-webkit-details-marker { display: none; }
+.scan-manual-browser[open] summary { border-bottom: 1px solid #e1e8f1; }
+.scan-manual-search {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 9px;
+  margin: 13px;
+  padding: 0 12px;
+  border: 1px solid #cad9e9;
+  border-radius: 10px;
+  color: #7188a5;
+  background: #f9fcff;
+}
+.scan-manual-search input { min-width: 0; height: 43px; border: 0; outline: 0; background: transparent; }
+.scan-manual-results { max-height: 260px; display: grid; gap: 7px; overflow-y: auto; padding: 0 13px 13px; }
+.scan-manual-results > p { margin: 5px; color: #788ba5; text-align: center; font-size: .74rem; }
+.scan-manual-results button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 9px 12px;
+  border: 1px solid #e0e8f1;
+  border-radius: 10px;
+  color: #0756c9;
+  background: #fbfdff;
+  text-align: left;
+}
+.scan-manual-results button span { min-width: 0; }
+.scan-manual-results strong,
+.scan-manual-results small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scan-manual-results strong { color: #17365f; font-size: .76rem; }
+.scan-manual-results small { margin-top: 3px; color: #7a8da5; font-size: .67rem; }
+
+.scan-discard-draft {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 13px;
+  padding: 8px 10px;
+  border: 0;
+  color: #a74755;
+  background: transparent;
+  font-size: .7rem;
+  font-weight: 800;
+}
+
+.scan-quick-tool-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2650;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(4, 24, 58, .66);
+  backdrop-filter: blur(9px);
+}
+.scan-quick-tool {
+  width: min(580px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  border: 1px solid #d3e0ed;
+  border-radius: 20px;
+  color: #17365f;
+  background: #f7faff;
+  box-shadow: 0 28px 75px rgba(3, 29, 68, .35);
+}
+.scan-quick-tool > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 17px 19px;
+  color: white;
+  background: linear-gradient(120deg, #063b98, #0768d9);
+}
+.scan-quick-tool > header > div { display: flex; align-items: center; gap: 11px; }
+.scan-quick-tool header small { color: #68e3f2; font-size: .62rem; font-weight: 900; letter-spacing: .09em; }
+.scan-quick-tool header h3 { margin: 3px 0 0; }
+.scan-quick-tool header button { width: 38px; min-height: 38px; padding: 0; color: white; border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.1); }
+.scan-quick-tool > p { margin: 16px 18px 0; color: #6f829b; font-size: .73rem; line-height: 1.5; }
+.scan-quick-tool > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 17px 18px; }
+.scan-quick-tool label { display: grid; gap: 7px; color: #466487; font-size: .7rem; font-weight: 850; }
+.scan-quick-tool input,
+.scan-quick-tool select { width: 100%; height: 43px; padding: 0 11px; border: 1px solid #cbd9e8; border-radius: 9px; color: #17365f; background: white; }
+.scan-quick-tool > footer { display: flex; justify-content: flex-end; gap: 9px; padding: 0 18px 18px; }
+
+.scan-receipt { max-width: 720px; margin: 0 auto; }
+.scan-receipt dl { grid-template-columns: 1fr 1fr; }
+.scan-receipt-tools { width: min(580px, 100%); display: grid; gap: 6px; margin-top: 13px; }
+.scan-receipt-tools span { padding: 9px 11px; border-radius: 8px; color: #31577f; background: #eef6ff; font-size: .72rem; }
+.scan-receipt > div:last-child { flex-wrap: wrap; justify-content: center; }
+
+@media (max-width: 760px) {
+  .scan-recovery-screen { min-height: 0; padding: 22px 8px; }
+  .scan-recovery-screen dl { grid-template-columns: 1fr; }
+  .scan-recovery-screen > div { width: 100%; display: grid; grid-template-columns: 1fr; }
+  .scan-recovery-screen button { width: 100%; }
+  .scan-manual-results { max-height: 210px; }
+  .scan-quick-tool-backdrop { padding: 0; }
+  .scan-quick-tool { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; }
+  .scan-quick-tool > div { grid-template-columns: 1fr; }
+  .scan-quick-tool > footer { display: grid; grid-template-columns: 1fr; }
+  .scan-receipt dl { grid-template-columns: 1fr; }
+  .scan-receipt > div:last-child { width: 100%; display: grid; grid-template-columns: 1fr; }
+}

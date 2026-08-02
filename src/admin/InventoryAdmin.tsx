@@ -3,7 +3,6 @@ import {
   Check,
   Download,
   FileSpreadsheet,
-  PackageOpen,
   Printer,
   QrCode,
   Upload,
@@ -11,7 +10,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { saveData } from '../storage';
-import type { AppData, Tool, ToolStatus } from '../types';
+import type { AppData, CatalogEntry, LocationEntry, Tool, ToolStatus } from '../types';
 
 type InventoryAdminProps = {
   data: AppData;
@@ -26,8 +25,9 @@ const statusLabels: Record<ToolStatus, string> = {
   retired: 'Retirado',
 };
 
-const uid = () => `tool-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+const uid = (prefix = 'tool') => `${prefix}-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
 const toolPayload = (tool: Pick<Tool, 'code' | 'qrPayload'>) => tool.qrPayload || `ISIVOLTPRO:TOOL:${tool.code}`;
+const normalize = (value: string) => value.trim().toLocaleLowerCase('es-ES');
 
 const normalizeHeader = (value: string) => value
   .normalize('NFD')
@@ -92,6 +92,14 @@ export default function InventoryAdmin({ data, onDataChange, onMessage }: Invent
 
   const selected = useMemo(() => data.tools.find((tool) => tool.id === toolId) ?? null, [data.tools, toolId]);
   const sortedTools = useMemo(() => [...data.tools].sort((a, b) => a.code.localeCompare(b.code, 'es')), [data.tools]);
+  const activeCategories = useMemo(
+    () => (data.toolCategories ?? []).filter((entry) => entry.active).sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [data.toolCategories],
+  );
+  const activeLocations = useMemo(
+    () => (data.locations ?? []).filter((entry) => entry.active).sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [data.locations],
+  );
 
   useEffect(() => {
     setDraft(selected ? { ...selected } : null);
@@ -106,9 +114,9 @@ export default function InventoryAdmin({ data, onDataChange, onMessage }: Invent
     if (!draft || !selected) return;
     const code = draft.code.trim().toUpperCase();
     const name = draft.name.trim();
-    const category = draft.category.trim();
-    const location = draft.location.trim();
-    if (!code || !name || !category) {
+    const categoryEntry = (data.toolCategories ?? []).find((entry) => entry.id === draft.categoryId);
+    const locationEntry = (data.locations ?? []).find((entry) => entry.id === draft.locationId);
+    if (!code || !name || !categoryEntry) {
       onMessage('Código, nombre y categoría son obligatorios.');
       return;
     }
@@ -126,8 +134,10 @@ export default function InventoryAdmin({ data, onDataChange, onMessage }: Invent
       ...draft,
       code,
       name,
-      category,
-      location,
+      categoryId: categoryEntry.id,
+      category: categoryEntry.name,
+      locationId: locationEntry?.id,
+      location: locationEntry?.name ?? 'Sin ubicación',
       brand: draft.brand?.trim() || undefined,
       model: draft.model?.trim() || undefined,
       serialNumber: draft.serialNumber?.trim() || undefined,
@@ -163,32 +173,80 @@ export default function InventoryAdmin({ data, onDataChange, onMessage }: Invent
     try {
       const rows = parseCsv(await file.text());
       if (rows.length === 0) throw new Error('Sin filas');
-      const now = new Date().toISOString();
+      const timestamp = new Date().toISOString();
       const byCode = new Map(data.tools.map((tool) => [tool.code.toUpperCase(), tool]));
+      const categories = [...(data.toolCategories ?? [])];
+      const locations = [...(data.locations ?? [])];
+      const categoryByName = new Map(categories.map((entry) => [normalize(entry.name), entry]));
+      const locationByName = new Map(locations.map((entry) => [normalize(entry.name), entry]));
       let created = 0;
       let updated = 0;
       let skipped = 0;
+      let catalogsCreated = 0;
+
+      const ensureCategory = (name: string): CatalogEntry => {
+        const key = normalize(name);
+        const current = categoryByName.get(key);
+        if (current) return current;
+        const entry: CatalogEntry = {
+          id: uid('tool-category'),
+          name,
+          code: `CAT-${String(categories.length + 1).padStart(3, '0')}`,
+          color: '#0b63ce',
+          active: true,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        };
+        categories.push(entry);
+        categoryByName.set(key, entry);
+        catalogsCreated += 1;
+        return entry;
+      };
+
+      const ensureLocation = (name: string): LocationEntry | undefined => {
+        if (!name) return undefined;
+        const key = normalize(name);
+        const current = locationByName.get(key);
+        if (current) return current;
+        const entry: LocationEntry = {
+          id: uid('location'),
+          name,
+          code: `UBI-${String(locations.length + 1).padStart(3, '0')}`,
+          color: '#286f9d',
+          active: true,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        };
+        locations.push(entry);
+        locationByName.set(key, entry);
+        catalogsCreated += 1;
+        return entry;
+      };
 
       for (const row of rows) {
         const code = valueFrom(row, 'codigo', 'code', 'id').toUpperCase();
         const name = valueFrom(row, 'nombre', 'name', 'descripcion');
-        const category = valueFrom(row, 'categoria', 'category', 'tipo');
-        const location = valueFrom(row, 'ubicacion', 'location', 'almacen');
-        if (!code || !name || !category) {
+        const categoryName = valueFrom(row, 'categoria', 'category', 'tipo');
+        const locationName = valueFrom(row, 'ubicacion', 'location', 'almacen');
+        if (!code || !name || !categoryName) {
           skipped += 1;
           continue;
         }
+        const category = ensureCategory(categoryName);
+        const location = ensureLocation(locationName);
         const existing = byCode.get(code);
         if (existing) {
           const nextTool: Tool = {
             ...existing,
             name,
-            category,
-            location: location || existing.location,
+            category: category.name,
+            categoryId: category.id,
+            location: location?.name ?? existing.location,
+            locationId: location?.id ?? existing.locationId,
             brand: valueFrom(row, 'marca', 'brand') || existing.brand,
             model: valueFrom(row, 'modelo', 'model') || existing.model,
             serialNumber: valueFrom(row, 'serie', 'numero_serie', 'serial', 'serial_number') || existing.serialNumber,
-            updatedAt: now,
+            updatedAt: timestamp,
           };
           byCode.set(code, nextTool);
           updated += 1;
@@ -197,24 +255,34 @@ export default function InventoryAdmin({ data, onDataChange, onMessage }: Invent
             id: uid(),
             code,
             name,
-            category,
-            location,
+            category: category.name,
+            categoryId: category.id,
+            location: location?.name ?? 'Sin ubicación',
+            locationId: location?.id,
+            kind: 'returnable-tool',
+            serviceState: 'ready',
             brand: valueFrom(row, 'marca', 'brand') || undefined,
             model: valueFrom(row, 'modelo', 'model') || undefined,
             serialNumber: valueFrom(row, 'serie', 'numero_serie', 'serial', 'serial_number') || undefined,
             qrPayload: `ISIVOLTPRO:TOOL:${code}`,
             status: 'available',
-            createdAt: now,
-            updatedAt: now,
+            createdAt: timestamp,
+            updatedAt: timestamp,
           };
           byCode.set(code, nextTool);
           created += 1;
         }
       }
 
-      const next = { ...data, tools: [...byCode.values()].sort((a, b) => a.code.localeCompare(b.code, 'es')) };
+      const next: AppData = {
+        ...data,
+        schemaVersion: 3,
+        tools: [...byCode.values()].sort((a, b) => a.code.localeCompare(b.code, 'es')),
+        toolCategories: categories,
+        locations,
+      };
       commit(next);
-      onMessage(`Importación terminada: ${created} altas, ${updated} actualizados y ${skipped} omitidos.`);
+      onMessage(`Importación terminada: ${created} altas, ${updated} actualizados, ${skipped} omitidos y ${catalogsCreated} catálogos creados.`);
     } catch {
       onMessage('No se ha podido importar el CSV. Revisa la plantilla y el separador.');
     } finally {
@@ -229,6 +297,13 @@ export default function InventoryAdmin({ data, onDataChange, onMessage }: Invent
     window.print();
     window.setTimeout(cleanup, 1000);
   };
+
+  const currentCategoryIncluded = draft?.categoryId && !(activeCategories.some((entry) => entry.id === draft.categoryId))
+    ? (data.toolCategories ?? []).find((entry) => entry.id === draft.categoryId)
+    : undefined;
+  const currentLocationIncluded = draft?.locationId && !(activeLocations.some((entry) => entry.id === draft.locationId))
+    ? (data.locations ?? []).find((entry) => entry.id === draft.locationId)
+    : undefined;
 
   return (
     <div className="inventory-admin">
@@ -245,8 +320,26 @@ export default function InventoryAdmin({ data, onDataChange, onMessage }: Invent
             <div className="inventory-form-grid">
               <label>Código<input value={draft.code} onChange={(event) => setDraft({ ...draft, code: event.target.value })} /></label>
               <label>Nombre<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
-              <label>Categoría<input value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} /></label>
-              <label>Ubicación<input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} /></label>
+              <label>Categoría
+                <select value={draft.categoryId ?? ''} onChange={(event) => {
+                  const category = (data.toolCategories ?? []).find((entry) => entry.id === event.target.value);
+                  setDraft({ ...draft, categoryId: category?.id, category: category?.name ?? draft.category });
+                }}>
+                  <option value="">Selecciona una categoría</option>
+                  {currentCategoryIncluded && <option value={currentCategoryIncluded.id}>{currentCategoryIncluded.name} (inactiva)</option>}
+                  {activeCategories.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
+                </select>
+              </label>
+              <label>Ubicación
+                <select value={draft.locationId ?? ''} onChange={(event) => {
+                  const location = (data.locations ?? []).find((entry) => entry.id === event.target.value);
+                  setDraft({ ...draft, locationId: location?.id, location: location?.name ?? 'Sin ubicación' });
+                }}>
+                  <option value="">Sin ubicación</option>
+                  {currentLocationIncluded && <option value={currentLocationIncluded.id}>{currentLocationIncluded.name} (inactiva)</option>}
+                  {activeLocations.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
+                </select>
+              </label>
               <label>Marca<input value={draft.brand ?? ''} onChange={(event) => setDraft({ ...draft, brand: event.target.value })} /></label>
               <label>Modelo<input value={draft.model ?? ''} onChange={(event) => setDraft({ ...draft, model: event.target.value })} /></label>
               <label>Número de serie<input value={draft.serialNumber ?? ''} onChange={(event) => setDraft({ ...draft, serialNumber: event.target.value })} /></label>
@@ -259,6 +352,7 @@ export default function InventoryAdmin({ data, onDataChange, onMessage }: Invent
                 </select>
               </label>
             </div>
+            {activeCategories.length === 0 && <p className="inventory-loaned-warning">Crea primero una categoría en Gestionar → Catálogos.</p>}
             {draft.status === 'loaned' && <p className="inventory-loaned-warning">Este artículo está prestado. Debe devolverse desde Escanear antes de cambiar su estado.</p>}
             <button className="admin-primary" type="button" onClick={saveTool}><Check size={18} /> Guardar artículo</button>
           </>
@@ -279,7 +373,7 @@ export default function InventoryAdmin({ data, onDataChange, onMessage }: Invent
       </section>
 
       <section className="inventory-import-card">
-        <div><FileSpreadsheet size={25} /><div><strong>Alta y actualización por CSV</strong><p>Los artículos existentes se actualizan por código. Los nuevos se crean disponibles.</p></div></div>
+        <div><FileSpreadsheet size={25} /><div><strong>Alta y actualización por CSV</strong><p>Las categorías y ubicaciones desconocidas se crean automáticamente.</p></div></div>
         <div className="inventory-import-actions">
           <button type="button" onClick={exportTemplate}><Download size={17} /> Descargar plantilla</button>
           <button type="button" onClick={() => importRef.current?.click()}><Upload size={17} /> Importar CSV</button>

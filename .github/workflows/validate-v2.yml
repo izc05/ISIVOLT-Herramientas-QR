@@ -29,6 +29,8 @@ jobs:
         run: npm run check
       - name: Validar seguridad del dispositivo
         run: node scripts/validate-device-security.mjs
+      - name: Validar modelo de datos V3
+        run: node scripts/validate-data-model-v3.mjs
       - name: Validar manifiesto PWA
         run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest','utf8')); console.log('Manifest válido')"
       - name: Validar service worker

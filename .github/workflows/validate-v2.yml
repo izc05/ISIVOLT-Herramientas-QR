@@ -45,6 +45,8 @@ jobs:
         run: node scripts/validate-qr-print-designer.mjs
       - name: Validar estado operativo
         run: node scripts/validate-status-overview.mjs
+      - name: Validar edición, fotos y versión publicada
+        run: node scripts/validate-editing-publication.mjs
       - name: Validar manifiesto PWA
         run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest','utf8')); console.log('Manifest válido')"
       - name: Validar service worker

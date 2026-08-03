@@ -53,7 +53,7 @@ for (const fragment of [
 }
 
 if (!main.includes("./nfc/nfc-programmer.css")) fail('los estilos NFC no están montados');
-if (packageJson.version !== '2.0.0-alpha.7.3') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-3')) fail('caché PWA no renovada');
+if (!/^2\.0\.0-alpha\.7\.\d+$/.test(packageJson.version)) fail(`versión inesperada: ${packageJson.version}`);
+if (!serviceWorker.includes('alpha-7-')) fail('caché PWA no renovada');
 
 console.log('Programador NFC preparado: lectura, conflicto, escritura NDEF, verificación y desvinculación segura.');

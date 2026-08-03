@@ -33,6 +33,7 @@ for (const fragment of [
   "document.body.dataset.accessRole === 'technician'",
   'WORKSPACE_DATA_EVENT',
   '.status-tool-card, .status-technician-card',
+  'ADMIN_OPEN_ENTITY_EVENT',
 ]) {
   if (!bridge.includes(fragment)) fail(`AdminDeepLinkBridge no contiene ${fragment}`);
 }
@@ -63,7 +64,8 @@ for (const fragment of [
   if (!main.includes(fragment)) fail(`main no contiene ${fragment}`);
 }
 
-if (packageJson.version !== '2.0.0-alpha.7.6') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-6')) fail('caché PWA no renovada');
+if (!/^2\.0\.0-alpha\.7\.\d+$/.test(packageJson.version)) fail(`versión inesperada: ${packageJson.version}`);
+const cacheSuffix = packageJson.version.replace('2.0.0-alpha.', 'alpha-').replaceAll('.', '-');
+if (!serviceWorker.includes(cacheSuffix)) fail(`caché PWA no corresponde a ${packageJson.version}`);
 
 console.log('Edición accesible: fotos persistentes, fichas directas y versión visible para verificar GitHub Pages.');

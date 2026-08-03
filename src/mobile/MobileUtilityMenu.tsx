@@ -139,7 +139,7 @@ export default function MobileUtilityMenu() {
           <section className="mobile-utility-panel" role="dialog" aria-modal="true" aria-label="Accesos de IsiVoltPro">
             <header>
               <div>
-                <span className="mobile-utility-brand">IZ</span>
+                <span className="mobile-utility-brand">I</span>
                 <div><small>ISIVOLTPRO</small><h2>Accesos rápidos</h2></div>
               </div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar"><X size={20} /></button>

@@ -1,0 +1,227 @@
+/* Branding IsiVoltPro: monograma I azul sobre pieza blanca. */
+.brand-mark {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border: 1px solid rgba(255,255,255,.7);
+  border-radius: 13px;
+  color: transparent !important;
+  background: #fff;
+  box-shadow: inset 0 -4px 0 #28d4ea, 0 9px 22px rgba(0,31,91,.22);
+  font-size: 0 !important;
+  line-height: 1;
+  transform: none !important;
+}
+.brand-mark::after {
+  content: 'I';
+  color: #0866e8;
+  font-size: 30px;
+  font-weight: 900;
+  font-style: normal;
+  letter-spacing: -.08em;
+}
+
+.mobile-utility-brand,
+.isivolt-monogram {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 1px solid #d9e6f5;
+  border-radius: 13px;
+  color: #0866e8;
+  background: #fff;
+  box-shadow: inset 0 -4px 0 #28d4ea, 0 8px 20px rgba(8,102,232,.12);
+  font-size: 1.45rem;
+  font-weight: 900;
+}
+
+.desktop-utility-menu {
+  position: relative;
+  order: 40;
+  display: flex;
+  align-items: center;
+}
+
+.topbar-actions .desktop-utility-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: auto;
+  min-width: 82px;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid #cfdaea;
+  border-radius: 10px;
+  color: #294b78;
+  background: #fff;
+  font-size: .78rem;
+  font-weight: 750;
+  box-shadow: 0 4px 12px rgba(28,66,118,.04);
+}
+.topbar-actions .desktop-utility-trigger:hover,
+.topbar-actions .desktop-utility-trigger[aria-expanded='true'] {
+  color: #0756c9;
+  border-color: #a9c9f3;
+  background: #f5f9ff;
+}
+.topbar-actions .desktop-utility-trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
+.topbar-actions .desktop-utility-trigger svg { transition: transform .16s ease; }
+
+.desktop-utility-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 180;
+  width: min(360px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid #dce5f1;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 65px rgba(14,46,92,.2);
+  animation: desktopUtilityIn .16s ease-out;
+}
+.desktop-utility-popover > header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #e5ebf4;
+  background: linear-gradient(135deg, #f8fbff, #eef6ff);
+}
+.desktop-utility-popover > header div { display: grid; min-width: 0; gap: 3px; }
+.desktop-utility-popover > header strong { color: #102a56; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desktop-utility-popover > header small { color: #6f82a2; font-size: .7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.desktop-utility-actions { display: grid; gap: 5px; padding: 9px; }
+.topbar-actions .desktop-utility-actions > button {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  height: auto;
+  min-height: 58px;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 11px;
+  color: #294b78;
+  background: transparent;
+  text-align: left;
+}
+.topbar-actions .desktop-utility-actions > button:hover { background: #f2f7fd; }
+.desktop-utility-actions > button > span:last-child { display: grid; gap: 3px; min-width: 0; }
+.desktop-utility-actions strong { color: #102a56; font-size: .82rem; }
+.desktop-utility-actions small { color: #7486a2; font-size: .67rem; line-height: 1.35; }
+.desktop-utility-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  color: #0866e8;
+  background: #edf5ff;
+}
+.desktop-utility-icon.action-system { color: #188265; background: #eaf8f3; }
+.desktop-utility-icon.action-security { color: #7553be; background: #f1ecff; }
+.desktop-utility-icon.action-ecosystem { color: #0756c9; background: #eaf3ff; }
+.desktop-utility-popover footer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 16px;
+  border-top: 1px solid #e5ebf4;
+  color: #72839d;
+  background: #fbfdff;
+  font-size: .68rem;
+  font-weight: 650;
+}
+
+@keyframes desktopUtilityIn {
+  from { opacity: 0; transform: translateY(-5px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (min-width: 761px) {
+  .topbar { padding-inline: 28px; }
+  .topbar-actions {
+    position: relative;
+    gap: 8px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  /* Ocultos visualmente, pero conservados en DOM para abrirlos desde Más. */
+  .topbar-actions .diagnostics-trigger,
+  .topbar-actions .ecosystem-trigger,
+  .topbar-actions .security-center-trigger,
+  .topbar-actions > button[aria-label='Notificaciones'],
+  .topbar-actions > button[aria-label='Ayuda'],
+  .topbar-actions > .avatar {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  .topbar-actions .cloud-status-trigger { order: 10; }
+  .topbar-actions .scan-launcher { order: 20; }
+  .topbar-actions .admin-tools-launcher { order: 30; }
+
+  .topbar-actions .cloud-status-trigger,
+  .topbar-actions .scan-launcher,
+  .topbar-actions .admin-tools-launcher {
+    width: auto;
+    min-width: 0;
+    height: 42px;
+    padding: 0 13px;
+    border-radius: 10px;
+    font-size: .76rem;
+    font-weight: 750;
+    box-shadow: 0 4px 12px rgba(28,66,118,.04);
+  }
+  .topbar-actions .cloud-status-trigger {
+    min-width: 104px;
+    border: 1px solid #cfdbea;
+    color: #395778;
+    background: #fff;
+  }
+  .topbar-actions .scan-launcher {
+    border: 1px solid #9ec5f5;
+    color: #0756c9;
+    background: #eef6ff;
+  }
+  .topbar-actions .admin-tools-launcher {
+    border: 1px solid #cfdbea;
+    color: #294b78;
+    background: #fff;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  .breadcrumbs span:not(:last-of-type),
+  .breadcrumbs i { display: none; }
+  .topbar-actions .cloud-status-trigger span,
+  .topbar-actions .admin-tools-launcher span { display: none; }
+  .topbar-actions .cloud-status-trigger,
+  .topbar-actions .admin-tools-launcher { min-width: 42px; width: 42px; padding: 0; }
+  .topbar-actions .scan-launcher span { display: none; }
+  .topbar-actions .scan-launcher { width: 42px; padding: 0; }
+}
+
+@media (max-width: 760px) {
+  .desktop-utility-menu { display: none; }
+  .brand-mark { width: 44px; height: 44px; flex-basis: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-utility-popover { animation: none; }
+}

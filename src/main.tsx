@@ -8,6 +8,7 @@ import CloudStatus from './cloud/CloudStatus';
 import ReleaseDiagnostics from './diagnostics/ReleaseDiagnostics';
 import EcosystemSwitcher from './ecosystem/EcosystemSwitcher';
 import OperationalCenter from './ecosystem/OperationalCenter';
+import DesktopUtilityMenu from './header/DesktopUtilityMenu';
 import MainScreenEnhancer from './main-screen/MainScreenEnhancer';
 import MobileFastScan from './mobile/MobileFastScan';
 import MobileUtilityMenu from './mobile/MobileUtilityMenu';
@@ -57,6 +58,7 @@ import './monitoring/loan-monitor.css';
 import './diagnostics/release-diagnostics.css';
 import './diagnostics/release-diagnostics-mobile.css';
 import './security/device-security.css';
+import './header/header-branding.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('No se encontró el contenedor principal.');
@@ -84,6 +86,7 @@ createRoot(root).render(
     <ReleaseDiagnostics />
     <ReleaseVersionBadge />
     <SecurityCenter />
+    <DesktopUtilityMenu />
     <MyMaterial />
     <PwaInstallPrompt />
   </StrictMode>,

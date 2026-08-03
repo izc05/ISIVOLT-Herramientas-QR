@@ -12,6 +12,8 @@ import MobileUtilityMenu from './mobile/MobileUtilityMenu';
 import LoanMonitor from './monitoring/LoanMonitor';
 import PwaInstallPrompt from './pwa/PwaInstallPrompt';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
+import QRPrintFullOutput from './printing/QRPrintFullOutput';
+import QRPrintLauncher from './printing/QRPrintLauncher';
 import ScanFeedbackLayer from './scan/ScanFeedbackLayer';
 import ScanLauncher from './scan/ScanLauncher';
 import ScanSession, { SCAN_SESSION_EVENT } from './scan/ScanSession';
@@ -37,6 +39,9 @@ import './admin/catalog-admin.css';
 import './admin/entity-details.css';
 import './photos/photo-manager.css';
 import './nfc/nfc-programmer.css';
+import './printing/qr-print-designer.css';
+import './printing/qr-print-modal.css';
+import './printing/qr-print-full-output.css';
 import './cloud/cloud.css';
 import './technician/my-material.css';
 import './access/access-mode.css';
@@ -62,6 +67,8 @@ createRoot(root).render(
     <MobileFastScan />
     <MobileUtilityMenu />
     <AdminTools />
+    <QRPrintLauncher />
+    <QRPrintFullOutput />
     <CloudStatus />
     <ReleaseDiagnostics />
     <SecurityCenter />

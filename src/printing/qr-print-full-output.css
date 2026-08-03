@@ -1,0 +1,32 @@
+.qr-print-full-output {
+  display: none;
+}
+
+@media print {
+  body[data-qr-print-designer="active"] .qr-print-preview-panel .qr-print-sheet {
+    display: none !important;
+  }
+
+  body[data-qr-print-designer="active"] .qr-print-full-output,
+  body[data-qr-print-designer="active"] .qr-print-full-output * {
+    visibility: visible !important;
+  }
+
+  body[data-qr-print-designer="active"] .qr-print-full-output {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    display: grid !important;
+    align-content: start !important;
+    justify-content: start !important;
+    gap: 2mm !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  body[data-qr-print-template="thermal"] .qr-print-full-output {
+    grid-template-columns: 1fr !important;
+    page: thermal-label;
+  }
+}

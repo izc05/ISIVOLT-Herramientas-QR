@@ -1,0 +1,431 @@
+.qr-print-designer {
+  display: grid;
+  grid-template-columns: minmax(350px, .9fr) minmax(420px, 1.1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.qr-print-controls,
+.qr-print-preview-panel {
+  border: 1px solid #d7e2ef;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 15px 35px rgba(16, 51, 91, .08);
+}
+
+.qr-print-controls { padding: 20px; }
+.qr-print-controls > header,
+.qr-print-preview-panel > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.qr-print-controls > header small,
+.qr-print-preview-panel > header small {
+  color: #14a9c7;
+  font-size: .66rem;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+
+.qr-print-controls h3,
+.qr-print-preview-panel h3 {
+  margin: 4px 0 5px;
+  color: #102a56;
+}
+
+.qr-print-controls header p {
+  margin: 0;
+  color: #7085a2;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.qr-print-controls > header > svg { color: #0866e8; }
+
+.qr-print-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 18px 0 12px;
+  padding: 5px;
+  border-radius: 12px;
+  background: #edf3fa;
+}
+
+.qr-print-mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  border: 0;
+  border-radius: 9px;
+  color: #607896;
+  background: transparent;
+  font-weight: 800;
+}
+
+.qr-print-mode-switch button.active {
+  color: #0756c9;
+  background: #fff;
+  box-shadow: 0 5px 14px rgba(20, 54, 96, .1);
+}
+
+.qr-print-filters {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.5fr) repeat(3, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.qr-print-filters label {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid #cedbea;
+  border-radius: 10px;
+  color: #7187a5;
+  background: #fbfdff;
+}
+
+.qr-print-filters input,
+.qr-print-filters select {
+  min-width: 0;
+  width: 100%;
+  height: 38px;
+  border: 0;
+  outline: 0;
+  color: #17365f;
+  background: transparent;
+  font-size: .75rem;
+}
+
+.qr-print-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 8px;
+}
+
+.qr-print-selection-bar strong {
+  margin-right: auto;
+  color: #17365f;
+  font-size: .75rem;
+}
+
+.qr-print-selection-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid #cbd9e9;
+  border-radius: 8px;
+  color: #0756c9;
+  background: #f6faff;
+  font-size: .69rem;
+  font-weight: 750;
+}
+
+.qr-print-list {
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid #d8e3ef;
+  border-radius: 12px;
+  background: #f9fbfe;
+}
+
+.qr-print-list > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 0;
+  border-bottom: 1px solid #e6edf5;
+  color: #667d9a;
+  background: transparent;
+  text-align: left;
+}
+
+.qr-print-list > button:last-child { border-bottom: 0; }
+.qr-print-list > button.selected { color: #0866e8; background: #edf6ff; }
+.qr-print-list span { min-width: 0; }
+.qr-print-list strong,
+.qr-print-list small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qr-print-list strong { color: #17365f; font-size: .77rem; }
+.qr-print-list small { margin-top: 3px; color: #7b90aa; font-size: .67rem; }
+.qr-print-list em {
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #537190;
+  background: #eef3f8;
+  font-size: .58rem;
+  font-style: normal;
+  font-weight: 850;
+}
+.qr-print-empty { padding: 22px; color: #7b90aa; text-align: center; font-size: .75rem; }
+
+.qr-print-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr 90px;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.qr-print-options label {
+  display: grid;
+  gap: 5px;
+  color: #496785;
+  font-size: .67rem;
+  font-weight: 800;
+}
+
+.qr-print-options select,
+.qr-print-options input {
+  width: 100%;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #cad8e8;
+  border-radius: 9px;
+  color: #17365f;
+  background: #fbfdff;
+}
+
+.qr-print-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 14px 0;
+}
+
+.qr-print-toggles label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #536f8e;
+  font-size: .69rem;
+  font-weight: 700;
+}
+
+.qr-print-primary {
+  width: 100%;
+  min-height: 45px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, #075bd0, #0873ef);
+  font-weight: 850;
+  box-shadow: 0 11px 24px rgba(8, 102, 232, .2);
+}
+
+.qr-print-last {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  color: #7890aa;
+  font-size: .66rem;
+}
+
+.qr-print-preview-panel { overflow: hidden; }
+.qr-print-preview-panel > header {
+  align-items: center;
+  padding: 16px 18px;
+  border-bottom: 1px solid #dce5ef;
+}
+.qr-print-preview-panel > header span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #0756c9;
+  background: #edf5ff;
+  font-size: .63rem;
+  font-weight: 900;
+}
+
+.qr-print-sheet {
+  --label-size: 30mm;
+  min-height: 590px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--label-size), var(--label-size)));
+  align-content: start;
+  justify-content: center;
+  gap: 10px;
+  padding: 22px;
+  background: linear-gradient(#f4f7fa 1px, transparent 1px), linear-gradient(90deg, #f4f7fa 1px, transparent 1px), #fff;
+  background-size: 12px 12px;
+}
+
+.qr-print-sheet.size-20 { --label-size: 20mm; }
+.qr-print-sheet.size-25 { --label-size: 25mm; }
+.qr-print-sheet.size-30 { --label-size: 30mm; }
+.qr-print-sheet.size-40 { --label-size: 40mm; }
+.qr-print-sheet.size-technician-card {
+  grid-template-columns: repeat(auto-fill, minmax(86mm, 86mm));
+}
+
+.qr-print-label {
+  box-sizing: border-box;
+  width: var(--label-size);
+  height: var(--label-size);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+  padding: 2mm;
+  border: 1px dashed #9fb2c8;
+  color: #0f294f;
+  background: #fff;
+  text-align: center;
+}
+
+.qr-print-label svg {
+  width: min(68%, 24mm);
+  height: min(68%, 24mm);
+  flex: 0 1 auto;
+}
+
+.qr-print-label strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 7pt;
+}
+.qr-print-label p,
+.qr-print-label small { max-width: 100%; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qr-print-label p { font-size: 5.8pt; }
+.qr-print-label small { color: #5f7691; font-size: 5pt; }
+
+.qr-print-brand {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #0756c9;
+  font-size: 4.8pt;
+  font-weight: 900;
+}
+.qr-print-brand b { color: #10b6d4; }
+
+.qr-print-sheet.size-20 .qr-print-label { padding: 1.2mm; gap: 1px; }
+.qr-print-sheet.size-20 .qr-print-label svg { width: 70%; height: 70%; }
+.qr-print-sheet.size-20 .qr-print-label p,
+.qr-print-sheet.size-20 .qr-print-label small,
+.qr-print-sheet.size-20 .qr-print-brand { display: none; }
+.qr-print-sheet.size-20 .qr-print-label strong { font-size: 5.5pt; }
+
+.qr-print-sheet.size-40 .qr-print-label strong { font-size: 9pt; }
+.qr-print-sheet.size-40 .qr-print-label p { font-size: 7pt; }
+.qr-print-sheet.size-40 .qr-print-label small { font-size: 6pt; }
+
+.qr-print-sheet.size-technician-card .qr-print-label {
+  width: 86mm;
+  height: 54mm;
+  display: grid;
+  grid-template-columns: 18mm 25mm minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  gap: 2.5mm;
+  padding: 4mm;
+  border: 1px solid #9bb1c8;
+  border-radius: 3mm;
+  text-align: left;
+}
+.qr-print-sheet.size-technician-card .qr-print-brand { grid-column: 1 / -1; justify-self: start; font-size: 8pt; }
+.qr-print-sheet.size-technician-card .qr-print-photo {
+  width: 18mm;
+  height: 25mm;
+  object-fit: cover;
+  border: 1px solid #ccd9e8;
+  border-radius: 2mm;
+  background: #eef3f8;
+}
+.qr-print-sheet.size-technician-card .qr-print-photo.placeholder { display: grid; place-items: center; color: #7890aa; }
+.qr-print-sheet.size-technician-card .qr-print-label > svg { width: 25mm; height: 25mm; }
+.qr-print-person { min-width: 0; align-self: center; }
+.qr-print-sheet.size-technician-card .qr-print-person strong { display: block; font-size: 12pt; white-space: normal; }
+.qr-print-sheet.size-technician-card .qr-print-person p { margin-top: 2mm; font-size: 8pt; }
+.qr-print-sheet.size-technician-card .qr-print-person small { display: block; margin-top: 1mm; font-size: 7pt; }
+
+.qr-print-preview-empty {
+  grid-column: 1 / -1;
+  min-height: 430px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  color: #8294aa;
+  text-align: center;
+}
+.qr-print-preview-empty strong { margin-top: 10px; color: #2c4b70; }
+.qr-print-preview-empty p { max-width: 350px; margin: 6px 0 0; font-size: .75rem; line-height: 1.45; }
+
+@media (max-width: 1050px) {
+  .qr-print-designer { grid-template-columns: 1fr; }
+  .qr-print-sheet { min-height: 430px; }
+}
+
+@media (max-width: 680px) {
+  .qr-print-controls { padding: 15px; }
+  .qr-print-filters { grid-template-columns: 1fr 1fr; }
+  .qr-print-filters .search { grid-column: 1 / -1; }
+  .qr-print-selection-bar { flex-wrap: wrap; }
+  .qr-print-selection-bar strong { width: 100%; }
+  .qr-print-options { grid-template-columns: 1fr 1fr; }
+  .qr-print-options label:last-child { grid-column: 1 / -1; }
+  .qr-print-sheet { justify-content: start; overflow-x: auto; padding: 14px; }
+}
+
+@media print {
+  body[data-qr-print-designer="active"] * {
+    visibility: hidden !important;
+  }
+
+  body[data-qr-print-designer="active"] .qr-print-sheet,
+  body[data-qr-print-designer="active"] .qr-print-sheet * {
+    visibility: visible !important;
+  }
+
+  body[data-qr-print-designer="active"] .qr-print-sheet {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    display: grid !important;
+    align-content: start !important;
+    justify-content: start !important;
+    gap: 2mm !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  body[data-qr-print-designer="active"] .qr-print-label {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border-style: solid !important;
+  }
+
+  body[data-qr-print-template="thermal"] .qr-print-sheet {
+    page: thermal-label;
+    grid-template-columns: 1fr !important;
+  }
+
+  body[data-qr-print-template="thermal"] .qr-print-label {
+    margin: 0 auto !important;
+  }
+}
+
+@page thermal-label {
+  size: 60mm 45mm;
+  margin: 2mm;
+}

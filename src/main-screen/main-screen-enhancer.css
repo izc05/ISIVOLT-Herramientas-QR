@@ -1,0 +1,149 @@
+.main-edit-entity {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid rgba(16, 102, 207, 0.2);
+  border-radius: 11px;
+  background: #eef6ff;
+  color: #0b67ce;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.main-edit-entity:hover,
+.main-edit-entity:focus-visible {
+  border-color: rgba(16, 102, 207, 0.48);
+  background: #e1efff;
+  outline: none;
+}
+
+.main-edit-entity > span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.main-tool-name-cell {
+  position: relative;
+  padding-left: 54px !important;
+}
+
+.main-tool-photo {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  transform: translateY(-50%);
+  overflow: hidden;
+  border-radius: 10px;
+  background: #edf4fb;
+  border: 1px solid #d8e5f1;
+}
+
+.main-entity-photo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.technician-card {
+  position: relative;
+}
+
+.technician-card .initials.has-photo {
+  color: transparent;
+  overflow: hidden;
+}
+
+.technician-card .main-edit-entity {
+  position: absolute;
+  right: 20px;
+  bottom: 15px;
+}
+
+.main-technician-editable {
+  padding-bottom: 62px !important;
+}
+
+.main-create-photo-slot {
+  grid-column: 1 / -1;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #dce6f0;
+}
+
+.main-create-photo-slot > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.main-create-photo-slot > header > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #e9f4ff;
+  color: #0c70dc;
+}
+
+.main-create-photo-slot > header strong,
+.main-create-photo-slot > header p {
+  display: block;
+  margin: 0;
+}
+
+.main-create-photo-slot > header p {
+  margin-top: 2px;
+  color: #6d7f96;
+  font-size: 0.84rem;
+}
+
+.main-photo-message {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #eff8f2;
+  color: #207044;
+  font-size: 0.85rem;
+}
+
+.main-photo-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  color: #66788f;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 760px) {
+  .row-actions {
+    flex-wrap: wrap;
+  }
+
+  .row-actions .main-edit-entity {
+    flex-basis: 100%;
+    min-width: 110px;
+  }
+
+  .technician-card .main-edit-entity {
+    right: 14px;
+    bottom: 13px;
+  }
+
+  .main-technician-editable {
+    padding-bottom: 66px !important;
+  }
+
+  .main-create-photo-slot {
+    margin-top: 10px;
+  }
+}

@@ -20,6 +20,8 @@ const waitFor = <T extends Element>(selector: string, timeout = 2400): Promise<T
   }, 45);
 });
 
+const pause = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
 const buttonByText = (selector: string, text: string) => [...document.querySelectorAll<HTMLButtonElement>(selector)]
   .find((button) => button.textContent?.trim().toLocaleLowerCase('es-ES').includes(text.toLocaleLowerCase('es-ES')));
 
@@ -36,12 +38,13 @@ async function openEntity(mode: EntityMode, entityId: string) {
 
   const modeLabel = mode === 'tool' ? 'Herramientas' : 'Técnicos';
   buttonByText('.entity-mode-switch button', modeLabel)?.click();
+  await pause(90);
   const select = await waitFor<HTMLSelectElement>('.entity-selector-card select');
   if (!select) return;
 
   select.value = entityId;
   select.dispatchEvent(new Event('change', { bubbles: true }));
-  window.setTimeout(() => document.querySelector('.entity-details-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  window.setTimeout(() => document.querySelector('.entity-details-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 140);
 }
 
 function prepareCards() {

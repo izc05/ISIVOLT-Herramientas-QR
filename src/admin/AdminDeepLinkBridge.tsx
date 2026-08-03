@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { loadData, WORKSPACE_DATA_EVENT } from '../storage';
 
+export const ADMIN_OPEN_ENTITY_EVENT = 'isivoltpro:open-entity-admin';
+
 type EntityMode = 'tool' | 'technician';
+type OpenEntityDetail = { mode: EntityMode; entityId: string };
 
 const waitFor = <T extends Element>(selector: string, timeout = 2400): Promise<T | null> => new Promise((resolve) => {
   const immediate = document.querySelector<T>(selector);
@@ -113,12 +116,20 @@ export default function AdminDeepLinkBridge() {
       activate(card);
     };
 
+    const handleOpenRequest = (event: Event) => {
+      const detail = (event as CustomEvent<OpenEntityDetail>).detail;
+      if (!detail?.entityId || !detail.mode) return;
+      void openEntity(detail.mode, detail.entityId);
+    };
+
     document.addEventListener('click', handleClick);
     document.addEventListener('keydown', handleKey);
+    window.addEventListener(ADMIN_OPEN_ENTITY_EVENT, handleOpenRequest);
     return () => {
       observer.disconnect();
       document.removeEventListener('click', handleClick);
       document.removeEventListener('keydown', handleKey);
+      window.removeEventListener(ADMIN_OPEN_ENTITY_EVENT, handleOpenRequest);
     };
   }, []);
 

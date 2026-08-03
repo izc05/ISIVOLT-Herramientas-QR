@@ -8,6 +8,7 @@ import CloudStatus from './cloud/CloudStatus';
 import ReleaseDiagnostics from './diagnostics/ReleaseDiagnostics';
 import EcosystemSwitcher from './ecosystem/EcosystemSwitcher';
 import OperationalCenter from './ecosystem/OperationalCenter';
+import MainScreenEnhancer from './main-screen/MainScreenEnhancer';
 import MobileFastScan from './mobile/MobileFastScan';
 import MobileUtilityMenu from './mobile/MobileUtilityMenu';
 import LoanMonitor from './monitoring/LoanMonitor';
@@ -32,6 +33,7 @@ import './ecosystem/operational-center.css';
 import './scan/scan.css';
 import './scan/scan-feedback.css';
 import './scan/scan-recovery.css';
+import './main-screen/main-screen-enhancer.css';
 import './mobile/mobile-fast-scan.css';
 import './mobile/mobile-utility-menu.css';
 import './pwa/pwa.css';
@@ -65,6 +67,7 @@ createRoot(root).render(
     <DeviceSecurityGate />
     <EcosystemSwitcher />
     <App />
+    <MainScreenEnhancer />
     <OperationalCenter />
     <LoanMonitor />
     <StatusOverview />

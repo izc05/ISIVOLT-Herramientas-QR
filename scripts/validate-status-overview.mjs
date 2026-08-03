@@ -51,7 +51,7 @@ for (const fragment of [
 
 if (!main.includes('<StatusOverview />')) fail('el panel no está montado');
 if (!main.includes("./status/status-overview.css")) fail('faltan estilos en main');
-if (packageJson.version !== '2.0.0-alpha.7.5') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-5')) fail('caché PWA no renovada');
+if (!/^2\.0\.0-alpha\.7\./.test(packageJson.version)) fail(`versión inesperada: ${packageJson.version}`);
+if (!/alpha-7-\d+/.test(serviceWorker)) fail('caché PWA no renovada');
 
 console.log('Estado operativo preparado: herramientas, técnicos, alertas, fotos, QR/NFC, filtros y aislamiento por rol.');

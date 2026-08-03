@@ -1,0 +1,48 @@
+body:not([data-access-role="technician"]) .status-tool-card[data-editable-card="true"],
+body:not([data-access-role="technician"]) .status-technician-card[data-editable-card="true"] {
+  position: relative;
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+body:not([data-access-role="technician"]) .status-tool-card[data-editable-card="true"]::after,
+body:not([data-access-role="technician"]) .status-technician-card[data-editable-card="true"]::after {
+  content: 'Editar ficha';
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #0756c9;
+  background: rgba(237, 246, 255, .94);
+  border: 1px solid rgba(7, 86, 201, .16);
+  font-size: .58rem;
+  font-weight: 850;
+  letter-spacing: .01em;
+  opacity: .78;
+  pointer-events: none;
+}
+
+body:not([data-access-role="technician"]) .status-tool-card[data-editable-card="true"]:hover,
+body:not([data-access-role="technician"]) .status-technician-card[data-editable-card="true"]:hover,
+body:not([data-access-role="technician"]) .status-tool-card[data-editable-card="true"]:focus-visible,
+body:not([data-access-role="technician"]) .status-technician-card[data-editable-card="true"]:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(7, 86, 201, .38);
+  box-shadow: 0 16px 30px rgba(22, 63, 112, .14);
+  outline: none;
+}
+
+body:not([data-access-role="technician"]) .status-tool-card[data-editable-card="true"]:focus-visible,
+body:not([data-access-role="technician"]) .status-technician-card[data-editable-card="true"]:focus-visible {
+  box-shadow: 0 0 0 3px rgba(8, 102, 232, .18), 0 16px 30px rgba(22, 63, 112, .14);
+}
+
+@media (max-width: 680px) {
+  body:not([data-access-role="technician"]) .status-tool-card[data-editable-card="true"]::after,
+  body:not([data-access-role="technician"]) .status-technician-card[data-editable-card="true"]::after {
+    right: 8px;
+    bottom: 7px;
+    font-size: .54rem;
+  }
+}

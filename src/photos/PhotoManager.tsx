@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Camera, ImagePlus, Star, Trash2 } from 'lucide-react';
-import type { PhotoReference } from '../types';
+import { activeStorageKey, loadData } from '../storage';
+import type { AppData, PhotoReference } from '../types';
 import { getPhotoUrl, removeLocalPhoto, saveLocalPhoto } from './photoStore';
 
 type PhotoManagerProps = {
@@ -15,6 +16,27 @@ type PhotoPreview = {
   reference: PhotoReference;
   url: string | null;
 };
+
+function persistEntityPhotos(entityId: string, photos: PhotoReference[]) {
+  const data = loadData();
+  const updatedAt = new Date().toISOString();
+  let changed = false;
+
+  const tools = data.tools.map((tool) => {
+    if (tool.id !== entityId) return tool;
+    changed = true;
+    return { ...tool, photos, updatedAt };
+  });
+  const technicians = data.technicians.map((technician) => {
+    if (technician.id !== entityId) return technician;
+    changed = true;
+    return { ...technician, photos, updatedAt };
+  });
+
+  if (!changed) return;
+  const next: AppData = { ...data, tools, technicians };
+  window.localStorage.setItem(activeStorageKey(), JSON.stringify(next));
+}
 
 export default function PhotoManager({ entityId, photos, onChange, onMessage, maxPhotos = 5 }: PhotoManagerProps) {
   const [previews, setPreviews] = useState<PhotoPreview[]>([]);
@@ -39,6 +61,12 @@ export default function PhotoManager({ entityId, photos, onChange, onMessage, ma
     };
   }, [photos]);
 
+  const applyPhotos = (next: PhotoReference[], message: string) => {
+    onChange(next);
+    persistEntityPhotos(entityId, next);
+    onMessage(message);
+  };
+
   const addPhoto = async (file?: File) => {
     if (!file || busy) return;
     if (photos.length >= maxPhotos) {
@@ -51,8 +79,7 @@ export default function PhotoManager({ entityId, photos, onChange, onMessage, ma
       const next = photos.length === 0
         ? [{ ...reference, primary: true }]
         : [...photos, reference];
-      onChange(next);
-      onMessage('Fotografía guardada y comprimida en este dispositivo.');
+      applyPhotos(next, 'Fotografía guardada y vinculada automáticamente a la ficha.');
     } catch (error) {
       onMessage(error instanceof Error ? error.message : 'No se pudo guardar la fotografía.');
     } finally {
@@ -63,8 +90,8 @@ export default function PhotoManager({ entityId, photos, onChange, onMessage, ma
   };
 
   const setPrimary = (id: string) => {
-    onChange(photos.map((photo) => ({ ...photo, primary: photo.id === id })));
-    onMessage('Fotografía principal actualizada.');
+    const next = photos.map((photo) => ({ ...photo, primary: photo.id === id }));
+    applyPhotos(next, 'Fotografía principal actualizada y guardada.');
   };
 
   const remove = async (reference: PhotoReference) => {
@@ -73,8 +100,7 @@ export default function PhotoManager({ entityId, photos, onChange, onMessage, ma
       await removeLocalPhoto(reference);
       const remaining = photos.filter((photo) => photo.id !== reference.id);
       if (reference.primary && remaining.length > 0) remaining[0] = { ...remaining[0], primary: true };
-      onChange(remaining);
-      onMessage('Fotografía eliminada.');
+      applyPhotos(remaining, 'Fotografía eliminada de la ficha.');
     } catch (error) {
       onMessage(error instanceof Error ? error.message : 'No se pudo eliminar la fotografía.');
     } finally {
@@ -85,7 +111,7 @@ export default function PhotoManager({ entityId, photos, onChange, onMessage, ma
   return (
     <section className="photo-manager">
       <header>
-        <div><strong>Fotografías</strong><p>{photos.length} de {maxPhotos} · La estrella indica la fotografía principal.</p></div>
+        <div><strong>Fotografías</strong><p>{photos.length} de {maxPhotos} · Se guardan automáticamente. La estrella indica la principal.</p></div>
         <div className="photo-actions">
           <button type="button" disabled={busy || photos.length >= maxPhotos} onClick={() => cameraRef.current?.click()}><Camera size={17} /> Cámara</button>
           <button type="button" disabled={busy || photos.length >= maxPhotos} onClick={() => galleryRef.current?.click()}><ImagePlus size={17} /> Galería</button>
@@ -107,7 +133,7 @@ export default function PhotoManager({ entityId, photos, onChange, onMessage, ma
           ))}
         </div>
       ) : (
-        <div className="photo-empty"><Camera size={30} /><strong>Sin fotografías</strong><p>Haz una foto o selecciónala desde la galería.</p></div>
+        <div className="photo-empty"><Camera size={30} /><strong>Sin fotografías</strong><p>Haz una foto o selecciónala desde la galería; quedará vinculada inmediatamente.</p></div>
       )}
     </section>
   );

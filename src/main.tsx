@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import AccessMode from './access/AccessMode';
 import App from './App';
+import AdminDeepLinkBridge from './admin/AdminDeepLinkBridge';
 import AdminTools from './admin/AdminTools';
 import CloudStatus from './cloud/CloudStatus';
 import ReleaseDiagnostics from './diagnostics/ReleaseDiagnostics';
@@ -14,6 +15,7 @@ import PwaInstallPrompt from './pwa/PwaInstallPrompt';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
 import QRPrintFullOutput from './printing/QRPrintFullOutput';
 import QRPrintLauncher from './printing/QRPrintLauncher';
+import ReleaseVersionBadge from './release/ReleaseVersionBadge';
 import ScanFeedbackLayer from './scan/ScanFeedbackLayer';
 import ScanLauncher from './scan/ScanLauncher';
 import ScanSession, { SCAN_SESSION_EVENT } from './scan/ScanSession';
@@ -34,6 +36,7 @@ import './mobile/mobile-fast-scan.css';
 import './mobile/mobile-utility-menu.css';
 import './pwa/pwa.css';
 import './admin/admin-tools.css';
+import './admin/admin-deep-link.css';
 import './admin/inventory-admin.css';
 import './admin/account-admin.css';
 import './admin/catalog-admin.css';
@@ -43,6 +46,7 @@ import './nfc/nfc-programmer.css';
 import './printing/qr-print-designer.css';
 import './printing/qr-print-modal.css';
 import './printing/qr-print-full-output.css';
+import './release/release-version.css';
 import './status/status-overview.css';
 import './cloud/cloud.css';
 import './technician/my-material.css';
@@ -70,10 +74,12 @@ createRoot(root).render(
     <MobileFastScan />
     <MobileUtilityMenu />
     <AdminTools />
+    <AdminDeepLinkBridge />
     <QRPrintLauncher />
     <QRPrintFullOutput />
     <CloudStatus />
     <ReleaseDiagnostics />
+    <ReleaseVersionBadge />
     <SecurityCenter />
     <MyMaterial />
     <PwaInstallPrompt />

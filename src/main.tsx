@@ -19,6 +19,7 @@ import ScanLauncher from './scan/ScanLauncher';
 import ScanSession, { SCAN_SESSION_EVENT } from './scan/ScanSession';
 import DeviceSecurityGate from './security/DeviceSecurityGate';
 import SecurityCenter from './security/SecurityCenter';
+import StatusOverview from './status/StatusOverview';
 import MyMaterial from './technician/MyMaterial';
 import './styles.css';
 import './responsive.css';
@@ -42,6 +43,7 @@ import './nfc/nfc-programmer.css';
 import './printing/qr-print-designer.css';
 import './printing/qr-print-modal.css';
 import './printing/qr-print-full-output.css';
+import './status/status-overview.css';
 import './cloud/cloud.css';
 import './technician/my-material.css';
 import './access/access-mode.css';
@@ -61,6 +63,7 @@ createRoot(root).render(
     <App />
     <OperationalCenter />
     <LoanMonitor />
+    <StatusOverview />
     <ScanLauncher />
     <ScanSession />
     <ScanFeedbackLayer />

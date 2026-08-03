@@ -1,25 +1,49 @@
-/* Branding IsiVoltPro: monograma I azul sobre pieza blanca. */
-.brand-mark {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 46px;
-  border: 1px solid rgba(255,255,255,.7);
-  border-radius: 13px;
-  color: transparent !important;
+/* Branding IsiVoltPro: logotipo horizontal azul y cabecera sin desbordamientos. */
+.brand {
+  width: calc(100% - 8px);
+  min-height: 58px;
+  margin: 0 4px 24px;
+  padding: 9px 11px;
+  gap: 9px;
+  border: 1px solid rgba(255,255,255,.82);
+  border-radius: 15px;
   background: #fff;
-  box-shadow: inset 0 -4px 0 #28d4ea, 0 9px 22px rgba(0,31,91,.22);
+  box-shadow: 0 12px 28px rgba(0,31,91,.2);
+  overflow: hidden;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border: 0;
+  border-radius: 11px;
+  color: transparent !important;
+  background: linear-gradient(145deg, #0878ee, #0756c9);
+  box-shadow: 0 7px 16px rgba(8,102,232,.25);
   font-size: 0 !important;
   line-height: 1;
   transform: none !important;
 }
 .brand-mark::after {
   content: 'I';
-  color: #0866e8;
-  font-size: 30px;
+  color: #fff;
+  font-size: 25px;
   font-weight: 900;
   font-style: normal;
+  line-height: 1;
   letter-spacing: -.08em;
 }
+.brand strong {
+  min-width: 0;
+  color: #102a56;
+  font-size: 1.22rem;
+  font-weight: 800;
+  letter-spacing: -.045em;
+  white-space: nowrap;
+}
+.brand strong span { color: #0866e8; }
 
 .mobile-utility-brand,
 .isivolt-monogram {
@@ -28,11 +52,11 @@
   width: 44px;
   height: 44px;
   flex: 0 0 44px;
-  border: 1px solid #d9e6f5;
+  border: 0;
   border-radius: 13px;
-  color: #0866e8;
-  background: #fff;
-  box-shadow: inset 0 -4px 0 #28d4ea, 0 8px 20px rgba(8,102,232,.12);
+  color: #fff;
+  background: linear-gradient(145deg, #0878ee, #0756c9);
+  box-shadow: 0 8px 20px rgba(8,102,232,.22);
   font-size: 1.45rem;
   font-weight: 900;
 }
@@ -138,6 +162,11 @@
   font-size: .68rem;
   font-weight: 650;
 }
+.desktop-utility-popover footer .desktop-utility-version {
+  margin-left: auto;
+  color: #0866e8;
+  font-variant-numeric: tabular-nums;
+}
 
 @keyframes desktopUtilityIn {
   from { opacity: 0; transform: translateY(-5px) scale(.985); }
@@ -145,31 +174,31 @@
 }
 
 @media (min-width: 761px) {
-  .topbar { padding-inline: 28px; }
+  .topbar {
+    gap: 18px;
+    padding-inline: 28px;
+    overflow: visible;
+  }
+  .breadcrumbs {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    white-space: nowrap;
+  }
   .topbar-actions {
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     gap: 8px;
+    min-width: 0;
     flex: 0 0 auto;
     white-space: nowrap;
   }
 
-  /* Ocultos visualmente, pero conservados en DOM para abrirlos desde Más. */
-  .topbar-actions .diagnostics-trigger,
-  .topbar-actions .ecosystem-trigger,
-  .topbar-actions .security-center-trigger,
-  .topbar-actions > button[aria-label='Notificaciones'],
-  .topbar-actions > button[aria-label='Ayuda'],
-  .topbar-actions > .avatar {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-    clip: rect(0 0 0 0) !important;
-    clip-path: inset(50%) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
+  /* Regla definitiva: solo cuatro controles pueden ocupar espacio en escritorio. */
+  .topbar-actions > :not(.cloud-status-trigger):not(.scan-launcher):not(.admin-tools-launcher):not(.desktop-utility-menu) {
+    display: none !important;
   }
 
   .topbar-actions .cloud-status-trigger { order: 10; }
@@ -206,20 +235,27 @@
   }
 }
 
-@media (min-width: 761px) and (max-width: 1180px) {
+@media (min-width: 761px) and (max-width: 1360px) {
   .breadcrumbs span:not(:last-of-type),
   .breadcrumbs i { display: none; }
   .topbar-actions .cloud-status-trigger span,
+  .topbar-actions .scan-launcher span,
   .topbar-actions .admin-tools-launcher span { display: none; }
   .topbar-actions .cloud-status-trigger,
-  .topbar-actions .admin-tools-launcher { min-width: 42px; width: 42px; padding: 0; }
-  .topbar-actions .scan-launcher span { display: none; }
-  .topbar-actions .scan-launcher { width: 42px; padding: 0; }
+  .topbar-actions .scan-launcher,
+  .topbar-actions .admin-tools-launcher {
+    min-width: 42px;
+    width: 42px;
+    padding: 0;
+  }
 }
 
 @media (max-width: 760px) {
   .desktop-utility-menu { display: none; }
-  .brand-mark { width: 44px; height: 44px; flex-basis: 44px; }
+  .brand {
+    width: calc(100% - 6px);
+    margin-inline: 3px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

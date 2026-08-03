@@ -28,23 +28,28 @@ for (const fragment of [
   '<span>Más</span>',
   'role="menu"',
   'getCloudProfile()',
+  "import packageJson from '../../package.json'",
+  'desktop-utility-version',
+  'v{packageJson.version}',
 ]) {
   if (!component.includes(fragment)) fail(`DesktopUtilityMenu no contiene ${fragment}`);
 }
 
 for (const fragment of [
+  '.brand {',
+  'background: #fff',
   '.brand-mark::after',
   "content: 'I'",
+  'background: linear-gradient(145deg, #0878ee, #0756c9)',
+  '.brand strong span { color: #0866e8; }',
   '.topbar-actions .cloud-status-trigger { order: 10; }',
   '.topbar-actions .scan-launcher { order: 20; }',
   '.topbar-actions .admin-tools-launcher { order: 30; }',
   '.desktop-utility-menu',
   'order: 40',
-  '.topbar-actions .diagnostics-trigger',
-  '.topbar-actions .ecosystem-trigger',
-  '.topbar-actions .security-center-trigger',
-  "button[aria-label='Ayuda']",
-  "button[aria-label='Notificaciones']",
+  '.topbar-actions > :not(.cloud-status-trigger):not(.scan-launcher):not(.admin-tools-launcher):not(.desktop-utility-menu)',
+  'display: none !important',
+  'max-width: 1360px',
   '@media (max-width: 760px)',
 ]) {
   if (!css.includes(fragment)) fail(`header-branding.css no contiene ${fragment}`);
@@ -72,7 +77,7 @@ for (const key of ['icon192', 'icon512']) {
   if (signature !== '89504e470d0a1a0a') fail(`${key} no contiene un PNG`);
 }
 
-if (packageJson.version !== '2.0.0-alpha.7.8') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-8')) fail('caché PWA no renovada');
+if (packageJson.version !== '2.0.0-alpha.7.9') fail(`versión inesperada: ${packageJson.version}`);
+if (!serviceWorker.includes('alpha-7-9')) fail('caché PWA no renovada');
 
-console.log('Cabecera limpia: Estado, Operación, Gestionar y Más; monograma I aplicado a interfaz y PWA.');
+console.log('Cabecera estable: solo Estado, Operación, Gestionar y Más; logo horizontal azul y versión dentro del menú.');

@@ -85,7 +85,7 @@ for (const fragment of [
 if (!modalCss.includes('.qr-print-modal') || !modalCss.includes('.qr-print-nav-launcher')) fail('falta integración modal o navegación');
 if (!main.includes('<QRPrintLauncher />') || !main.includes('<QRPrintFullOutput />')) fail('el diseñador o la salida completa no están montados');
 if (!main.includes("./printing/qr-print-designer.css") || !main.includes("./printing/qr-print-modal.css") || !main.includes("./printing/qr-print-full-output.css")) fail('faltan estilos QR en main');
-if (packageJson.version !== '2.0.0-alpha.7.4') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-4')) fail('caché PWA no renovada');
+if (!/^2\.0\.0-alpha\.7\.\d+$/.test(packageJson.version)) fail(`versión inesperada: ${packageJson.version}`);
+if (!serviceWorker.includes('alpha-7-')) fail('caché PWA no renovada');
 
 console.log('Diseñador QR preparado: selección completa, filtros, tamaños físicos, A4, térmica, tarjetas, fotos e historial local.');

@@ -30,6 +30,18 @@ type OutputState = {
 };
 
 const PREFERENCES_KEY = 'isivoltpro:qr-print-preferences:v1';
+const DEFAULT_PREFERENCES: PrintPreferences = {
+  mode: 'tools',
+  size: '30',
+  template: 'a4',
+  copies: 1,
+  showLogo: true,
+  showName: true,
+  showCategory: false,
+  showLocation: false,
+  showSerial: false,
+  showPhoto: true,
+};
 
 function toolPayload(tool: Tool) {
   return tool.qrPayload ?? `ISIVOLTPRO:TOOL:${tool.code}`;
@@ -70,12 +82,12 @@ function PrimaryPhoto({ photos, enabled }: { photos?: PhotoReference[]; enabled:
     : <span className="qr-print-photo placeholder"><UserRound size={25} /></span>;
 }
 
-function parsePreferences(): PrintPreferences | null {
+function parsePreferences(): PrintPreferences {
   try {
-    const value = JSON.parse(localStorage.getItem(PREFERENCES_KEY) ?? 'null') as PrintPreferences | null;
-    return value?.mode && value?.size ? value : null;
+    const value = JSON.parse(localStorage.getItem(PREFERENCES_KEY) ?? 'null') as Partial<PrintPreferences> | null;
+    return { ...DEFAULT_PREFERENCES, ...(value ?? {}) };
   } catch {
-    return null;
+    return DEFAULT_PREFERENCES;
   }
 }
 
@@ -91,11 +103,6 @@ export default function QRPrintFullOutput() {
       }
 
       const preferences = parsePreferences();
-      if (!preferences) {
-        originalPrint();
-        return;
-      }
-
       const codes = [...document.querySelectorAll('.qr-print-list > button.selected strong')]
         .map((node) => node.textContent?.split(' · ')[0]?.trim())
         .filter((code): code is string => Boolean(code));

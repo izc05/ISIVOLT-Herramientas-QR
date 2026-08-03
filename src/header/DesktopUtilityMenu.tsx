@@ -9,6 +9,7 @@ import {
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
+import packageJson from '../../package.json';
 import {
   CLOUD_PROFILE_EVENT,
   getCloudProfile,
@@ -149,7 +150,11 @@ export default function DesktopUtilityMenu() {
             ))}
           </div>
 
-          <footer><UserRound size={15} /> {roleLabel(profile?.role ?? role)}</footer>
+          <footer>
+            <UserRound size={15} />
+            <span>{roleLabel(profile?.role ?? role)}</span>
+            <span className="desktop-utility-version">v{packageJson.version}</span>
+          </footer>
         </section>
       )}
     </div>,

@@ -54,7 +54,8 @@ for (const fragment of [
 
 if (!main.includes('<MainScreenEnhancer />')) fail('MainScreenEnhancer no está montado');
 if (!main.includes("./main-screen/main-screen-enhancer.css")) fail('faltan estilos en main');
-if (packageJson.version !== '2.0.0-alpha.7.7') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-7')) fail('caché PWA no renovada');
+if (!/^2\.0\.0-alpha\.7\.\d+$/.test(packageJson.version)) fail(`versión inesperada: ${packageJson.version}`);
+const cacheSuffix = packageJson.version.replace('2.0.0-alpha.', 'alpha-').replaceAll('.', '-');
+if (!serviceWorker.includes(cacheSuffix)) fail(`caché PWA no corresponde a ${packageJson.version}`);
 
 console.log('Pantallas principales preparadas: edición directa, fotografía inicial, miniaturas y vinculación automática.');

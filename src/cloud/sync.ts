@@ -17,7 +17,14 @@ import type {
   ToolStatus,
 } from '../types';
 import type { CloudProfile } from './config';
-import { createRecord, listRecords, type PocketBaseRecord, updateRecord } from './pocketbaseClient';
+import { submitAtomicOperation } from './atomicOperations';
+import {
+  createRecord,
+  listRecords,
+  PocketBaseRequestError,
+  type PocketBaseRecord,
+  updateRecord,
+} from './pocketbaseClient';
 
 const COLLECTIONS = {
   technicians: 'isivolt_technicians',
@@ -26,10 +33,17 @@ const COLLECTIONS = {
   movements: 'isivolt_movements',
 } as const;
 
+export type SyncConflict = {
+  batchId: string;
+  toolIds: string[];
+  message: string;
+};
+
 export type SyncResult = {
   data: AppData;
   uploaded: number;
   downloaded: number;
+  conflicts: SyncConflict[];
 };
 
 type RemoteWorkspace = {
@@ -300,127 +314,237 @@ async function createMissing(
   return changed;
 }
 
-async function pushWorkspace(data: AppData, profile: CloudProfile, remote: RemoteWorkspace): Promise<number> {
+async function toolPayload(
+  tool: Tool,
+  status: string,
+  technicianExternalId: string,
+): Promise<Record<string, unknown>> {
+  return {
+    code: tool.code,
+    name: tool.name,
+    category: tool.category,
+    category_external_id: tool.categoryId ?? '',
+    location: tool.location,
+    location_external_id: tool.locationId ?? '',
+    tool_kind: tool.kind ?? 'returnable-tool',
+    service_state: tool.serviceState ?? (tool.status === 'review' ? 'review' : tool.status === 'retired' ? 'retired' : 'ready'),
+    description: tool.description ?? '',
+    notes: tool.notes ?? '',
+    photo_refs: tool.photos ?? [],
+    brand: tool.brand ?? '',
+    model: tool.model ?? '',
+    serial_number: tool.serialNumber ?? '',
+    purchase_date: tool.purchaseDate ?? '',
+    purchase_price: tool.purchasePrice ?? null,
+    review_due_date: tool.reviewDueDate ?? '',
+    calibration_due_date: tool.calibrationDueDate ?? '',
+    review_interval_days: tool.reviewIntervalDays ?? null,
+    calibration_interval_days: tool.calibrationIntervalDays ?? null,
+    quantity: tool.quantity ?? null,
+    min_stock: tool.minStock ?? null,
+    unit: tool.unit ?? '',
+    qr_payload: tool.qrPayload,
+    nfc_tag: tool.nfcTag ?? '',
+    status,
+    technician_external_id: technicianExternalId,
+    source_created: tool.createdAt,
+    source_updated: tool.updatedAt,
+  };
+}
+
+async function upsertToolMetadata(
+  workspace: string,
+  tools: Tool[],
+  remoteRecords: PocketBaseRecord[],
+): Promise<number> {
+  const remote = indexByExternalId(remoteRecords);
+  let changed = 0;
+  for (const tool of tools) {
+    const current = remote.get(tool.id);
+    if (!current) {
+      await createRecord(COLLECTIONS.tools, {
+        workspace,
+        external_id: tool.id,
+        ...(await toolPayload(tool, 'available', '')),
+      });
+      changed += 1;
+      continue;
+    }
+    const remoteUpdated = stringValue(current.source_updated);
+    if (tool.updatedAt <= remoteUpdated) continue;
+    await updateRecord(
+      COLLECTIONS.tools,
+      current.id,
+      await toolPayload(
+        tool,
+        stringValue(current.status) || 'available',
+        stringValue(current.technician_external_id),
+      ),
+    );
+    changed += 1;
+  }
+  return changed;
+}
+
+type PushResult = {
+  uploaded: number;
+  conflicts: SyncConflict[];
+  rejectedBatchIds: Set<string>;
+  conflictToolIds: Set<string>;
+};
+
+const movementsForBatch = (data: AppData, batchId: string): Movement[] => (
+  data.movements.filter((movement) => movement.batchId === batchId)
+);
+
+const legacyBatches = (data: AppData, remoteMovementIds: Set<string>): Array<{ batch: BatchTransaction; movements: Movement[] }> => (
+  data.movements
+    .filter((movement) => (
+      (movement.type === 'loan' || movement.type === 'return')
+      && !movement.batchId
+      && movement.toolId
+      && movement.technicianId
+      && !remoteMovementIds.has(movement.id)
+    ))
+    .map((movement) => ({
+      batch: {
+        id: `legacy-${movement.id}`.slice(0, 120),
+        operation: movement.type === 'return' ? 'return' : 'loan',
+        technicianId: movement.technicianId ?? '',
+        toolIds: movement.toolId ? [movement.toolId] : [],
+        operatorMode: movement.identificationMethod === 'authenticated' ? 'self-service' : 'administrator',
+        identificationMethod: movement.identificationMethod ?? 'manual',
+        scanMethod: movement.scanMethod ?? 'manual',
+        startedAt: movement.occurredAt,
+        completedAt: movement.occurredAt,
+      },
+      movements: [{ ...movement, batchId: `legacy-${movement.id}`.slice(0, 120) }],
+    }))
+);
+
+async function pushWorkspace(data: AppData, profile: CloudProfile, remote: RemoteWorkspace): Promise<PushResult> {
   const workspace = profile.workspace;
   let uploaded = 0;
+  const conflicts: SyncConflict[] = [];
+  const rejectedBatchIds = new Set<string>();
+  const conflictToolIds = new Set<string>();
+  const manager = profile.role === 'admin' || profile.role === 'coordinator';
 
-  uploaded += await upsertMutable(
-    COLLECTIONS.technicians,
-    workspace,
-    data.technicians.map((technician) => ({
-      id: technician.id,
-      updatedAt: technician.updatedAt,
-      payload: {
-        code: technician.code,
-        name: technician.name,
-        category: technician.category,
-        category_external_id: technician.categoryId ?? '',
-        technician_status: technician.status ?? (technician.active ? 'active' : 'inactive'),
-        company: technician.company ?? '',
-        department: technician.department ?? '',
-        notes: technician.notes ?? '',
-        photo_refs: technician.photos ?? [],
-        phone: technician.phone ?? '',
-        email: technician.email ?? '',
-        qr_payload: technician.qrPayload ?? `ISIVOLTPRO:TECH:${technician.code}`,
-        nfc_tag: technician.nfcTag ?? '',
-        active: technician.active,
-        source_created: technician.createdAt,
-        source_updated: technician.updatedAt,
-      },
-    })),
-    remote.records.technicians,
-  );
+  if (manager) {
+    uploaded += await upsertMutable(
+      COLLECTIONS.technicians,
+      workspace,
+      data.technicians.map((technician) => ({
+        id: technician.id,
+        updatedAt: technician.updatedAt,
+        payload: {
+          code: technician.code,
+          name: technician.name,
+          category: technician.category,
+          category_external_id: technician.categoryId ?? '',
+          technician_status: technician.status ?? (technician.active ? 'active' : 'inactive'),
+          company: technician.company ?? '',
+          department: technician.department ?? '',
+          notes: technician.notes ?? '',
+          photo_refs: technician.photos ?? [],
+          phone: technician.phone ?? '',
+          email: technician.email ?? '',
+          qr_payload: technician.qrPayload ?? `ISIVOLTPRO:TECH:${technician.code}`,
+          nfc_tag: technician.nfcTag ?? '',
+          active: technician.active,
+          source_created: technician.createdAt,
+          source_updated: technician.updatedAt,
+        },
+      })),
+      remote.records.technicians,
+    );
+    uploaded += await upsertToolMetadata(workspace, data.tools, remote.records.tools);
+  }
 
-  uploaded += await upsertMutable(
-    COLLECTIONS.tools,
-    workspace,
-    data.tools.map((tool) => ({
-      id: tool.id,
-      updatedAt: tool.updatedAt,
-      payload: {
-        code: tool.code,
-        name: tool.name,
-        category: tool.category,
-        category_external_id: tool.categoryId ?? '',
-        location: tool.location,
-        location_external_id: tool.locationId ?? '',
-        tool_kind: tool.kind ?? 'returnable-tool',
-        service_state: tool.serviceState ?? (tool.status === 'review' ? 'review' : tool.status === 'retired' ? 'retired' : 'ready'),
-        description: tool.description ?? '',
-        notes: tool.notes ?? '',
-        photo_refs: tool.photos ?? [],
-        brand: tool.brand ?? '',
-        model: tool.model ?? '',
-        serial_number: tool.serialNumber ?? '',
-        purchase_date: tool.purchaseDate ?? '',
-        purchase_price: tool.purchasePrice ?? null,
-        review_due_date: tool.reviewDueDate ?? '',
-        calibration_due_date: tool.calibrationDueDate ?? '',
-        review_interval_days: tool.reviewIntervalDays ?? null,
-        calibration_interval_days: tool.calibrationIntervalDays ?? null,
-        quantity: tool.quantity ?? null,
-        min_stock: tool.minStock ?? null,
-        unit: tool.unit ?? '',
-        qr_payload: tool.qrPayload,
-        nfc_tag: tool.nfcTag ?? '',
-        status: tool.status,
-        technician_external_id: tool.technicianId ?? '',
-        source_created: tool.createdAt,
-        source_updated: tool.updatedAt,
-      },
-    })),
-    remote.records.tools,
-  );
+  const remoteBatchIds = new Set(remote.records.batches.map((record) => stringValue(record.external_id)));
+  const remoteMovementIds = new Set(remote.records.movements.map((record) => stringValue(record.external_id)));
+  const operations = [
+    ...data.batches.map((batch) => ({ batch, movements: movementsForBatch(data, batch.id) })),
+    ...legacyBatches(data, remoteMovementIds),
+  ].sort((a, b) => a.batch.completedAt.localeCompare(b.batch.completedAt));
 
-  uploaded += await createMissing(
-    COLLECTIONS.batches,
-    workspace,
-    data.batches.map((batch) => ({
-      id: batch.id,
-      payload: {
-        operation: batch.operation,
-        technician_external_id: batch.technicianId,
-        tool_ids: batch.toolIds,
-        operator_mode: batch.operatorMode,
-        identification_method: batch.identificationMethod,
-        scan_method: batch.scanMethod,
-        started_at: batch.startedAt,
-        completed_at: batch.completedAt,
-      },
-    })),
-    remote.records.batches,
-  );
+  for (const operation of operations) {
+    if (remoteBatchIds.has(operation.batch.id)) continue;
+    const result = await submitAtomicOperation(operation, { requireCloud: true });
+    if (result.status === 'confirmed') {
+      remoteBatchIds.add(operation.batch.id);
+      operation.movements.forEach((movement) => remoteMovementIds.add(movement.id));
+      uploaded += 1 + operation.movements.length + operation.batch.toolIds.length;
+      continue;
+    }
+    if (result.status === 'pending' || result.status === 'local') {
+      throw new PocketBaseRequestError(
+        result.status === 'pending' ? result.message : 'La operación sigue pendiente de conexión.',
+        0,
+      );
+    }
+    rejectedBatchIds.add(operation.batch.id);
+    operation.batch.toolIds.forEach((toolId) => conflictToolIds.add(toolId));
+    conflicts.push({
+      batchId: operation.batch.id,
+      toolIds: operation.batch.toolIds,
+      message: result.message,
+    });
+  }
 
-  uploaded += await createMissing(
-    COLLECTIONS.movements,
-    workspace,
-    data.movements.map((movement) => ({
-      id: movement.id,
-      payload: {
-        type: movement.type,
-        occurred_at: movement.occurredAt,
-        tool_external_id: movement.toolId ?? '',
-        technician_external_id: movement.technicianId ?? '',
-        batch_external_id: movement.batchId ?? '',
-        identification_method: movement.identificationMethod ?? '',
-        scan_method: movement.scanMethod ?? '',
-        detail: movement.detail,
-      },
-    })),
-    remote.records.movements,
-  );
+  if (manager) {
+    uploaded += await createMissing(
+      COLLECTIONS.movements,
+      workspace,
+      data.movements
+        .filter((movement) => movement.type !== 'loan' && movement.type !== 'return')
+        .map((movement) => ({
+          id: movement.id,
+          payload: {
+            type: movement.type,
+            occurred_at: movement.occurredAt,
+            tool_external_id: movement.toolId ?? '',
+            technician_external_id: movement.technicianId ?? '',
+            batch_external_id: movement.batchId ?? '',
+            identification_method: movement.identificationMethod ?? '',
+            scan_method: movement.scanMethod ?? '',
+            detail: movement.detail,
+          },
+        })),
+      remote.records.movements,
+    );
+  }
 
-  return uploaded;
+  return { uploaded, conflicts, rejectedBatchIds, conflictToolIds };
 }
 
 export async function synchronizeWorkspace(local: AppData, profile: CloudProfile): Promise<SyncResult> {
   const normalizedLocal = normalizeAppData(local) ?? local;
   const firstRemote = await loadRemoteWorkspace(profile.workspace);
   const merged = mergeWorkspaceData(normalizedLocal, firstRemote.data);
-  const uploaded = await pushWorkspace(merged, profile, firstRemote);
-  const finalRemote = uploaded > 0 ? await loadRemoteWorkspace(profile.workspace) : firstRemote;
-  const finalData = mergeWorkspaceData(merged, finalRemote.data);
+  const pushed = await pushWorkspace(merged, profile, firstRemote);
+  const finalRemote = pushed.uploaded > 0 || pushed.conflicts.length > 0
+    ? await loadRemoteWorkspace(profile.workspace)
+    : firstRemote;
+
+  const rejectedMovementIds = new Set(
+    merged.movements
+      .filter((movement) => movement.batchId && pushed.rejectedBatchIds.has(movement.batchId))
+      .map((movement) => movement.id),
+  );
+  const localForMerge: AppData = {
+    ...merged,
+    batches: merged.batches.filter((batch) => !pushed.rejectedBatchIds.has(batch.id)),
+    movements: merged.movements.filter((movement) => !rejectedMovementIds.has(movement.id)),
+  };
+  const finalData = mergeWorkspaceData(localForMerge, finalRemote.data);
+
+  if (pushed.conflictToolIds.size > 0) {
+    const canonicalTools = new Map(finalRemote.data.tools.map((tool) => [tool.id, tool]));
+    finalData.tools = finalData.tools.map((tool) => (
+      pushed.conflictToolIds.has(tool.id) ? canonicalTools.get(tool.id) ?? tool : tool
+    ));
+  }
 
   const localIds = new Set([
     ...normalizedLocal.technicians.map((item) => `t:${item.id}`),
@@ -435,5 +559,10 @@ export async function synchronizeWorkspace(local: AppData, profile: CloudProfile
     ...finalData.movements.map((item) => `m:${item.id}`),
   ].filter((id) => !localIds.has(id)).length;
 
-  return { data: finalData, uploaded, downloaded };
+  return {
+    data: finalData,
+    uploaded: pushed.uploaded,
+    downloaded,
+    conflicts: pushed.conflicts,
+  };
 }

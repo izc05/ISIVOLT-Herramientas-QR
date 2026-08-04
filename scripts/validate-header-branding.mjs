@@ -98,8 +98,8 @@ for (const key of ['icon192', 'icon512']) {
 }
 
 for (const fragment of [
-  "VITE_BASE_PATH",
-  "normalizeBase",
+  'VITE_BASE_PATH',
+  'normalizeBase',
   "sourcemap: mode !== 'production'",
 ]) {
   if (!viteConfig.includes(fragment)) fail(`vite.config.ts no contiene ${fragment}`);
@@ -107,7 +107,7 @@ for (const fragment of [
 
 for (const fragment of [
   "const CACHE_PREFIX = 'isivoltpro-herramientas-'",
-  "const CACHE_NAME = `${CACHE_PREFIX}alpha-7-11`",
+  'const CACHE_NAME = `${CACHE_PREFIX}alpha-7-',
   "const BASE = new URL('./', self.location.href).pathname",
   'key.startsWith(CACHE_PREFIX)',
   'request.destination',

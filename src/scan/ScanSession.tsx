@@ -25,7 +25,7 @@ import {
   X,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { commitBatchOperation, createQuickToolRecord, technicianCanReceiveTools } from '../data/workspaceTransactions';
+import { commitBatchOperation, createQuickToolRecord, technicianCanReceiveTools } from '../data/workspaceOperations';
 import { loadData, WORKSPACE_DATA_EVENT } from '../storage';
 import type {
   AppData,

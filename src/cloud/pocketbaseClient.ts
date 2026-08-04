@@ -49,7 +49,11 @@ const profileFromRecord = (record: PocketBaseRecord): CloudProfile => ({
   technicianExternalId: record.technician_external_id ? String(record.technician_external_id) : undefined,
 });
 
-async function request<T>(path: string, options: RequestInit = {}, token = getPocketBaseToken()): Promise<T> {
+export async function pocketBaseRequest<T>(
+  path: string,
+  options: RequestInit = {},
+  token = getPocketBaseToken(),
+): Promise<T> {
   const baseUrl = getPocketBaseUrl();
   if (!baseUrl) throw new PocketBaseRequestError('PocketBase no está configurado.', 0);
 
@@ -86,7 +90,7 @@ async function request<T>(path: string, options: RequestInit = {}, token = getPo
 }
 
 export async function authenticate(email: string, password: string): Promise<CloudProfile> {
-  const result = await request<AuthResponse>('/api/collections/isivolt_users/auth-with-password', {
+  const result = await pocketBaseRequest<AuthResponse>('/api/collections/isivolt_users/auth-with-password', {
     method: 'POST',
     body: JSON.stringify({ identity: email.trim(), password }),
   }, '');
@@ -97,7 +101,7 @@ export async function authenticate(email: string, password: string): Promise<Clo
 }
 
 export async function refreshAuthentication(): Promise<CloudProfile> {
-  const result = await request<AuthResponse>('/api/collections/isivolt_users/auth-refresh', { method: 'POST' });
+  const result = await pocketBaseRequest<AuthResponse>('/api/collections/isivolt_users/auth-refresh', { method: 'POST' });
   const profile = profileFromRecord(result.record);
   savePocketBaseToken(result.token);
   saveCloudProfile(profile);
@@ -117,7 +121,7 @@ export async function listRecords(collection: string, workspace: string): Promis
       sort: '-updated',
       filter,
     });
-    const response = await request<ListResponse<PocketBaseRecord>>(
+    const response = await pocketBaseRequest<ListResponse<PocketBaseRecord>>(
       `/api/collections/${encodeURIComponent(collection)}/records?${params.toString()}`,
     );
     records.push(...response.items);
@@ -129,7 +133,7 @@ export async function listRecords(collection: string, workspace: string): Promis
 }
 
 export async function createRecord(collection: string, data: Record<string, unknown>): Promise<PocketBaseRecord> {
-  return request<PocketBaseRecord>(`/api/collections/${encodeURIComponent(collection)}/records`, {
+  return pocketBaseRequest<PocketBaseRecord>(`/api/collections/${encodeURIComponent(collection)}/records`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -140,14 +144,14 @@ export async function updateRecord(
   recordId: string,
   data: Record<string, unknown>,
 ): Promise<PocketBaseRecord> {
-  return request<PocketBaseRecord>(
+  return pocketBaseRequest<PocketBaseRecord>(
     `/api/collections/${encodeURIComponent(collection)}/records/${encodeURIComponent(recordId)}`,
     { method: 'PATCH', body: JSON.stringify(data) },
   );
 }
 
 export async function deleteRecord(collection: string, recordId: string): Promise<void> {
-  await request<unknown>(
+  await pocketBaseRequest<unknown>(
     `/api/collections/${encodeURIComponent(collection)}/records/${encodeURIComponent(recordId)}`,
     { method: 'DELETE' },
   );

@@ -15,13 +15,15 @@ import {
   getCloudProfile,
   type CloudProfile,
 } from '../cloud/config';
+import { ECOSYSTEM_OPEN_EVENT } from '../ecosystem/EcosystemSwitcher';
 
 type HeaderAction = {
   id: string;
   label: string;
   detail: string;
-  selector: string;
   Icon: LucideIcon;
+  selector?: string;
+  eventName?: string;
 };
 
 const actions: HeaderAction[] = [
@@ -36,7 +38,7 @@ const actions: HeaderAction[] = [
     id: 'ecosystem',
     label: 'Ecosistema',
     detail: 'Módulos IsiVoltPro y hoja de ruta.',
-    selector: '.ecosystem-trigger',
+    eventName: ECOSYSTEM_OPEN_EVENT,
     Icon: Grid3X3,
   },
   {
@@ -114,9 +116,15 @@ export default function DesktopUtilityMenu() {
     detail: profile?.email ?? roleLabel(role),
   }), [profile, role]);
 
-  const launch = (selector: string) => {
+  const launch = (action: HeaderAction) => {
     setOpen(false);
-    window.setTimeout(() => document.querySelector<HTMLButtonElement>(selector)?.click(), 60);
+    window.setTimeout(() => {
+      if (action.eventName) {
+        window.dispatchEvent(new CustomEvent(action.eventName));
+        return;
+      }
+      if (action.selector) document.querySelector<HTMLButtonElement>(action.selector)?.click();
+    }, 60);
   };
 
   if (!target) return null;
@@ -142,12 +150,15 @@ export default function DesktopUtilityMenu() {
           </header>
 
           <div className="desktop-utility-actions">
-            {actions.map(({ id, label, detail, selector, Icon }) => (
-              <button key={id} type="button" role="menuitem" onClick={() => launch(selector)}>
-                <span className={`desktop-utility-icon action-${id}`}><Icon size={19} /></span>
-                <span><strong>{label}</strong><small>{detail}</small></span>
-              </button>
-            ))}
+            {actions.map((action) => {
+              const { id, label, detail, Icon } = action;
+              return (
+                <button key={id} type="button" role="menuitem" onClick={() => launch(action)}>
+                  <span className={`desktop-utility-icon action-${id}`}><Icon size={19} /></span>
+                  <span><strong>{label}</strong><small>{detail}</small></span>
+                </button>
+              );
+            })}
           </div>
 
           <footer>

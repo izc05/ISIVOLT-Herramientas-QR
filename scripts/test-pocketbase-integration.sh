@@ -298,7 +298,7 @@ NODE
 
 curl --silent --show-error --fail \
   -X PATCH -H "Authorization: $APP_TOKEN" -H 'Content-Type: application/json' \
-  -d '{"display_name":"Técnico CI","role":"technician","technician_external_id":"tech-ci-001","active":false}' \
+  -d '{"active":false}' \
   "$BASE_URL/api/collections/isivolt_users/records/$TECH_USER_RECORD_ID" >"$TMP_DIR/tech-disabled.json"
 
 DISABLED_AUTH_STATUS="$(curl --silent --show-error --output "$TMP_DIR/disabled-auth.json" --write-out '%{http_code}' \

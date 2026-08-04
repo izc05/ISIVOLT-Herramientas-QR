@@ -8,7 +8,7 @@ Type=simple
 User=isivoltpro
 Group=isivoltpro
 WorkingDirectory=/opt/isivoltpro-pocketbase
-ExecStart=/opt/isivoltpro-pocketbase/pocketbase serve --http=127.0.0.1:8090 --dir=/var/lib/isivoltpro-pocketbase/pb_data --migrationsDir=/opt/isivoltpro-pocketbase/pb_migrations
+ExecStart=/opt/isivoltpro-pocketbase/pocketbase serve --http=127.0.0.1:8090 --dir=/var/lib/isivoltpro-pocketbase/pb_data --migrationsDir=/opt/isivoltpro-pocketbase/pb_migrations --hooksDir=/opt/isivoltpro-pocketbase/pb_hooks
 Restart=on-failure
 RestartSec=4
 TimeoutStopSec=30

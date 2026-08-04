@@ -35,7 +35,7 @@ import {
   createToolRecord,
   linkToolNfc,
   technicianCanReceiveTools,
-} from './data/workspaceTransactions';
+} from './data/workspaceOperations';
 import { clearData, loadData, WORKSPACE_DATA_EVENT } from './storage';
 import type { AppData, Movement, ToolStatus, ViewId } from './types';
 

@@ -81,14 +81,22 @@ export default function CloudStatus() {
       const catalogResult = await synchronizeCatalogs(coreResult.data, activeProfile);
       ignoreNextDataEvent.current = true;
       saveData(catalogResult.data);
-      setState('synced');
       const uploaded = coreResult.uploaded + catalogResult.uploaded;
       const downloaded = coreResult.downloaded + catalogResult.downloaded;
-      setMessage(
-        uploaded || downloaded
-          ? `${uploaded} cambios enviados · ${downloaded} recibidos.`
-          : 'Todos los datos están actualizados.',
-      );
+      if (coreResult.conflicts.length > 0) {
+        setState('error');
+        setError(
+          `${coreResult.conflicts.length} operación${coreResult.conflicts.length === 1 ? '' : 'es'} no se pudo confirmar: ${coreResult.conflicts[0].message}`,
+        );
+        setMessage('Se ha recuperado el estado válido del servidor central. Revisa el lote antes de repetirlo.');
+      } else {
+        setState('synced');
+        setMessage(
+          uploaded || downloaded
+            ? `${uploaded} cambios enviados · ${downloaded} recibidos.`
+            : 'Todos los datos están actualizados.',
+        );
+      }
     } catch (syncError) {
       const requestError = syncError instanceof PocketBaseRequestError ? syncError : null;
       if (!getCloudProfile()) returnToLocalContext();

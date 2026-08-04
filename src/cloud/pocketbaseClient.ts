@@ -108,13 +108,12 @@ export async function listRecords(collection: string, workspace: string): Promis
   const records: PocketBaseRecord[] = [];
   let page = 1;
   let totalPages = 1;
-  const filter = `workspace = "${workspace.replaceAll('"', '\\"')}"`;
+  const filter = `workspace = \"${workspace.replaceAll('\"', '\\\"')}\"`;
 
   do {
     const params = new URLSearchParams({
       page: String(page),
       perPage: '500',
-      sort: '-updated',
       filter,
     });
     const response = await request<ListResponse<PocketBaseRecord>>(

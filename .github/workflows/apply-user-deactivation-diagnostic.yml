@@ -1,0 +1,40 @@
+name: Aplicar diagnóstico de desactivación
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    name: Aplicar ajuste diagnóstico
+    if: github.head_ref == 'fix/server-atomic-operations-alpha-7-12' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar rama
+        uses: actions/checkout@v4
+        with:
+          ref: fix/server-atomic-operations-alpha-7-12
+          fetch-depth: 0
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Aplicar diagnóstico
+        run: node scripts/apply-user-deactivation-diagnostic.mjs
+      - name: Comprobar sintaxis
+        run: bash -n scripts/test-pocketbase-integration.sh
+      - name: Publicar ajuste
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "test(users): diagnosticar desactivación con payload real"
+          git push origin HEAD:fix/server-atomic-operations-alpha-7-12

@@ -1,3 +1,5 @@
+import { getCloudProfile, getPocketBaseUrl } from '../cloud/config';
+import { commitAtomicBatch, PocketBaseRequestError } from '../cloud/pocketbaseClient';
 import { activeStorageKey, loadData, saveData } from '../storage';
 import type {
   AppData,
@@ -51,15 +53,17 @@ export const technicianCanReceiveTools = (technician: Technician): boolean => {
 };
 
 const toolIsLoanable = (tool: Tool): boolean => (
-  tool.status === 'available' && (tool.serviceState ?? 'ready') === 'ready'
+  tool.status === 'available'
+  && (tool.serviceState ?? 'ready') === 'ready'
+  && tool.kind !== 'consumable'
 );
 
 async function mutateWorkspace<T>(
-  mutation: (current: AppData) => MutationDecision<T>,
+  mutation: (current: AppData) => MutationDecision<T> | Promise<MutationDecision<T>>,
 ): Promise<WorkspaceTransactionResult<T>> {
   const execute = async (): Promise<WorkspaceTransactionResult<T>> => {
     const current = loadData();
-    const decision = mutation(current);
+    const decision = await mutation(current);
     if (!decision.ok) return { ...decision, data: current };
     saveData(decision.data);
     return decision;
@@ -270,13 +274,16 @@ export async function commitBatchOperation(input: {
   scanMethod: ScanMethod;
   startedAt: string;
 }): Promise<WorkspaceTransactionResult<BatchTransaction>> {
-  return mutateWorkspace((current) => {
+  return mutateWorkspace(async (current) => {
     const technician = current.technicians.find((item) => item.id === input.technicianId);
     if (!technician) {
       return { ok: false, message: 'El técnico asociado a la operación ya no existe.' };
     }
     if (input.operation === 'loan' && !technicianCanReceiveTools(technician)) {
       return { ok: false, message: 'El técnico ya no está activo o disponible para recibir material.' };
+    }
+    if (input.operatorMode === 'self-service' && input.identificationMethod !== 'authenticated') {
+      return { ok: false, message: 'El autoservicio requiere una cuenta técnica autenticada.' };
     }
 
     const uniqueToolIds = [...new Set(input.toolIds.filter(Boolean))];
@@ -304,7 +311,38 @@ export async function commitBatchOperation(input: {
 
     const completedAt = now();
     const batchId = uid('batch');
+    const movementIds = uniqueToolIds.map(() => uid('mov'));
     const selectedTools = uniqueToolIds.map((id) => toolById.get(id)).filter((tool): tool is Tool => Boolean(tool));
+
+    if (getPocketBaseUrl() && getCloudProfile()) {
+      try {
+        await commitAtomicBatch({
+          operation: input.operation,
+          technicianExternalId: technician.id,
+          toolExternalIds: uniqueToolIds,
+          operatorMode: input.operatorMode,
+          identificationMethod: input.identificationMethod,
+          scanMethod: input.scanMethod,
+          startedAt: input.startedAt,
+          completedAt,
+          batchExternalId: batchId,
+          movementExternalIds: movementIds,
+        });
+      } catch (error) {
+        const requestError = error instanceof PocketBaseRequestError ? error : null;
+        const routeMissing = requestError?.status === 404
+          && !requestError.message.toLocaleLowerCase('es-ES').includes('artículo')
+          && !requestError.message.toLocaleLowerCase('es-ES').includes('técnico');
+        if (requestError?.status !== 0 && !routeMissing) {
+          return {
+            ok: false,
+            invalidToolIds: uniqueToolIds,
+            message: `El servidor rechazó la operación: ${requestError?.message ?? 'conflicto entre dispositivos'}. Actualiza los datos y revisa el lote.`,
+          };
+        }
+      }
+    }
+
     const batch: BatchTransaction = {
       id: batchId,
       operation: input.operation,
@@ -325,8 +363,8 @@ export async function commitBatchOperation(input: {
           : { ...tool, status: 'available', technicianId: undefined, updatedAt: completedAt };
       }),
       movements: [
-        ...selectedTools.map((tool) => ({
-          id: uid('mov'),
+        ...selectedTools.map((tool, index) => ({
+          id: movementIds[index],
           type: input.operation,
           occurredAt: completedAt,
           toolId: tool.id,

@@ -43,6 +43,10 @@ jobs:
         run: node scripts/validate-data-consistency.mjs
       - name: Compilar aplicación
         run: npm run build
+      - name: Retirar artefactos generados
+        run: |
+          rm -f package-lock.json tsconfig.app.tsbuildinfo tsconfig.node.tsbuildinfo
+          rm -f public/icons/apple-touch-icon.png public/icons/icon-192.png public/icons/icon-512.png public/icons/maskable-512.png
       - name: Publicar cambios en la rama
         run: |
           git config user.name "github-actions[bot]"

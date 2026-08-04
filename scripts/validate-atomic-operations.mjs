@@ -8,6 +8,7 @@ const fail = (message) => {
 
 const hook = read('pb_hooks/isivolt_operations.pb.js');
 const migration = read('pb_migrations/1722512600_atomic_operations.js');
+const inactiveUsersMigration = read('pb_migrations/1722512700_allow_inactive_users.js');
 const client = read('src/cloud/atomicOperations.ts');
 const operation = read('src/data/atomicWorkspaceOperations.ts');
 const bridge = read('src/data/workspaceOperations.ts');
@@ -40,6 +41,16 @@ for (const fragment of [
   '@request.body.type != "return"',
 ]) {
   if (!migration.includes(fragment)) fail(`la migración no contiene ${fragment}`);
+}
+
+for (const fragment of [
+  "users.fields.getByName('active')",
+  'activeField.required = false',
+  'app.save(users)',
+]) {
+  if (!inactiveUsersMigration.includes(fragment)) {
+    fail(`la migración de usuarios inactivos no contiene ${fragment}`);
+  }
 }
 
 for (const fragment of [
@@ -84,4 +95,4 @@ if (!service.includes('--hooksDir=/opt/isivoltpro-pocketbase/pb_hooks')) fail('s
 if (packageJson.version !== '2.0.0-alpha.7.12') fail(`versión inesperada: ${packageJson.version}`);
 if (!sw.includes('alpha-7-12')) fail('caché PWA no renovada');
 
-console.log('Operaciones atómicas preparadas: ruta autenticada, transacción, idempotencia, conflicto y reconciliación.');
+console.log('Operaciones atómicas preparadas: transacción, idempotencia, conflicto, reconciliación y cuentas desactivables.');

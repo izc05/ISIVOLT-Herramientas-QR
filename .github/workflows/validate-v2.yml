@@ -53,11 +53,13 @@ jobs:
         run: node scripts/validate-header-branding.mjs
       - name: Validar consistencia de datos y operaciones
         run: node scripts/validate-data-consistency.mjs
+      - name: Validar operaciones atómicas de servidor
+        run: node scripts/validate-atomic-operations.mjs
       - name: Validar manifiesto PWA
         run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest','utf8')); console.log('Manifest válido')"
       - name: Validar service worker
         run: node --check public/sw.js
-      - name: Validar migraciones PocketBase
+      - name: Validar migraciones y hooks PocketBase
         run: |
           set -euo pipefail
           found=0
@@ -67,6 +69,13 @@ jobs:
             node --check "$migration"
           done
           test "$found" -eq 1
+          found_hooks=0
+          for hook in pb_hooks/*.js; do
+            found_hooks=1
+            echo "Validando $hook"
+            node --check "$hook"
+          done
+          test "$found_hooks" -eq 1
       - name: Comprobar seguridad PocketBase
         run: node scripts/validate-pocketbase-security.mjs
       - name: Comprobar aislamiento de caché
@@ -80,6 +89,7 @@ jobs:
           bash -n deploy/check-deployment.sh
           bash -n scripts/test-pocketbase-integration.sh
           bash -n scripts/test-pocketbase-catalogs.sh
+          bash -n scripts/test-pocketbase-atomic-operations.sh
           node scripts/validate-deployment-kit.mjs
       - name: Compilar aplicación e iconos
         run: npm run build
@@ -96,7 +106,7 @@ jobs:
   pocketbase-integration:
     name: PocketBase real y migraciones
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
@@ -112,3 +122,7 @@ jobs:
         env:
           PB_VERSION: 0.39.9
         run: bash scripts/test-pocketbase-catalogs.sh
+      - name: Probar concurrencia atómica con PocketBase real
+        env:
+          PB_VERSION: 0.39.9
+        run: bash scripts/test-pocketbase-atomic-operations.sh

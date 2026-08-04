@@ -11,13 +11,15 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import { ECOSYSTEM_OPEN_EVENT } from '../ecosystem/EcosystemSwitcher';
 
 type UtilityAction = {
   id: string;
   label: string;
   detail: string;
-  selector: string;
   Icon: LucideIcon;
+  selector?: string;
+  eventName?: string;
   managerOnly?: boolean;
 };
 
@@ -55,7 +57,7 @@ const actions: UtilityAction[] = [
     id: 'ecosystem',
     label: 'Ecosistema IsiVoltPro',
     detail: 'Módulos actuales y hoja de ruta.',
-    selector: '.ecosystem-trigger',
+    eventName: ECOSYSTEM_OPEN_EVENT,
     Icon: Grid3X3,
   },
 ];
@@ -105,10 +107,15 @@ export default function MobileUtilityMenu() {
     [role],
   );
 
-  const launch = (selector: string) => {
-    const source = document.querySelector<HTMLButtonElement>(selector);
+  const launch = (action: UtilityAction) => {
     setOpen(false);
-    window.setTimeout(() => source?.click(), 70);
+    window.setTimeout(() => {
+      if (action.eventName) {
+        window.dispatchEvent(new CustomEvent(action.eventName));
+        return;
+      }
+      if (action.selector) document.querySelector<HTMLButtonElement>(action.selector)?.click();
+    }, 70);
   };
 
   const launcher = target ? createPortal(
@@ -146,13 +153,16 @@ export default function MobileUtilityMenu() {
             </header>
 
             <div className="mobile-utility-actions">
-              {visibleActions.map(({ id, label, detail, selector, Icon }) => (
-                <button key={id} type="button" onClick={() => launch(selector)}>
-                  <span className={`mobile-utility-icon action-${id}`}><Icon size={21} /></span>
-                  <span className="mobile-utility-copy"><strong>{label}</strong><small>{detail}</small></span>
-                  <ChevronRight size={18} />
-                </button>
-              ))}
+              {visibleActions.map((action) => {
+                const { id, label, detail, Icon } = action;
+                return (
+                  <button key={id} type="button" onClick={() => launch(action)}>
+                    <span className={`mobile-utility-icon action-${id}`}><Icon size={21} /></span>
+                    <span className="mobile-utility-copy"><strong>{label}</strong><small>{detail}</small></span>
+                    <ChevronRight size={18} />
+                  </button>
+                );
+              })}
             </div>
 
             <footer>Los accesos secundarios se agrupan aquí para mantener limpia la cabecera del móvil.</footer>

@@ -25,7 +25,7 @@ import {
   X,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { createQuickToolRecord, commitBatchOperation } from '../data/workspaceTransactions';
+import { commitBatchOperation, createQuickToolRecord, technicianCanReceiveTools } from '../data/workspaceTransactions';
 import { loadData, WORKSPACE_DATA_EVENT } from '../storage';
 import type {
   AppData,
@@ -120,7 +120,10 @@ export default function ScanSession() {
   const pendingRequestRef = useRef<ScanSessionRequest>({});
   const scanHandlerRef = useRef<(value: string, target: ScanTarget, method: Exclude<ScanMethod, 'mixed'>) => void>(() => undefined);
 
-  const activeTechnicians = useMemo(() => data.technicians.filter((technician) => technician.active), [data.technicians]);
+  const activeTechnicians = useMemo(
+    () => data.technicians.filter((technician) => operation === 'loan' ? technicianCanReceiveTools(technician) : true),
+    [data.technicians, operation],
+  );
   const selectedTechnician = data.technicians.find((technician) => technician.id === technicianId);
   const selectedTools = toolIds.map((id) => data.tools.find((tool) => tool.id === id)).filter((tool): tool is Tool => Boolean(tool));
   const activeCategories = useMemo(() => (data.toolCategories ?? []).filter((entry) => entry.active), [data.toolCategories]);
@@ -171,7 +174,10 @@ export default function ScanSession() {
 
   const resumeDraft = (draft: ScanDraft) => {
     const snapshot = loadData();
-    const technician = snapshot.technicians.find((item) => item.id === draft.technicianId && item.active);
+    const technician = snapshot.technicians.find((item) => (
+      item.id === draft.technicianId
+      && (draft.operation === 'return' || technicianCanReceiveTools(item))
+    ));
     if (!technician) {
       clearScanDraft();
       setRecoveryDraft(null);

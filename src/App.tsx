@@ -34,6 +34,7 @@ import {
   createTechnicianRecord,
   createToolRecord,
   linkToolNfc,
+  technicianCanReceiveTools,
 } from './data/workspaceTransactions';
 import { clearData, loadData, WORKSPACE_DATA_EVENT } from './storage';
 import type { AppData, Movement, ToolStatus, ViewId } from './types';
@@ -183,7 +184,7 @@ export default function App() {
     });
   }, [data.tools, query, statusFilter]);
 
-  const activeTechnicians = data.technicians.filter((technician) => technician.active);
+  const activeTechnicians = data.technicians.filter(technicianCanReceiveTools);
   const availableTools = data.tools.filter((tool) => tool.status === 'available');
   const loanedTools = data.tools.filter((tool) => tool.status === 'loaned');
   const selectedTool = data.tools.find((tool) => tool.id === selectedToolId);
@@ -258,7 +259,7 @@ export default function App() {
 
   const registerReturn = async () => {
     if (!selectedToolId) return;
-    const currentTool = data.tools.find((item) => item.id === selectedToolId);
+    const currentTool = loadData().tools.find((item) => item.id === selectedToolId);
     if (!currentTool?.technicianId) {
       setNotice('La herramienta ya no tiene un responsable válido.');
       return;
@@ -282,6 +283,12 @@ export default function App() {
 
   const saveNfc = async (writeToTag: boolean) => {
     if (!selectedTool || !nfcTag.trim()) return;
+    const result = await linkToolNfc(selectedTool.id, nfcTag);
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
+
     let writeWarning = '';
     if (writeToTag) {
       const Reader = (window as unknown as { NDEFReader?: new () => { write(data: unknown): Promise<void> } }).NDEFReader;
@@ -290,20 +297,16 @@ export default function App() {
       } else {
         try {
           const reader = new Reader();
-          await reader.write({ records: [{ recordType: 'text', data: selectedTool.qrPayload }] });
+          await reader.write({ records: [{ recordType: 'text', data: result.value.qrPayload }] });
         } catch {
           writeWarning = 'No se pudo grabar físicamente la etiqueta;';
         }
       }
     }
-    const result = await linkToolNfc(selectedTool.id, nfcTag);
-    if (!result.ok) {
-      setNotice(result.message);
-      return;
-    }
+
     closeModal();
     setNotice(writeWarning
-      ? `${writeWarning} la referencia se guardó sin duplicados.`
+      ? `${writeWarning} la referencia ya está vinculada sin duplicados.`
       : 'NFC vinculado a la herramienta.');
   };
 

@@ -39,11 +39,12 @@ for (const fragment of [
   'navigator as WorkspaceNavigator',
   "{ mode: 'exclusive' }",
   'const current = loadData()',
-  'technicianIsOperational',
+  'technicianCanReceiveTools',
   'toolIsLoanable',
   'new Set(input.toolIds.filter(Boolean))',
   'duplicateTool',
   'duplicateTechnician',
+  "input.operation === 'loan' && !technicianCanReceiveTools(technician)",
 ]) {
   if (!transactions.includes(fragment)) fail(`workspaceTransactions no contiene ${fragment}`);
 }

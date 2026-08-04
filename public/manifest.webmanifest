@@ -2,9 +2,9 @@
   "name": "IsiVoltPro Herramientas",
   "short_name": "IsiVoltPro",
   "description": "Gestión de herramientas y material mediante QR y NFC.",
-  "id": "/ISIVOLT-Herramientas-QR/",
-  "start_url": "/ISIVOLT-Herramientas-QR/",
-  "scope": "/ISIVOLT-Herramientas-QR/",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f4f8fd",
@@ -13,19 +13,19 @@
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/ISIVOLT-Herramientas-QR/icons/icon-192.png",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/ISIVOLT-Herramientas-QR/icons/icon-512.png",
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/ISIVOLT-Herramientas-QR/icons/maskable-512.png",
+      "src": "icons/maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -35,8 +35,8 @@
     {
       "name": "Escanear material",
       "short_name": "Escanear",
-      "url": "/ISIVOLT-Herramientas-QR/?action=scan",
-      "icons": [{ "src": "/ISIVOLT-Herramientas-QR/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "url": "?action=scan",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

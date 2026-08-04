@@ -45,7 +45,7 @@ const nextCode = (items: Array<{ code: string }>, prefix: string): string => {
   return `${prefix}-${String(highest + 1).padStart(3, '0')}`;
 };
 
-const technicianIsOperational = (technician: Technician): boolean => {
+export const technicianCanReceiveTools = (technician: Technician): boolean => {
   const status = technician.status ?? (technician.active ? 'active' : 'inactive');
   return technician.active && status === 'active';
 };
@@ -207,7 +207,17 @@ export async function createQuickToolRecord(input: {
       createdAt: timestamp,
       updatedAt: timestamp,
     };
-    const data: AppData = { ...current, tools: [tool, ...current.tools] };
+    const data: AppData = {
+      ...current,
+      tools: [tool, ...current.tools],
+      movements: [{
+        id: uid('mov'),
+        type: 'tool_created',
+        occurredAt: timestamp,
+        toolId: tool.id,
+        detail: `${tool.name} · ${tool.code} · alta rápida`,
+      }, ...current.movements],
+    };
     return { ok: true, data, value: tool };
   });
 }
@@ -262,9 +272,13 @@ export async function commitBatchOperation(input: {
 }): Promise<WorkspaceTransactionResult<BatchTransaction>> {
   return mutateWorkspace((current) => {
     const technician = current.technicians.find((item) => item.id === input.technicianId);
-    if (!technician || !technicianIsOperational(technician)) {
+    if (!technician) {
+      return { ok: false, message: 'El técnico asociado a la operación ya no existe.' };
+    }
+    if (input.operation === 'loan' && !technicianCanReceiveTools(technician)) {
       return { ok: false, message: 'El técnico ya no está activo o disponible para recibir material.' };
     }
+
     const uniqueToolIds = [...new Set(input.toolIds.filter(Boolean))];
     if (uniqueToolIds.length === 0) return { ok: false, message: 'No hay artículos para confirmar.' };
 
@@ -284,7 +298,7 @@ export async function commitBatchOperation(input: {
       return {
         ok: false,
         invalidToolIds,
-        message: `No se ha guardado la operación porque cambió el estado de: ${labels.join(', ')} . Revisa el lote.`,
+        message: `No se ha guardado la operación porque cambió el estado de: ${labels.join(', ')}. Revisa el lote.`,
       };
     }
 

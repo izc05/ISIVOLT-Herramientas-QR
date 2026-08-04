@@ -41,8 +41,22 @@ export default function PwaInstallPrompt() {
   };
 
   const update = () => {
-    updateRegistration?.waiting?.postMessage({ type: 'SKIP_WAITING' });
-    navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), { once: true });
+    let reloaded = false;
+    const reload = () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    };
+
+    navigator.serviceWorker.addEventListener('controllerchange', reload, { once: true });
+    const waiting = updateRegistration?.waiting;
+    if (!waiting) {
+      reload();
+      return;
+    }
+
+    waiting.postMessage({ type: 'SKIP_WAITING' });
+    window.setTimeout(reload, 5000);
   };
 
   if (dismissed || (!updateRegistration && (!installPrompt || standalone))) return null;

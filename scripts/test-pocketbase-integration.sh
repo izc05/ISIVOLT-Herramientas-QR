@@ -64,6 +64,7 @@ mkdir -p "$PB_DATA"
   --http="127.0.0.1:${PORT}" \
   --dir="$PB_DATA" \
   --migrationsDir="$ROOT_DIR/pb_migrations" \
+  --hooksDir="$ROOT_DIR/pb_hooks" \
   >"$PB_LOG" 2>&1 &
 SERVER_PID="$!"
 
@@ -120,9 +121,21 @@ for (const name of ['isivolt_batches', 'isivolt_movements']) {
     throw new Error(`${name} debe ser inmutable`);
   }
 }
+if (collections.get('isivolt_batches').createRule !== null) {
+  throw new Error('Los lotes operativos solo deben crearse mediante la ruta atómica');
+}
 const tools = collections.get('isivolt_tools');
-if (!String(tools.updateRule ?? '').includes('@request.body.workspace:changed = false')) {
+const toolRule = String(tools.updateRule ?? '');
+if (!toolRule.includes('@request.body.workspace:changed = false')) {
   throw new Error('La regla endurecida de isivolt_tools no está aplicada');
+}
+if (!toolRule.includes('@request.body.status:changed = false') || !toolRule.includes('@request.body.technician_external_id:changed = false')) {
+  throw new Error('La API genérica todavía permite cambiar el estado operativo');
+}
+const movements = collections.get('isivolt_movements');
+const movementCreateRule = String(movements.createRule ?? '');
+if (!movementCreateRule.includes('@request.body.type != "loan"') || !movementCreateRule.includes('@request.body.type != "return"')) {
+  throw new Error('La API genérica todavía permite movimientos de préstamo o devolución');
 }
 const users = collections.get('isivolt_users');
 if (users.authRule !== 'active = true') {
@@ -159,12 +172,12 @@ NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 curl --silent --show-error --fail \
   -X POST -H "Authorization: $APP_TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"workspace\":\"ci\",\"external_id\":\"tech-ci-001\",\"code\":\"TEC-CI-001\",\"name\":\"Técnico CI\",\"category\":\"Mantenimiento\",\"active\":true,\"qr_payload\":\"ISIVOLTPRO:TECH:TEC-CI-001\",\"source_created\":\"$NOW\",\"source_updated\":\"$NOW\"}" \
+  -d "{\"workspace\":\"ci\",\"external_id\":\"tech-ci-001\",\"code\":\"TEC-CI-001\",\"name\":\"Técnico CI\",\"category\":\"Mantenimiento\",\"technician_status\":\"active\",\"active\":true,\"qr_payload\":\"ISIVOLTPRO:TECH:TEC-CI-001\",\"source_created\":\"$NOW\",\"source_updated\":\"$NOW\"}" \
   "$BASE_URL/api/collections/isivolt_technicians/records" >"$TMP_DIR/technician.json"
 
 curl --silent --show-error --fail \
   -X POST -H "Authorization: $APP_TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"workspace\":\"ci\",\"external_id\":\"tool-ci-001\",\"code\":\"TOOL-CI-001\",\"name\":\"Multímetro CI\",\"category\":\"Medida\",\"location\":\"Almacén\",\"qr_payload\":\"ISIVOLTPRO:TOOL:TOOL-CI-001\",\"status\":\"available\",\"source_created\":\"$NOW\",\"source_updated\":\"$NOW\"}" \
+  -d "{\"workspace\":\"ci\",\"external_id\":\"tool-ci-001\",\"code\":\"TOOL-CI-001\",\"name\":\"Multímetro CI\",\"category\":\"Medida\",\"location\":\"Almacén\",\"tool_kind\":\"returnable-tool\",\"service_state\":\"ready\",\"qr_payload\":\"ISIVOLTPRO:TOOL:TOOL-CI-001\",\"status\":\"available\",\"source_created\":\"$NOW\",\"source_updated\":\"$NOW\"}" \
   "$BASE_URL/api/collections/isivolt_tools/records" >"$TMP_DIR/tool.json"
 TOOL_RECORD_ID="$(json_value "$TMP_DIR/tool.json" 'd.id')"
 
@@ -191,15 +204,34 @@ if (!payload.items.some((item) => item.external_id === 'tool-ci-001' && item.sta
 }
 NODE
 
-curl --silent --show-error --fail \
+DIRECT_LOAN_STATUS="$(curl --silent --show-error --output "$TMP_DIR/direct-loan.json" --write-out '%{http_code}' \
   -X PATCH -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
   -d "{\"status\":\"loaned\",\"technician_external_id\":\"tech-ci-001\",\"source_updated\":\"$NOW\"}" \
+  "$BASE_URL/api/collections/isivolt_tools/records/$TOOL_RECORD_ID")"
+expect_denied "$DIRECT_LOAN_STATUS" 'el estado operativo no puede cambiarse mediante PATCH'
+
+BATCH_ID="batch-ci-001"
+LOAN_PAYLOAD="{\"batch_external_id\":\"$BATCH_ID\",\"operation\":\"loan\",\"technician_external_id\":\"tech-ci-001\",\"tool_ids\":[\"tool-ci-001\"],\"operator_mode\":\"self-service\",\"identification_method\":\"authenticated\",\"scan_method\":\"qr\",\"started_at\":\"$NOW\",\"completed_at\":\"$NOW\",\"movements\":[{\"external_id\":\"move-ci-001\",\"tool_external_id\":\"tool-ci-001\",\"detail\":\"Préstamo CI\"}]}"
+curl --silent --show-error --fail \
+  -X POST -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
+  -d "$LOAN_PAYLOAD" \
+  "$BASE_URL/api/isivolt/operations" >"$TMP_DIR/atomic-loan.json"
+node - "$TMP_DIR/atomic-loan.json" <<'NODE'
+const fs = require('fs');
+const result = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+if (result.ok !== true || result.duplicate !== false || result.batch_external_id !== 'batch-ci-001') {
+  throw new Error('La ruta atómica no confirmó el préstamo técnico');
+}
+NODE
+
+curl --silent --show-error --fail \
+  -H "Authorization: $TECH_TOKEN" \
   "$BASE_URL/api/collections/isivolt_tools/records/$TOOL_RECORD_ID" >"$TMP_DIR/tool-loaned.json"
 node - "$TMP_DIR/tool-loaned.json" <<'NODE'
 const fs = require('fs');
 const tool = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 if (tool.status !== 'loaned' || tool.technician_external_id !== 'tech-ci-001') {
-  throw new Error('El autoservicio no asignó la herramienta al técnico autenticado');
+  throw new Error('La operación atómica no asignó la herramienta al técnico autenticado');
 }
 NODE
 
@@ -209,18 +241,25 @@ FORBIDDEN_EDIT_STATUS="$(curl --silent --show-error --output "$TMP_DIR/forbidden
   "$BASE_URL/api/collections/isivolt_tools/records/$TOOL_RECORD_ID")"
 expect_denied "$FORBIDDEN_EDIT_STATUS" 'el técnico no puede editar el nombre de la herramienta'
 
-BATCH_ID="batch-ci-001"
-curl --silent --show-error --fail \
+DIRECT_BATCH_STATUS="$(curl --silent --show-error --output "$TMP_DIR/direct-batch.json" --write-out '%{http_code}' \
   -X POST -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"workspace\":\"ci\",\"external_id\":\"$BATCH_ID\",\"operation\":\"loan\",\"technician_external_id\":\"tech-ci-001\",\"tool_ids\":[\"tool-ci-001\"],\"operator_mode\":\"self-service\",\"identification_method\":\"authenticated\",\"scan_method\":\"qr\",\"started_at\":\"$NOW\",\"completed_at\":\"$NOW\"}" \
-  "$BASE_URL/api/collections/isivolt_batches/records" >"$TMP_DIR/batch.json"
-BATCH_RECORD_ID="$(json_value "$TMP_DIR/batch.json" 'd.id')"
+  -d "{\"workspace\":\"ci\",\"external_id\":\"bypass-ci\",\"operation\":\"loan\",\"technician_external_id\":\"tech-ci-001\",\"tool_ids\":[\"tool-ci-001\"],\"operator_mode\":\"self-service\",\"identification_method\":\"authenticated\",\"scan_method\":\"qr\",\"started_at\":\"$NOW\",\"completed_at\":\"$NOW\"}" \
+  "$BASE_URL/api/collections/isivolt_batches/records")"
+expect_denied "$DIRECT_BATCH_STATUS" 'los lotes operativos no pueden crearse por la API genérica'
 
-curl --silent --show-error --fail \
-  -X POST -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"workspace\":\"ci\",\"external_id\":\"move-ci-001\",\"type\":\"loan\",\"occurred_at\":\"$NOW\",\"tool_external_id\":\"tool-ci-001\",\"technician_external_id\":\"tech-ci-001\",\"batch_external_id\":\"$BATCH_ID\",\"identification_method\":\"authenticated\",\"scan_method\":\"qr\",\"detail\":\"Préstamo CI\"}" \
-  "$BASE_URL/api/collections/isivolt_movements/records" >"$TMP_DIR/movement.json"
-MOVEMENT_RECORD_ID="$(json_value "$TMP_DIR/movement.json" 'd.id')"
+curl --silent --show-error --fail --get \
+  -H "Authorization: $TECH_TOKEN" \
+  --data-urlencode 'perPage=10' \
+  --data-urlencode 'filter=external_id = "batch-ci-001"' \
+  "$BASE_URL/api/collections/isivolt_batches/records" >"$TMP_DIR/batches-after-loan.json"
+BATCH_RECORD_ID="$(json_value "$TMP_DIR/batches-after-loan.json" 'd.items?.[0]?.id')"
+
+curl --silent --show-error --fail --get \
+  -H "Authorization: $TECH_TOKEN" \
+  --data-urlencode 'perPage=10' \
+  --data-urlencode 'filter=external_id = "move-ci-001"' \
+  "$BASE_URL/api/collections/isivolt_movements/records" >"$TMP_DIR/movements-after-loan.json"
+MOVEMENT_RECORD_ID="$(json_value "$TMP_DIR/movements-after-loan.json" 'd.items?.[0]?.id')"
 
 FORBIDDEN_BATCH_STATUS="$(curl --silent --show-error --output "$TMP_DIR/forbidden-batch.json" --write-out '%{http_code}' \
   -X PATCH -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
@@ -239,15 +278,21 @@ FORBIDDEN_DELETE_STATUS="$(curl --silent --show-error --output "$TMP_DIR/forbidd
   "$BASE_URL/api/collections/isivolt_tools/records/$TOOL_RECORD_ID")"
 expect_denied "$FORBIDDEN_DELETE_STATUS" 'el técnico no puede eliminar herramientas'
 
+RETURN_BATCH_ID="batch-ci-return"
+RETURN_PAYLOAD="{\"batch_external_id\":\"$RETURN_BATCH_ID\",\"operation\":\"return\",\"technician_external_id\":\"tech-ci-001\",\"tool_ids\":[\"tool-ci-001\"],\"operator_mode\":\"self-service\",\"identification_method\":\"authenticated\",\"scan_method\":\"qr\",\"started_at\":\"$NOW\",\"completed_at\":\"$NOW\",\"movements\":[{\"external_id\":\"move-ci-return\",\"tool_external_id\":\"tool-ci-001\",\"detail\":\"Devolución CI\"}]}"
 curl --silent --show-error --fail \
-  -X PATCH -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"status\":\"available\",\"technician_external_id\":\"\",\"source_updated\":\"$NOW\"}" \
+  -X POST -H "Authorization: $TECH_TOKEN" -H 'Content-Type: application/json' \
+  -d "$RETURN_PAYLOAD" \
+  "$BASE_URL/api/isivolt/operations" >"$TMP_DIR/atomic-return.json"
+
+curl --silent --show-error --fail \
+  -H "Authorization: $TECH_TOKEN" \
   "$BASE_URL/api/collections/isivolt_tools/records/$TOOL_RECORD_ID" >"$TMP_DIR/tool-returned.json"
 node - "$TMP_DIR/tool-returned.json" <<'NODE'
 const fs = require('fs');
 const tool = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 if (tool.status !== 'available' || tool.technician_external_id !== '') {
-  throw new Error('La devolución autenticada no dejó la herramienta disponible');
+  throw new Error('La devolución atómica no dejó la herramienta disponible');
 }
 NODE
 
@@ -268,5 +313,5 @@ if [[ "$UNAUTHORIZED_STATUS" != "401" ]]; then
   exit 1
 fi
 
-echo "Reglas reales verificadas: alta, préstamo propio, bloqueos, lote, movimiento, devolución y desactivación."
+echo "Reglas reales verificadas: alta, ruta atómica, bloqueos, lote, movimiento, devolución y desactivación."
 echo "Integración PocketBase ${PB_VERSION} superada en una base temporal."

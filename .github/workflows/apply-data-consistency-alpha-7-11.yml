@@ -27,10 +27,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Corregir límites del transformador
+        run: node scripts/fix-data-consistency-patcher.mjs
       - name: Comprobar script de parche
         run: node --check scripts/apply-data-consistency-alpha-7-11.mjs
       - name: Aplicar parche
-        run: node scripts/apply-data-consistency-alpha-7-11.mjs
+        run: |
+          node scripts/apply-data-consistency-alpha-7-11.mjs
+          rm -f scripts/fix-data-consistency-patcher.mjs src/data/.gitkeep
       - name: Instalar dependencias
         run: npm install --no-audit --no-fund
       - name: Comprobar TypeScript

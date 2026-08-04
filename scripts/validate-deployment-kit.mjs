@@ -11,6 +11,7 @@ const files = {
   tunnel: read('deploy/cloudflare/config.yml.example'),
   check: read('deploy/check-deployment.sh'),
   guide: read('deploy/README.md'),
+  atomicHook: read('pb_hooks/isivolt_atomic_batches.pb.js'),
 };
 
 const errors = [];
@@ -23,6 +24,7 @@ const forbidFragment = (file, fragment, label) => {
 
 requireFragment('service', '--http=127.0.0.1:8090', 'Servicio');
 requireFragment('service', '--migrationsDir=/opt/isivoltpro-pocketbase/pb_migrations', 'Servicio');
+requireFragment('service', 'WorkingDirectory=/opt/isivoltpro-pocketbase', 'Servicio');
 requireFragment('service', 'NoNewPrivileges=true', 'Servicio');
 requireFragment('service', 'ProtectSystem=strict', 'Servicio');
 requireFragment('service', 'ReadWritePaths=/var/lib/isivoltpro-pocketbase', 'Servicio');
@@ -30,10 +32,16 @@ forbidFragment('service', '0.0.0.0:8090', 'Servicio');
 forbidFragment('service', '--http=:8090', 'Servicio');
 
 requireFragment('install', 'pb_migrations', 'Instalador');
+requireFragment('install', 'pb_hooks', 'Instalador');
+requireFragment('install', "-name '*.pb.js'", 'Instalador');
 requireFragment('install', 'enable --now isivoltpro-pocketbase.service', 'Instalador');
 requireFragment('install', 'enable --now isivoltpro-pocketbase-backup.timer', 'Instalador');
 requireFragment('install', '/api/health', 'Instalador');
 requireFragment('install', 'PB_VERSION="${PB_VERSION:-0.39.9}"', 'Instalador');
+
+requireFragment('atomicHook', '/api/isivoltpro/batch-operation', 'Hook atómico');
+requireFragment('atomicHook', 'runInTransaction', 'Hook atómico');
+requireFragment('atomicHook', '$apis.requireAuth()', 'Hook atómico');
 
 requireFragment('admin', 'read -r -s', 'Creación de supercuenta');
 requireFragment('admin', 'superuser create', 'Creación de supercuenta');
@@ -74,4 +82,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Kit de despliegue validado: enlace local, migraciones, systemd, copias, túnel y ausencia de secretos.');
+console.log('Kit de despliegue validado: enlace local, migraciones, hooks, systemd, copias, túnel y ausencia de secretos.');

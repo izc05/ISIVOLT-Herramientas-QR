@@ -6,6 +6,12 @@ import {
   savePocketBaseToken,
   type CloudProfile,
 } from './config';
+import type {
+  BatchOperation,
+  IdentificationMethod,
+  OperatorMode,
+  ScanMethod,
+} from '../types';
 
 export type PocketBaseRecord = Record<string, unknown> & {
   id: string;
@@ -24,6 +30,26 @@ type ListResponse<T> = {
 type AuthResponse = {
   token: string;
   record: PocketBaseRecord;
+};
+
+export type AtomicBatchRequest = {
+  operation: BatchOperation;
+  technicianExternalId: string;
+  toolExternalIds: string[];
+  operatorMode: OperatorMode;
+  identificationMethod: IdentificationMethod;
+  scanMethod: ScanMethod;
+  startedAt: string;
+  completedAt: string;
+  batchExternalId: string;
+  movementExternalIds: string[];
+};
+
+export type AtomicBatchResponse = {
+  ok: true;
+  batchExternalId: string;
+  completedAt: string;
+  toolExternalIds: string[];
 };
 
 export class PocketBaseRequestError extends Error {
@@ -151,4 +177,11 @@ export async function deleteRecord(collection: string, recordId: string): Promis
     `/api/collections/${encodeURIComponent(collection)}/records/${encodeURIComponent(recordId)}`,
     { method: 'DELETE' },
   );
+}
+
+export async function commitAtomicBatch(input: AtomicBatchRequest): Promise<AtomicBatchResponse> {
+  return request<AtomicBatchResponse>('/api/isivoltpro/batch-operation', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 }

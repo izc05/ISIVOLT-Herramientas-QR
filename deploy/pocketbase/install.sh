@@ -37,7 +37,7 @@ fi
 
 install -d -m 0755 -o root -g root "$INSTALL_DIR"
 install -d -m 0750 -o "$SERVICE_USER" -g "$SERVICE_GROUP" "$DATA_DIR/pb_data" "$DATA_DIR/backups"
-install -d -m 0755 -o root -g root "$INSTALL_DIR/pb_migrations"
+install -d -m 0755 -o root -g root "$INSTALL_DIR/pb_migrations" "$INSTALL_DIR/pb_hooks"
 
 echo "Descargando PocketBase ${PB_VERSION} (${PB_ARCH})..."
 curl --fail --location --retry 3 --output "$TMP_DIR/pocketbase.zip" "$DOWNLOAD_URL"
@@ -49,8 +49,17 @@ find "$REPO_ROOT/pb_migrations" -maxdepth 1 -type f -name '*.js' -print0 \
   | sort -z \
   | xargs -0 -r -I{} install -m 0644 -o root -g root "{}" "$INSTALL_DIR/pb_migrations/"
 
+find "$INSTALL_DIR/pb_hooks" -maxdepth 1 -type f -name '*.pb.js' -delete
+find "$REPO_ROOT/pb_hooks" -maxdepth 1 -type f -name '*.pb.js' -print0 \
+  | sort -z \
+  | xargs -0 -r -I{} install -m 0644 -o root -g root "{}" "$INSTALL_DIR/pb_hooks/"
+
 if ! find "$INSTALL_DIR/pb_migrations" -maxdepth 1 -type f -name '*.js' | grep -q .; then
   echo "No se encontraron migraciones en $REPO_ROOT/pb_migrations" >&2
+  exit 1
+fi
+if ! find "$INSTALL_DIR/pb_hooks" -maxdepth 1 -type f -name '*.pb.js' | grep -q .; then
+  echo "No se encontraron hooks en $REPO_ROOT/pb_hooks" >&2
   exit 1
 fi
 
@@ -85,6 +94,7 @@ API local:      http://127.0.0.1:8090/api/
 Panel local:    http://127.0.0.1:8090/_/
 Datos:          $DATA_DIR/pb_data
 Migraciones:    $INSTALL_DIR/pb_migrations
+Hooks:          $INSTALL_DIR/pb_hooks
 Copias:         $DATA_DIR/backups
 
 Siguiente paso:

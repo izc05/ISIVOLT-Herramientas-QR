@@ -51,6 +51,8 @@ jobs:
         run: node scripts/validate-main-screen-editing.mjs
       - name: Validar cabecera y branding
         run: node scripts/validate-header-branding.mjs
+      - name: Validar consistencia de datos y operaciones
+        run: node scripts/validate-data-consistency.mjs
       - name: Validar manifiesto PWA
         run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.webmanifest','utf8')); console.log('Manifest válido')"
       - name: Validar service worker

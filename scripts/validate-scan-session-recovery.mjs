@@ -8,6 +8,7 @@ const fail = (message) => {
 const read = (path) => readFileSync(path, 'utf8');
 const draft = read('src/scan/scanDraft.ts');
 const session = read('src/scan/ScanSession.tsx');
+const transactions = read('src/data/workspaceTransactions.ts');
 const css = read('src/scan/scan-recovery.css');
 const main = read('src/main.tsx');
 const packageJson = JSON.parse(read('package.json'));
@@ -39,6 +40,8 @@ for (const fragment of [
   'setQuickTool',
   'Registrar nuevo artículo',
   'Registrar y añadir',
+  'createQuickToolRecord',
+  'commitBatchOperation',
   'operation === \'return\'',
   'Solo se devolverán los artículos incluidos',
   'copyReceipt',
@@ -48,9 +51,16 @@ for (const fragment of [
   if (!session.includes(fragment)) fail(`ScanSession no contiene ${fragment}`);
 }
 
-if (!session.includes("kind: 'returnable-tool'") || !session.includes("status: 'available'")) {
-  fail('el alta rápida no crea un artículo disponible y retornable');
+for (const fragment of [
+  'export async function createQuickToolRecord',
+  "kind: 'returnable-tool'",
+  "serviceState: 'ready'",
+  "status: 'available'",
+  "type: 'tool_created'",
+]) {
+  if (!transactions.includes(fragment)) fail(`el alta rápida transaccional no contiene ${fragment}`);
 }
+
 if (!session.includes("operation === 'loan' && code")) fail('el alta rápida debe limitarse al préstamo');
 if (!session.includes("tool.status === 'loaned' && tool.technicianId === selectedTechnician.id")) {
   fail('la devolución manual no está limitada al material del técnico');
@@ -71,4 +81,4 @@ if (!String(packageJson.version).startsWith('2.0.0-alpha.7')) fail(`versión ine
 const cacheSuffix = String(packageJson.version).replace(/^2\.0\.0-/, '').replaceAll('.', '-');
 if (!serviceWorker.includes(cacheSuffix)) fail(`la caché PWA no coincide con ${packageJson.version}`);
 
-console.log('Escaneo persistente preparado: borrador por cuenta, recuperación, alta rápida, selección manual y devolución parcial.');
+console.log('Escaneo persistente preparado: borrador por cuenta, recuperación, alta rápida transaccional, selección manual y devolución parcial.');

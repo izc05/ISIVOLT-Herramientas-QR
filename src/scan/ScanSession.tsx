@@ -25,7 +25,8 @@ import {
   X,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { loadData, saveData, WORKSPACE_DATA_EVENT } from '../storage';
+import { commitBatchOperation, createQuickToolRecord, technicianCanReceiveTools } from '../data/workspaceTransactions';
+import { loadData, WORKSPACE_DATA_EVENT } from '../storage';
 import type {
   AppData,
   BatchOperation,
@@ -73,7 +74,6 @@ type NdefReaderInstance = {
 };
 type NdefReaderConstructor = new () => NdefReaderInstance;
 
-const uid = (prefix: string) => `${prefix}-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
 const now = () => new Date().toISOString();
 const technicianPayload = (technician: Technician) => technician.qrPayload ?? `ISIVOLTPRO:TECH:${technician.code}`;
 const toolPayloadCode = (value: string) => value.trim().startsWith('ISIVOLTPRO:TOOL:')
@@ -120,7 +120,10 @@ export default function ScanSession() {
   const pendingRequestRef = useRef<ScanSessionRequest>({});
   const scanHandlerRef = useRef<(value: string, target: ScanTarget, method: Exclude<ScanMethod, 'mixed'>) => void>(() => undefined);
 
-  const activeTechnicians = useMemo(() => data.technicians.filter((technician) => technician.active), [data.technicians]);
+  const activeTechnicians = useMemo(
+    () => data.technicians.filter((technician) => operation === 'loan' ? technicianCanReceiveTools(technician) : true),
+    [data.technicians, operation],
+  );
   const selectedTechnician = data.technicians.find((technician) => technician.id === technicianId);
   const selectedTools = toolIds.map((id) => data.tools.find((tool) => tool.id === id)).filter((tool): tool is Tool => Boolean(tool));
   const activeCategories = useMemo(() => (data.toolCategories ?? []).filter((entry) => entry.active), [data.toolCategories]);
@@ -171,7 +174,10 @@ export default function ScanSession() {
 
   const resumeDraft = (draft: ScanDraft) => {
     const snapshot = loadData();
-    const technician = snapshot.technicians.find((item) => item.id === draft.technicianId && item.active);
+    const technician = snapshot.technicians.find((item) => (
+      item.id === draft.technicianId
+      && (draft.operation === 'return' || technicianCanReceiveTools(item))
+    ));
     if (!technician) {
       clearScanDraft();
       setRecoveryDraft(null);
@@ -390,92 +396,50 @@ export default function ScanSession() {
     }
   };
 
-  const saveQuickTool = () => {
+  const saveQuickTool = async () => {
     if (!quickTool || !selectedTechnician) return;
-    const code = quickTool.code.trim().toLocaleUpperCase('es-ES');
-    const name = quickTool.name.trim();
-    const category = activeCategories.find((entry) => entry.id === quickTool.categoryId);
-    const location = activeLocations.find((entry) => entry.id === quickTool.locationId);
-    if (!code || !name || !category) {
-      setMessage('Código, nombre y categoría son obligatorios para registrar el artículo.');
+    const result = await createQuickToolRecord({
+      code: quickTool.code,
+      name: quickTool.name,
+      categoryId: quickTool.categoryId,
+      locationId: quickTool.locationId || undefined,
+    });
+    setData(result.data);
+    if (!result.ok) {
+      setMessage(result.message);
       return;
     }
-    if (data.tools.some((tool) => tool.code.toLocaleUpperCase('es-ES') === code)) {
-      setMessage(`El código ${code} ya está registrado.`);
-      return;
-    }
-    const timestamp = now();
-    const tool: Tool = {
-      id: uid('tool'),
-      code,
-      name,
-      category: category.name,
-      categoryId: category.id,
-      location: location?.name ?? 'Sin ubicación',
-      locationId: location?.id,
-      kind: 'returnable-tool',
-      serviceState: 'ready',
-      qrPayload: `ISIVOLTPRO:TOOL:${code}`,
-      status: 'available',
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-    const nextData = { ...data, tools: [tool, ...data.tools] };
-    saveData(nextData);
-    setData(nextData);
-    setToolIds((current) => [...current, tool.id]);
+    const tool = result.value;
+    setToolIds((current) => current.includes(tool.id) ? current : [...current, tool.id]);
     setScanMethods((current) => new Set(current).add('manual'));
     setQuickTool(null);
     setScanInput('');
     setMessage(`${tool.code} · ${tool.name} registrado y añadido.`);
   };
 
-  const finish = () => {
-    if (!selectedTechnician || selectedTools.length === 0) return;
-    const completedAt = now();
-    const batchId = uid('batch');
-    const scanMethod = getScanMethod(scanMethods);
-    const batch: BatchTransaction = {
-      id: batchId,
+  const finish = async () => {
+    if (!selectedTechnician || toolIds.length === 0) return;
+    const result = await commitBatchOperation({
       operation,
       technicianId: selectedTechnician.id,
-      toolIds: selectedTools.map((tool) => tool.id),
+      toolIds,
       operatorMode,
       identificationMethod,
-      scanMethod,
+      scanMethod: getScanMethod(scanMethods),
       startedAt,
-      completedAt,
-    };
-    const nextData: AppData = {
-      ...data,
-      tools: data.tools.map((tool) => {
-        if (!toolIds.includes(tool.id)) return tool;
-        return operation === 'loan'
-          ? { ...tool, status: 'loaned', technicianId: selectedTechnician.id, updatedAt: completedAt }
-          : { ...tool, status: 'available', technicianId: undefined, updatedAt: completedAt };
-      }),
-      movements: [
-        ...selectedTools.map((tool) => ({
-          id: uid('mov'),
-          type: operation,
-          occurredAt: completedAt,
-          toolId: tool.id,
-          technicianId: selectedTechnician.id,
-          batchId,
-          identificationMethod,
-          scanMethod,
-          detail: operation === 'loan'
-            ? `${tool.name} asignada a ${selectedTechnician.name}`
-            : `${tool.name} devuelta por ${selectedTechnician.name}`,
-        } as const)),
-        ...data.movements,
-      ],
-      batches: [batch, ...data.batches],
-    };
-    saveData(nextData);
+    });
+    setData(result.data);
+    if (!result.ok) {
+      if (result.invalidToolIds?.length) {
+        const invalid = new Set(result.invalidToolIds);
+        setToolIds((current) => current.filter((id) => !invalid.has(id)));
+      }
+      setStep('items');
+      setMessage(result.message);
+      return;
+    }
     clearScanDraft();
-    setData(nextData);
-    setCompletedBatch(batch);
+    setCompletedBatch(result.value);
     setStep('complete');
     setMessage(operationCopy[operation].done);
   };

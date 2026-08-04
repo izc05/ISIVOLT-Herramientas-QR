@@ -107,7 +107,7 @@ for (const fragment of [
 
 for (const fragment of [
   "const CACHE_PREFIX = 'isivoltpro-herramientas-'",
-  "const CACHE_NAME = `${CACHE_PREFIX}alpha-7-10`",
+  "const CACHE_NAME = `${CACHE_PREFIX}alpha-7-11`",
   "const BASE = new URL('./', self.location.href).pathname",
   'key.startsWith(CACHE_PREFIX)',
   'request.destination',
@@ -129,7 +129,8 @@ if (!pwaPrompt.includes('window.setTimeout(reload, 5000)')) {
   fail('falta recuperación si la actualización PWA no cambia de controlador');
 }
 
-if (packageJson.version !== '2.0.0-alpha.7.10') fail(`versión inesperada: ${packageJson.version}`);
-if (!serviceWorker.includes('alpha-7-10')) fail('caché PWA no renovada');
+if (!/^2\.0\.0-alpha\.7\.\d+$/.test(packageJson.version)) fail(`versión inesperada: ${packageJson.version}`);
+const cacheSuffix = packageJson.version.replace('2.0.0-alpha.', 'alpha-').replaceAll('.', '-');
+if (!serviceWorker.includes(cacheSuffix)) fail(`caché PWA no corresponde a ${packageJson.version}`);
 
 console.log('Cabecera y PWA estables: sin botón Ecosistema flotante, base adaptable y actualización sin carrera.');

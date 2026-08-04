@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'isivoltpro-herramientas-';
-const CACHE_NAME = `${CACHE_PREFIX}alpha-7-10`;
+const CACHE_NAME = `${CACHE_PREFIX}alpha-7-11`;
 const BASE = new URL('./', self.location.href).pathname;
 const CORE = [
   BASE,

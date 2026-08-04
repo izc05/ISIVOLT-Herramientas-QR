@@ -8,6 +8,7 @@ import CloudStatus from './cloud/CloudStatus';
 import ReleaseDiagnostics from './diagnostics/ReleaseDiagnostics';
 import EcosystemSwitcher from './ecosystem/EcosystemSwitcher';
 import OperationalCenter from './ecosystem/OperationalCenter';
+import WorkspaceStorageBridge from './data/WorkspaceStorageBridge';
 import DesktopUtilityMenu from './header/DesktopUtilityMenu';
 import MainScreenEnhancer from './main-screen/MainScreenEnhancer';
 import MobileFastScan from './mobile/MobileFastScan';
@@ -67,6 +68,7 @@ createRoot(root).render(
   <StrictMode>
     <AccessMode />
     <DeviceSecurityGate />
+    <WorkspaceStorageBridge />
     <EcosystemSwitcher />
     <App />
     <MainScreenEnhancer />

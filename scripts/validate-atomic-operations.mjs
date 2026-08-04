@@ -9,6 +9,7 @@ const fail = (message) => {
 const hook = read('pb_hooks/isivolt_operations.pb.js');
 const migration = read('pb_migrations/1722512600_atomic_operations.js');
 const inactiveUsersMigration = read('pb_migrations/1722512700_allow_inactive_users.js');
+const lifecycleRulesMigration = read('pb_migrations/1722512800_fix_user_lifecycle_rules.js');
 const client = read('src/cloud/atomicOperations.ts');
 const operation = read('src/data/atomicWorkspaceOperations.ts');
 const bridge = read('src/data/workspaceOperations.ts');
@@ -54,6 +55,18 @@ for (const fragment of [
 }
 
 for (const fragment of [
+  "users.updateRule = `${authenticated} && ${sameWorkspace} && role != \"admin\"",
+  "users.manageRule = `${authenticated} && ${sameWorkspace} && ${manager} && role != \"admin\"",
+  '@request.body.workspace:changed = false',
+  '@request.body.email:changed = false',
+  'id != @request.auth.id',
+]) {
+  if (!lifecycleRulesMigration.includes(fragment)) {
+    fail(`la migración del ciclo de usuarios no contiene ${fragment}`);
+  }
+}
+
+for (const fragment of [
   "'/api/isivolt/operations'",
   "status: 'confirmed'",
   "status: 'pending'",
@@ -95,4 +108,4 @@ if (!service.includes('--hooksDir=/opt/isivoltpro-pocketbase/pb_hooks')) fail('s
 if (packageJson.version !== '2.0.0-alpha.7.12') fail(`versión inesperada: ${packageJson.version}`);
 if (!sw.includes('alpha-7-12')) fail('caché PWA no renovada');
 
-console.log('Operaciones atómicas preparadas: transacción, idempotencia, conflicto, reconciliación y cuentas desactivables.');
+console.log('Operaciones atómicas preparadas: transacción, idempotencia, conflicto, reconciliación y ciclo de cuentas.');

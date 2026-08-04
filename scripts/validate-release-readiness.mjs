@@ -26,11 +26,14 @@ checkPng('dist/icons/icon-512.png', 512, 512);
 checkPng('dist/icons/maskable-512.png', 512, 512);
 
 const manifest = JSON.parse(requireFile('dist/manifest.webmanifest').toString('utf8'));
+if (manifest.id !== './' || manifest.start_url !== './' || manifest.scope !== './') {
+  fail('el manifiesto debe usar id, start_url y scope relativos');
+}
 const iconSources = new Set((manifest.icons ?? []).map((icon) => icon.src));
 for (const source of [
-  '/ISIVOLT-Herramientas-QR/icons/icon-192.png',
-  '/ISIVOLT-Herramientas-QR/icons/icon-512.png',
-  '/ISIVOLT-Herramientas-QR/icons/maskable-512.png',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/maskable-512.png',
 ]) {
   if (!iconSources.has(source)) fail(`el manifiesto no referencia ${source}`);
 }
@@ -38,6 +41,9 @@ for (const source of [
 const html = requireFile('dist/index.html').toString('utf8');
 if (!html.includes('apple-touch-icon.png')) fail('index.html no referencia el icono Apple');
 if (!html.includes('mobile-web-app-capable')) fail('falta el metadato móvil');
+if (!html.includes('/ISIVOLT-Herramientas-QR/manifest.webmanifest')) {
+  fail('la compilación predeterminada no ha aplicado la base de GitHub Pages');
+}
 
 const diagnostics = requireFile('src/diagnostics/ReleaseDiagnostics.tsx').toString('utf8');
 for (const fragment of ['testCamera', '/api/health', 'navigator.storage', 'NDEFReader', 'Copiar informe']) {
@@ -49,11 +55,19 @@ for (const fragment of [
   '.admin-tools-launcher',
   '.cloud-status-trigger',
   '.diagnostics-trigger',
-  '.ecosystem-trigger',
+  'eventName: ECOSYSTEM_OPEN_EVENT',
   'role !== \'technician\'',
   'Accesos rápidos',
 ]) {
   if (!mobileMenu.includes(fragment)) fail(`el menú móvil no contiene ${fragment}`);
+}
+
+const ecosystem = requireFile('src/ecosystem/EcosystemSwitcher.tsx').toString('utf8');
+if (ecosystem.includes('className="ecosystem-trigger"')) {
+  fail('el selector de Ecosistema vuelve a crear un botón flotante');
+}
+if (!ecosystem.includes('window.addEventListener(ECOSYSTEM_OPEN_EVENT, handleOpen)')) {
+  fail('Ecosistema no escucha el evento de apertura');
 }
 
 const mobileMenuCss = requireFile('src/mobile/mobile-utility-menu.css').toString('utf8');
@@ -62,7 +76,6 @@ for (const fragment of [
   '.topbar-actions > .admin-tools-launcher',
   '.topbar-actions > .cloud-status-trigger',
   '.topbar-actions > .diagnostics-trigger',
-  '.ecosystem-trigger',
   'display: none !important',
   '.mobile-utility-launcher',
 ]) {
@@ -72,5 +85,13 @@ for (const fragment of [
 const main = requireFile('src/main.tsx').toString('utf8');
 if (!main.includes('<MobileUtilityMenu />')) fail('MobileUtilityMenu no está montado en la aplicación');
 
-requireFile('dist/sw.js');
-console.log('PWA, diagnóstico y cabecera móvil preparados: iconos, caché y accesos sin superposición correctos.');
+const sw = requireFile('dist/sw.js').toString('utf8');
+for (const fragment of [
+  "new URL('./', self.location.href).pathname",
+  'STATIC_DESTINATIONS',
+  'request.destination',
+]) {
+  if (!sw.includes(fragment)) fail(`el service worker compilado no contiene ${fragment}`);
+}
+
+console.log('PWA, diagnóstico y cabeceras preparados para GitHub Pages y dominio propio sin superposición.');

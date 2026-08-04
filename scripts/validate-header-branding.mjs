@@ -98,8 +98,8 @@ for (const key of ['icon192', 'icon512']) {
 }
 
 for (const fragment of [
-  "VITE_BASE_PATH",
-  "normalizeBase",
+  'VITE_BASE_PATH',
+  'normalizeBase',
   "sourcemap: mode !== 'production'",
 ]) {
   if (!viteConfig.includes(fragment)) fail(`vite.config.ts no contiene ${fragment}`);
@@ -107,7 +107,6 @@ for (const fragment of [
 
 for (const fragment of [
   "const CACHE_PREFIX = 'isivoltpro-herramientas-'",
-  "const CACHE_NAME = `${CACHE_PREFIX}alpha-7-11`",
   "const BASE = new URL('./', self.location.href).pathname",
   'key.startsWith(CACHE_PREFIX)',
   'request.destination',
@@ -131,6 +130,8 @@ if (!pwaPrompt.includes('window.setTimeout(reload, 5000)')) {
 
 if (!/^2\.0\.0-alpha\.7\.\d+$/.test(packageJson.version)) fail(`versión inesperada: ${packageJson.version}`);
 const cacheSuffix = packageJson.version.replace('2.0.0-alpha.', 'alpha-').replaceAll('.', '-');
-if (!serviceWorker.includes(cacheSuffix)) fail(`caché PWA no corresponde a ${packageJson.version}`);
+if (!serviceWorker.includes(`const CACHE_NAME = \`${'${CACHE_PREFIX}'}${cacheSuffix}\``)) {
+  fail(`caché PWA no corresponde a ${packageJson.version}`);
+}
 
 console.log('Cabecera y PWA estables: sin botón Ecosistema flotante, base adaptable y actualización sin carrera.');

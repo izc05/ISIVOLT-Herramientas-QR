@@ -11,10 +11,18 @@ APP_PASSWORD="AtomicIsiVoltPro!59382746"
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_DIR="$(mktemp -d)"
 PB_DATA="$TMP_DIR/pb_data"
+PB_HOOKS="$TMP_DIR/pb_hooks"
 PB_LOG="$TMP_DIR/pocketbase.log"
 SERVER_PID=""
+FAILED=0
 
 cleanup() {
+  local exit_code="$?"
+  if [[ "$exit_code" -ne 0 || "$FAILED" -eq 1 ]]; then
+    echo "--- Registro PocketBase de la prueba atómica ---" >&2
+    cat "$PB_LOG" >&2 2>/dev/null || true
+    echo "--- Fin del registro ---" >&2
+  fi
   if [[ -n "$SERVER_PID" ]] && kill -0 "$SERVER_PID" 2>/dev/null; then
     kill "$SERVER_PID" 2>/dev/null || true
     wait "$SERVER_PID" 2>/dev/null || true
@@ -34,8 +42,8 @@ curl --fail --location --retry 3 \
   "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip"
 unzip -q "$TMP_DIR/pocketbase.zip" pocketbase -d "$TMP_DIR"
 chmod +x "$TMP_DIR/pocketbase"
-mkdir -p "$PB_DATA" "$TMP_DIR/pb_hooks"
-cp "$ROOT_DIR"/pb_hooks/*.pb.js "$TMP_DIR/pb_hooks/"
+mkdir -p "$PB_DATA" "$PB_HOOKS"
+cp "$ROOT_DIR"/pb_hooks/*.pb.js "$PB_HOOKS/"
 
 "$TMP_DIR/pocketbase" migrate up \
   --dir="$PB_DATA" \
@@ -45,13 +53,11 @@ cp "$ROOT_DIR"/pb_hooks/*.pb.js "$TMP_DIR/pb_hooks/"
   --dir="$PB_DATA" \
   --migrationsDir="$ROOT_DIR/pb_migrations"
 
-(
-  cd "$TMP_DIR"
-  ./pocketbase serve \
-    --http="127.0.0.1:${PORT}" \
-    --dir="$PB_DATA" \
-    --migrationsDir="$ROOT_DIR/pb_migrations"
-) >"$PB_LOG" 2>&1 &
+"$TMP_DIR/pocketbase" serve \
+  --http="127.0.0.1:${PORT}" \
+  --dir="$PB_DATA" \
+  --migrationsDir="$ROOT_DIR/pb_migrations" \
+  --hooksDir="$PB_HOOKS" >"$PB_LOG" 2>&1 &
 SERVER_PID="$!"
 
 for attempt in {1..40}; do
@@ -59,7 +65,13 @@ for attempt in {1..40}; do
     break
   fi
   if ! kill -0 "$SERVER_PID" 2>/dev/null; then
-    cat "$PB_LOG" >&2
+    FAILED=1
+    echo "PocketBase terminó antes de responder." >&2
+    exit 1
+  fi
+  if [[ "$attempt" -eq 40 ]]; then
+    FAILED=1
+    echo "PocketBase no respondió dentro del tiempo esperado." >&2
     exit 1
   fi
   sleep .25
@@ -96,14 +108,21 @@ curl --silent --show-error --fail \
 FIRST_BODY="{\"operation\":\"loan\",\"technicianExternalId\":\"tech-atomic-001\",\"toolExternalIds\":[\"tool-atomic-001\"],\"operatorMode\":\"administrator\",\"identificationMethod\":\"manual\",\"scanMethod\":\"manual\",\"startedAt\":\"$NOW\",\"completedAt\":\"$NOW\",\"batchExternalId\":\"batch-atomic-first\",\"movementExternalIds\":[\"move-atomic-first\"]}"
 SECOND_BODY="{\"operation\":\"loan\",\"technicianExternalId\":\"tech-atomic-001\",\"toolExternalIds\":[\"tool-atomic-001\"],\"operatorMode\":\"administrator\",\"identificationMethod\":\"manual\",\"scanMethod\":\"manual\",\"startedAt\":\"$NOW\",\"completedAt\":\"$NOW\",\"batchExternalId\":\"batch-atomic-second\",\"movementExternalIds\":[\"move-atomic-second\"]}"
 
-curl --silent --show-error --fail \
+FIRST_STATUS="$(curl --silent --show-error --output "$TMP_DIR/first.json" --write-out '%{http_code}' \
   -X POST -H "Authorization: $APP_TOKEN" -H 'Content-Type: application/json' \
-  -d "$FIRST_BODY" "$BASE_URL/api/isivoltpro/batch-operation" >"$TMP_DIR/first.json"
+  -d "$FIRST_BODY" "$BASE_URL/api/isivoltpro/batch-operation")"
+if [[ ! "$FIRST_STATUS" =~ ^2 ]]; then
+  FAILED=1
+  echo "El primer préstamo atómico devolvió HTTP $FIRST_STATUS." >&2
+  cat "$TMP_DIR/first.json" >&2 || true
+  exit 1
+fi
 
 SECOND_STATUS="$(curl --silent --show-error --output "$TMP_DIR/second.json" --write-out '%{http_code}' \
   -X POST -H "Authorization: $APP_TOKEN" -H 'Content-Type: application/json' \
   -d "$SECOND_BODY" "$BASE_URL/api/isivoltpro/batch-operation")"
 if [[ "$SECOND_STATUS" =~ ^2 ]]; then
+  FAILED=1
   echo "El segundo préstamo debía ser rechazado." >&2
   cat "$TMP_DIR/second.json" >&2
   exit 1

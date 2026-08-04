@@ -29,8 +29,14 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { clearData, loadData, saveData } from './storage';
-import type { AppData, Movement, Technician, Tool, ToolStatus, ViewId } from './types';
+import {
+  commitBatchOperation,
+  createTechnicianRecord,
+  createToolRecord,
+  linkToolNfc,
+} from './data/workspaceTransactions';
+import { clearData, loadData, WORKSPACE_DATA_EVENT } from './storage';
+import type { AppData, Movement, ToolStatus, ViewId } from './types';
 
 const categories = [
   'Herramienta general',
@@ -80,9 +86,6 @@ const movementLabels: Record<Movement['type'], string> = {
   nfc_linked: 'NFC vinculado',
 };
 
-const uid = (prefix: string) => `${prefix}-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
-const now = () => new Date().toISOString();
-
 const formatDate = (value: string) => new Intl.DateTimeFormat('es-ES', {
   day: '2-digit',
   month: 'short',
@@ -90,15 +93,6 @@ const formatDate = (value: string) => new Intl.DateTimeFormat('es-ES', {
   hour: '2-digit',
   minute: '2-digit',
 }).format(new Date(value));
-
-const nextCode = (items: Array<{ code: string }>, prefix: string) => {
-  const highest = items.reduce((max, item) => {
-    if (!item.code.startsWith(`${prefix}-`)) return max;
-    const number = Number(item.code.split('-').at(-1));
-    return Number.isFinite(number) ? Math.max(max, number) : max;
-  }, 0);
-  return `${prefix}-${String(highest + 1).padStart(3, '0')}`;
-};
 
 type ModalName = 'tool' | 'technician' | 'loan' | 'return' | 'qr' | 'nfc' | 'reset' | null;
 
@@ -158,7 +152,14 @@ export default function App() {
   });
   const [nfcTag, setNfcTag] = useState('');
 
-  useEffect(() => saveData(data), [data]);
+  useEffect(() => {
+    const handleDataChange = (event: Event) => {
+      setData((event as CustomEvent<AppData>).detail ?? loadData());
+    };
+    window.addEventListener(WORKSPACE_DATA_EVENT, handleDataChange);
+    return () => window.removeEventListener(WORKSPACE_DATA_EVENT, handleDataChange);
+  }, []);
+
   useEffect(() => {
     if (!notice) return;
     const timer = window.setTimeout(() => setNotice(null), 2800);
@@ -187,12 +188,6 @@ export default function App() {
   const loanedTools = data.tools.filter((tool) => tool.status === 'loaned');
   const selectedTool = data.tools.find((tool) => tool.id === selectedToolId);
 
-  const addMovement = (movement: Omit<Movement, 'id' | 'occurredAt'>): Movement => ({
-    id: uid('mov'),
-    occurredAt: now(),
-    ...movement,
-  });
-
   const closeModal = () => {
     setModal(null);
     setSelectedToolId('');
@@ -205,118 +200,111 @@ export default function App() {
     setModal(name);
   };
 
-  const createTool = (event: FormEvent) => {
+  const createTool = async (event: FormEvent) => {
     event.preventDefault();
-    if (!toolDraft.name.trim()) return;
-    const timestamp = now();
-    const prefix = prefixes[toolDraft.category] ?? 'HER';
-    const code = nextCode(data.tools, prefix);
-    const tool: Tool = {
-      id: uid('tool'),
-      code,
-      name: toolDraft.name.trim(),
+    const result = await createToolRecord({
+      name: toolDraft.name,
       category: toolDraft.category,
-      location: toolDraft.location.trim() || 'Sin ubicación',
-      brand: toolDraft.brand.trim() || undefined,
-      model: toolDraft.model.trim() || undefined,
-      serialNumber: toolDraft.serialNumber.trim() || undefined,
-      qrPayload: `ISIVOLTPRO:TOOL:${code}`,
-      status: 'available',
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-    setData((current) => ({
-      ...current,
-      tools: [tool, ...current.tools],
-      movements: [addMovement({ type: 'tool_created', toolId: tool.id, detail: `${tool.name} · ${tool.code}` }), ...current.movements],
-    }));
+      location: toolDraft.location,
+      brand: toolDraft.brand,
+      model: toolDraft.model,
+      serialNumber: toolDraft.serialNumber,
+      prefix: prefixes[toolDraft.category] ?? 'HER',
+    });
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
     setToolDraft({ name: '', category: categories[0], location: 'Almacén principal', brand: '', model: '', serialNumber: '' });
     closeModal();
-    setNotice('Herramienta creada correctamente.');
+    setNotice(`${result.value.code} · ${result.value.name} creada correctamente.`);
   };
 
-  const createTechnician = (event: FormEvent) => {
+  const createTechnician = async (event: FormEvent) => {
     event.preventDefault();
-    if (!technicianDraft.name.trim()) return;
-    const timestamp = now();
-    const code = nextCode(data.technicians, 'TEC');
-    const technician: Technician = {
-      id: uid('tech'),
-      code,
-      name: technicianDraft.name.trim(),
+    const result = await createTechnicianRecord({
+      name: technicianDraft.name,
       category: technicianDraft.category,
-      phone: technicianDraft.phone.trim() || undefined,
-      email: technicianDraft.email.trim() || undefined,
-      active: true,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-    setData((current) => ({
-      ...current,
-      technicians: [technician, ...current.technicians],
-      movements: [addMovement({ type: 'technician_created', technicianId: technician.id, detail: `${technician.name} · ${technician.code}` }), ...current.movements],
-    }));
+      phone: technicianDraft.phone,
+      email: technicianDraft.email,
+    });
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
     setTechnicianDraft({ name: '', category: technicianCategories[0], phone: '', email: '' });
     closeModal();
-    setNotice('Técnico creado correctamente.');
+    setNotice(`${result.value.code} · ${result.value.name} creado correctamente.`);
   };
 
-  const registerLoan = () => {
+  const registerLoan = async () => {
     if (!selectedToolId || !selectedTechnicianId) return;
-    const timestamp = now();
-    const tool = data.tools.find((item) => item.id === selectedToolId);
-    const technician = data.technicians.find((item) => item.id === selectedTechnicianId);
-    if (!tool || !technician) return;
-    setData((current) => ({
-      ...current,
-      tools: current.tools.map((item) => item.id === tool.id
-        ? { ...item, status: 'loaned', technicianId: technician.id, updatedAt: timestamp }
-        : item),
-      movements: [addMovement({ type: 'loan', toolId: tool.id, technicianId: technician.id, detail: `${tool.name} asignada a ${technician.name}` }), ...current.movements],
-    }));
+    const result = await commitBatchOperation({
+      operation: 'loan',
+      technicianId: selectedTechnicianId,
+      toolIds: [selectedToolId],
+      operatorMode: 'administrator',
+      identificationMethod: 'manual',
+      scanMethod: 'manual',
+      startedAt: new Date().toISOString(),
+    });
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
     closeModal();
-    setNotice('Préstamo registrado.');
+    setNotice('Préstamo registrado y auditado en un lote.');
   };
 
-  const registerReturn = () => {
+  const registerReturn = async () => {
     if (!selectedToolId) return;
-    const timestamp = now();
-    const tool = data.tools.find((item) => item.id === selectedToolId);
-    if (!tool) return;
-    setData((current) => ({
-      ...current,
-      tools: current.tools.map((item) => item.id === tool.id
-        ? { ...item, status: 'available', technicianId: undefined, updatedAt: timestamp }
-        : item),
-      movements: [addMovement({ type: 'return', toolId: tool.id, technicianId: tool.technicianId, detail: `${tool.name} devuelta al almacén` }), ...current.movements],
-    }));
+    const currentTool = data.tools.find((item) => item.id === selectedToolId);
+    if (!currentTool?.technicianId) {
+      setNotice('La herramienta ya no tiene un responsable válido.');
+      return;
+    }
+    const result = await commitBatchOperation({
+      operation: 'return',
+      technicianId: currentTool.technicianId,
+      toolIds: [selectedToolId],
+      operatorMode: 'administrator',
+      identificationMethod: 'manual',
+      scanMethod: 'manual',
+      startedAt: new Date().toISOString(),
+    });
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
     closeModal();
-    setNotice('Devolución registrada.');
+    setNotice('Devolución registrada y auditada en un lote.');
   };
 
   const saveNfc = async (writeToTag: boolean) => {
     if (!selectedTool || !nfcTag.trim()) return;
+    let writeWarning = '';
     if (writeToTag) {
       const Reader = (window as unknown as { NDEFReader?: new () => { write(data: unknown): Promise<void> } }).NDEFReader;
       if (!Reader) {
-        setNotice('Web NFC no está disponible; se guardará la referencia manual.');
+        writeWarning = 'Web NFC no está disponible;';
       } else {
         try {
           const reader = new Reader();
           await reader.write({ records: [{ recordType: 'text', data: selectedTool.qrPayload }] });
         } catch {
-          setNotice('No se pudo grabar la etiqueta; se guardará la referencia manual.');
+          writeWarning = 'No se pudo grabar físicamente la etiqueta;';
         }
       }
     }
-    const timestamp = now();
-    setData((current) => ({
-      ...current,
-      tools: current.tools.map((tool) => tool.id === selectedTool.id ? { ...tool, nfcTag: nfcTag.trim(), updatedAt: timestamp } : tool),
-      movements: [addMovement({ type: 'nfc_linked', toolId: selectedTool.id, detail: `${selectedTool.name} · ${nfcTag.trim()}` }), ...current.movements],
-    }));
+    const result = await linkToolNfc(selectedTool.id, nfcTag);
+    if (!result.ok) {
+      setNotice(result.message);
+      return;
+    }
     closeModal();
-    setNotice('NFC vinculado a la herramienta.');
+    setNotice(writeWarning
+      ? `${writeWarning} la referencia se guardó sin duplicados.`
+      : 'NFC vinculado a la herramienta.');
   };
 
   const resetWorkspace = () => {

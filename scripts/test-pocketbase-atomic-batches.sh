@@ -110,14 +110,16 @@ if [[ "$SECOND_STATUS" =~ ^2 ]]; then
 fi
 
 FILTER_TOOL="$(node -e 'process.stdout.write(encodeURIComponent(`workspace = "atomic" && external_id = "tool-atomic-001"`))')"
-FILTER_BATCH="$(node -e 'process.stdout.write(encodeURIComponent(`workspace = "atomic"`))')"
+FILTER_WORKSPACE="$(node -e 'process.stdout.write(encodeURIComponent(`workspace = "atomic"`))')"
 
 curl --silent --show-error --fail -H "Authorization: $APP_TOKEN" \
   "$BASE_URL/api/collections/isivolt_tools/records?filter=$FILTER_TOOL" >"$TMP_DIR/tools.json"
 curl --silent --show-error --fail -H "Authorization: $APP_TOKEN" \
-  "$BASE_URL/api/collections/isivolt_batches/records?filter=$FILTER_BATCH&perPage=50" >"$TMP_DIR/batches.json"
+  "$BASE_URL/api/collections/isivolt_batches/records?filter=$FILTER_WORKSPACE&perPage=50" >"$TMP_DIR/batches.json"
 curl --silent --show-error --fail -H "Authorization: $APP_TOKEN" \
-  "$BASE_URL/api/collections/isivolt_movements/records?filter=$FILTER_BATCH&perPage=50" >"$TMP_DIR/movements.json"\nnode - "$TMP_DIR/tools.json" "$TMP_DIR/batches.json" "$TMP_DIR/movements.json" <<'NODE'
+  "$BASE_URL/api/collections/isivolt_movements/records?filter=$FILTER_WORKSPACE&perPage=50" >"$TMP_DIR/movements.json"
+
+node - "$TMP_DIR/tools.json" "$TMP_DIR/batches.json" "$TMP_DIR/movements.json" <<'NODE'
 const fs = require('fs');
 const tools = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')).items;
 const batches = JSON.parse(fs.readFileSync(process.argv[3], 'utf8')).items;

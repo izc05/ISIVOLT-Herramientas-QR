@@ -174,11 +174,24 @@ export default function MainScreenEnhancer() {
       saveData(next);
     };
 
-    const observer = new MutationObserver(() => {
+    let observerFrame: number | null = null;
+    const runObserverWork = () => {
+      observerFrame = null;
       resolveModal();
       decorateMainLists(loadData());
+    };
+    const scheduleObserverWork = () => {
+      if (observerFrame !== null) return;
+      observerFrame = window.requestAnimationFrame(runObserverWork);
+    };
+
+    const observer = new MutationObserver(scheduleObserverWork);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-access-role'],
     });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-access-role', 'class'] });
     resolveModal();
     refresh();
 
@@ -209,6 +222,7 @@ export default function MainScreenEnhancer() {
     document.addEventListener('click', handleEdit, true);
     return () => {
       observer.disconnect();
+      if (observerFrame !== null) window.cancelAnimationFrame(observerFrame);
       window.removeEventListener(WORKSPACE_DATA_EVENT, handleData);
       document.removeEventListener('submit', handleSubmit, true);
       document.removeEventListener('click', handleEdit, true);

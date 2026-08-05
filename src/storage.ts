@@ -286,9 +286,10 @@ const readKey = (key: string): AppData => {
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) return emptyData();
-    const normalized = normalizeAppData(JSON.parse(raw)) ?? emptyData();
-    if (normalized.schemaVersion === 3) window.localStorage.setItem(key, JSON.stringify(normalized));
-    return normalized;
+    // Leer y normalizar no debe escribir de nuevo en localStorage. En móvil, esta función
+    // se ejecuta muchas veces durante los cambios de interfaz y las escrituras síncronas
+    // repetidas podían bloquear Chrome al crear una ficha con fotografías.
+    return normalizeAppData(JSON.parse(raw)) ?? emptyData();
   } catch {
     return emptyData();
   }
